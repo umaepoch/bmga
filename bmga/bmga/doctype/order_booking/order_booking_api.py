@@ -107,7 +107,6 @@ def handle_booked_quantity(items_data, quantity_booked, fulfillment_settings, cu
     today = datetime.date.today()
     to_pickup = quantity_booked
     average_price_list = list()
-    print(customer_type)
     # check if the order can be fulfilled in the primary warehouse itself
     # take into count the customer type
     if "retail" in customer_type.lower():
@@ -151,7 +150,6 @@ def handle_booked_quantity(items_data, quantity_booked, fulfillment_settings, cu
                         batches["qty"] = 0
 
     elif "hospital" in customer_type.lower():
-        print("---------inside hospital")
         if items_data[fulfillment_settings["hospital_warehouse"]] > to_pickup:
             for batches in items_data["batches"]:
                 if batches["t_warehouse"] != fulfillment_settings["hospital_warehouse"]: continue
