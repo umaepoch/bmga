@@ -107,6 +107,7 @@ def handle_booked_quantity(items_data, quantity_booked, fulfillment_settings, cu
     today = datetime.date.today()
     to_pickup = quantity_booked
     average_price_list = list()
+    average_price_qty = list()
     # check if the order can be fulfilled in the primary warehouse itself
     # take into count the customer type
     if "retail" in customer_type.lower():
@@ -123,10 +124,12 @@ def handle_booked_quantity(items_data, quantity_booked, fulfillment_settings, cu
                 if batches["qty"] > to_pickup:
                     # add price to calculate average price and update batch quantity
                     batches["qty"] -= to_pickup
+                    average_price_qty.append(to_pickup)
                     to_pickup = 0
                     break
                 else:
                     to_pickup -= batches["qty"]
+                    average_price_qty.append(batches["qty"])
                     batches["qty"] = 0
         # if not pick try to pick from the bulk to fulfill the order
         else:
@@ -143,10 +146,12 @@ def handle_booked_quantity(items_data, quantity_booked, fulfillment_settings, cu
                     if batches["qty"] > to_pickup:
                         # add price to calculate average price and update batch quantity
                         batches["qty"] -= to_pickup
+                        average_price_qty.append(to_pickup)
                         to_pickup = 0
                         break
                     else:
                         to_pickup -= batches["qty"]
+                        average_price_qty.append(batches["qty"])
                         batches["qty"] = 0
 
     elif "hospital" in customer_type.lower():
@@ -161,10 +166,12 @@ def handle_booked_quantity(items_data, quantity_booked, fulfillment_settings, cu
                 if batches["qty"] > to_pickup:
                     # add price to calculate average price and update batch quantity
                     batches["qty"] -= to_pickup
+                    average_price_qty.append(to_pickup)
                     to_pickup = 0
                     break
                 else:
                     to_pickup -= batches["qty"]
+                    average_price_qty.append(batches["qty"])
                     batches["qty"] = 0
 
     elif "institutional" in customer_type.lower():
@@ -179,10 +186,12 @@ def handle_booked_quantity(items_data, quantity_booked, fulfillment_settings, cu
                 if batches["qty"] > to_pickup:
                     # add price to calculate average price and update batch quantity
                     batches["qty"] -= to_pickup
+                    average_price_qty.append(to_pickup)
                     to_pickup = 0
                     break
                 else:
                     to_pickup -= batches["qty"]
+                    average_price_qty.append(batches["qty"])
                     batches["qty"] = 0
     if to_pickup > 0:
         hunt = True
@@ -191,7 +200,10 @@ def handle_booked_quantity(items_data, quantity_booked, fulfillment_settings, cu
         hunt = False
         hunt_quantity = 0
     if len(average_price_list) > 0:
-        average_price = sum(average_price_list) / len(average_price_list)
+        average_price = 0
+        for i in range(len(average_price_list)):
+            average_price += average_price_list[i]*average_price_qty[i]
+        average_price /= quantity_booked
     else:
         average_price = 0
     amount = average_price * quantity_booked
