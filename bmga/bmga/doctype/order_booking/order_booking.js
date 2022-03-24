@@ -14,30 +14,41 @@ var settings_fetched = false;
 frappe.ui.form.on('Order Booking', {
 	customer: function(frm) {
 		// fetch the warehouse details for the customer taking into count the company's settings
-		customer_type = frm.doc.customer_type
 		let company = frm.doc.company
-		if(customer_type && company && settings_fetched) {
+		let customer = frm.doc.customer
+		if(customer) {
 			frappe.call({
-				method: "bmga.bmga.doctype.order_booking.order_booking_api.order_booking_container",
+				method: "bmga.bmga.doctype.order_booking.order_booking_api.customer_type_container",
 				args: {
-					fulfillment_settings: fulfillment_settings,
-					customer_type: customer_type
+					customer: customer,
 				}
 			}).done((response) => {
-				data = response.message;
-				console.log(data)
-				details_fetched = true;
-				if(data.length == 0) {
-					frm.doc.order_booking_items = []
-					frappe.msgprint("Error Item/Batch/Item Price not present in Stock!");
-					details_fetched = false;
+				customer_type = response.message.pch_customer_type;
+				frm.set_value("customer_type", customer_type);
+				if(customer_type && company && settings_fetched) {
+					frappe.call({
+						method: "bmga.bmga.doctype.order_booking.order_booking_api.order_booking_container",
+						args: {
+							fulfillment_settings: fulfillment_settings,
+							customer_type: customer_type
+						}
+					}).done((response) => {
+						data = response.message;
+						console.log(data)
+						details_fetched = true;
+						if(data.length == 0) {
+							frm.doc.order_booking_items = []
+							frappe.msgprint("Error Item/Batch/Item Price not present in Stock!");
+							details_fetched = false;
+						}
+						frm.doc.order_booking_items = []
+						refresh_field("order_booking_items");
+					})
+				} else {
+					frappe.msgprint("Error Company/Customer/Fulfillment Settings for the mentioned company not set!");
+					//setTimeout(window.location.reload(), 5000);
 				}
-				frm.doc.order_booking_items = []
-				refresh_field("order_booking_items");
 			})
-		} else {
-			frappe.msgprint("Error Company/Customer/Fulfillment Settings for the mentioned company not set!");
-			//setTimeout(window.location.reload(), 5000);
 		}
 	},
 	company: function(frm) {

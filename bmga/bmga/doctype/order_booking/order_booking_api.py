@@ -206,6 +206,23 @@ def handle_booked_quantity(items_data, quantity_booked, fulfillment_settings, cu
     )
     return data
 
+def fetch_customer_type(customer):
+    customer_group = frappe.db.sql(
+        f"""SELECT customer_group FROM `tabCustomer` WHERE name = '{customer}'""",
+        as_dict=True
+    )
+    customer_type = frappe.db.sql(
+        f"""SELECT pch_customer_type FROM `tabCustomer Group` WHERE name = '{customer_group[0]["customer_group"]}'""",
+        as_dict=True
+    )
+    return customer_type[0]
+
+# api to fetch customer type
+@frappe.whitelist()
+def customer_type_container(customer):
+    customer_type = fetch_customer_type(customer)
+    return customer_type
+
 # api to calculate batches to pickup and final amount
 @frappe.whitelist()
 def order_booked_container(items_data, quantity_booked, fulfillment_settings, customer_type):

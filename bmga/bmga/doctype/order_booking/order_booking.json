@@ -1,6 +1,7 @@
 {
  "actions": [],
  "allow_rename": 1,
+ "autoname": "ORDR.####",
  "creation": "2022-03-23 15:02:03.218812",
  "doctype": "DocType",
  "editable_grid": 1,
@@ -29,7 +30,6 @@
    "options": "Customer"
   },
   {
-   "fetch_from": "customer.pch_customer_type",
    "fieldname": "customer_type",
    "fieldtype": "Data",
    "label": "Customer Type",
@@ -59,7 +59,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2022-03-23 15:10:44.650316",
+ "modified": "2022-03-24 18:32:33.437497",
  "modified_by": "Administrator",
  "module": "Bmga",
  "name": "Order Booking",
