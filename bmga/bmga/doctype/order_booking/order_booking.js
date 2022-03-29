@@ -3,7 +3,6 @@
 
 // cache memory: items, fulfillment settings, warehouse details (batches, prices, etc ...)
 var data = null;
-var item_code = null;
 var fulfillment_settings = null;
 var customer_type = null;
 var sales_sum_data = {};
@@ -14,6 +13,19 @@ var details_fetched = false;
 var settings_fetched = false;
 
 frappe.ui.form.on('Order Booking', {
+	setup: function(frm) {
+		frm.check_duplicate=function(frm) {
+			var item_code_list = frm.doc.order_booking_items.map(function(d) {
+				return d.item_code
+			})
+			for(let i=0; i<item_code_list.length; i++) {
+				if(item_code_list.indexOf(item_code_list[i]) != i) {
+					return true;
+				}
+			}
+			return false;
+		}	
+	},
 	customer: function(frm) {
 		// fetch the warehouse details for the customer taking into count the company's settings
 		let company = frm.doc.company
@@ -80,15 +92,17 @@ frappe.ui.form.on('Order Booking', {
 					data.push(...sales_sum_data[keys[i]])
 				}
 				console.log(data)
-				/* frappe.call({
+				frappe.call({
 					method: "bmga.bmga.doctype.order_booking.order_booking_api.add_sales_order",
 					args: {
-						sales_data: sales_sum_data,
+						sales_data: data,
 						customer: customer
 					}
 				}).done(response => {
-					console.log(response.message)
-				}) */
+					console.log(response)
+					frappe.msgprint("You Order has been Placed")
+					//frm.refresh()
+				})
 			}
 		})
 	},
@@ -98,18 +112,30 @@ frappe.ui.form.on('Order Booking Items', {
 	// once item is selected display the needed information (available qty, etc ...)
 	item_code: function(frm, cdt, cdn) {
 		if(details_fetched) {
-			item_code = frappe.get_doc(cdt, cdn).item_code
+			let item_code = frappe.get_doc(cdt, cdn).item_code
 			if(item_code) {
-				frappe.model.set_value(cdt, cdn, "quantity_available", data[item_code]["quantity_available"]);
-				refresh_field("order_booking_items");
+				if(frm.check_duplicate(frm)) {
+					frappe.msgprint("Can not re-select chosen item!")
+					frappe.model.set_value(cdt, cdn, "item_code", null);
+					frappe.model.set_value(cdt, cdn, "quantity_available", null);
+					frappe.model.set_value(cdt, cdn, "quantity_booked", null);
+					frappe.model.set_value(cdt, cdn, "average_price", null);
+					frappe.model.set_value(cdt, cdn, "amount", null);
+					frappe.model.set_value(cdt, cdn, "amount_after_gst", null);
+					refresh_field("order_booking_items");
+				} else {
+					frappe.model.set_value(cdt, cdn, "quantity_available", data[item_code]["quantity_available"]);
+					refresh_field("order_booking_items");
+				}
 			}
 		}
 	},
 	quantity_booked: function(frm, cdt, cdn) {
 		let details = frappe.get_doc(cdt, cdn);
 		// check if item is selected
+		let item_code = frappe.get_doc(cdt, cdn).item_code
 		if(details_fetched) {
-			if(!frappe.get_doc(cdt, cdn).item_code) {
+			if(!item_code) {
 				frappe.model.set_value(cdt, cdn, "quantity_booked", null);
 				refresh_field("order_booking_items");
 				frappe.msgprint("Chose an Item First!");

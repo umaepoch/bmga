@@ -41,12 +41,15 @@ def fetch_order_booking_details(customer_type, fulfillment_settings) -> dict:
         return items
     else: return []
 
-def handle_fetched_order_booking_details(sum_data) -> dict:
+def handle_fetched_order_booking_details(sum_data, sales_data) -> dict:
     structure_data = dict()
     quantity_available = dict()
     # collect quantity available/etc.. 
     for data in sum_data:
-        quantity_available[data["item_code"]] = quantity_available.get(data["item_code"], 0) + data["qty"]
+        try:
+            quantity_available[data["item_code"]] = quantity_available.get(data["item_code"], 0) + data["qty"] - sales_data[data["item_code"]][data["t_warehouse"]][data["batch_no"]]
+        except:
+            quantity_available[data["item_code"]] = quantity_available.get(data["item_code"], 0) + data["qty"]
         # restructuring fetched data by items
         if data["item_code"] not in structure_data:
             structure_data[data["item_code"]] = dict()
@@ -58,7 +61,11 @@ def handle_fetched_order_booking_details(sum_data) -> dict:
             batch_data["batch_no"] = data["batch_no"]
             batch_data["expiry_date"] = data["expiry_date"]
             batch_data["manufacturing_date"] = data["manufacturing_date"]
-            batch_data["qty"] = data["qty"]
+            # difference between the sales order and stock
+            try:
+                batch_data["qty"] = data["qty"] - sales_data[data["item_code"]][data["t_warehouse"]][data["batch_no"]]
+            except:
+                batch_data["qty"] = data["qty"]
             batch_data["price_list_rate"] = data["price_list_rate"]
             structure_data[data["item_code"]]["batches"].append(batch_data)
         else:
@@ -67,7 +74,11 @@ def handle_fetched_order_booking_details(sum_data) -> dict:
             batch_data["batch_no"] = data["batch_no"]
             batch_data["expiry_date"] = data["expiry_date"]
             batch_data["manufacturing_date"] = data["manufacturing_date"]
-            batch_data["qty"] = data["qty"]
+            # difference between the sales order and stock
+            try:
+                batch_data["qty"] = data["qty"] - sales_data[data["item_code"]][data["t_warehouse"]][data["batch_no"]]
+            except:
+                batch_data["qty"] = data["qty"]
             batch_data["price_list_rate"] = data["price_list_rate"]
             structure_data[data["item_code"]]["batches"].append(batch_data)
     # add collected data to return (available quantity, etc ...)
@@ -79,6 +90,7 @@ def handle_fetched_order_booking_details(sum_data) -> dict:
         structure_data[key].update(warehouse_quantity)
         # also sort batches by expiry date (earliest to furthest)
         structure_data[key]["batches"] = sorted(structure_data[key]["batches"], key = lambda i: (i["expiry_date"]))
+    print("*******----------*********", structure_data)
     return structure_data
 
 def fetch_company_fulfillment_settings(company) -> dict:
@@ -235,6 +247,21 @@ def fetch_customer_type(customer):
     )
     return customer_type[0]
 
+def fetch_sales_order_details():
+    sales_data = frappe.db.sql(
+        """SELECT item_code, qty, pch_batch_no, warehouse
+        FROM `tabSales Order Item`""",
+        as_dict=True
+    )
+    structure_data = dict()
+    for data in sales_data:
+        if data["item_code"] not in structure_data:
+            structure_data[data["item_code"]] = dict()
+        if data["warehouse"] not in structure_data[data["item_code"]]:
+            structure_data[data["item_code"]][data["warehouse"]] = dict() 
+        structure_data[data["item_code"]][data["warehouse"]][data["pch_batch_no"]] = structure_data[data["item_code"]][data["warehouse"]].get(data["pch_batch_no"], 0) + data["qty"]
+    return structure_data
+
 # api to fetch customer type
 @frappe.whitelist()
 def customer_type_container(customer):
@@ -260,6 +287,8 @@ def fulfillment_settings_container(company):
 @frappe.whitelist()
 def add_sales_order(sales_data, customer):
     sales_data = json.loads(sales_data)
+    print(sales_data)
+    print(customer)
     delivery_date = datetime.datetime.today()
     delivery_date = delivery_date + datetime.timedelta(2)
     print(delivery_date)
@@ -271,7 +300,7 @@ def add_sales_order(sales_data, customer):
         "items": [],
     }
     for data in sales_data:
-        print(data)
+        if data["qty"] == 0: continue
         innerJson = {
             "doctype": "Sales Order Item",
             "item_code": data["item_code"],
@@ -292,6 +321,8 @@ def add_sales_order(sales_data, customer):
 def order_booking_container(fulfillment_settings, customer_type):
     fulfillment_settings = json.loads(fulfillment_settings)
     data = fetch_order_booking_details(customer_type, fulfillment_settings[0])
+    sales_order_details = fetch_sales_order_details()
+    print("----------", sales_order_details)
     if data == []: return []
-    else: items = handle_fetched_order_booking_details(data)
+    else: items = handle_fetched_order_booking_details(data, sales_order_details)
     return items
