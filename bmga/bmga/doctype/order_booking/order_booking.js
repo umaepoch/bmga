@@ -99,9 +99,10 @@ frappe.ui.form.on('Order Booking', {
 						customer: customer
 					}
 				}).done(response => {
-					console.log(response)
+					let so_name = response.message.so_name
+					frm.doc.order_booking_so = so_name
 					frappe.msgprint("You Order has been Placed")
-					//frm.refresh()
+					refresh_field("order_booking_so");
 				})
 			}
 		})
@@ -164,7 +165,7 @@ frappe.ui.form.on('Order Booking Items', {
 						console.log("new data", new_data)
 						console.log("sales data", sales_data)
 						console.log("sales sum data", sales_sum_data)
-						if(response.message.hunt) {
+						if(new_data.hunt) {
 							frappe.msgprint(`Need to Hunt ${new_data.hunt_quantity} ${new_data.updated_item_detail.item_code}`)
 						} else {
 							frappe.model.set_value(cdt, cdn, "average_price", new_data.average_price);

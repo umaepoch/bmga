@@ -90,7 +90,6 @@ def handle_fetched_order_booking_details(sum_data, sales_data) -> dict:
         structure_data[key].update(warehouse_quantity)
         # also sort batches by expiry date (earliest to furthest)
         structure_data[key]["batches"] = sorted(structure_data[key]["batches"], key = lambda i: (i["expiry_date"]))
-    print("*******----------*********", structure_data)
     return structure_data
 
 def fetch_company_fulfillment_settings(company) -> dict:
@@ -108,7 +107,7 @@ def fetch_company_fulfillment_settings(company) -> dict:
     return settings
 
 def handle_booked_quantity(items_data, quantity_booked, fulfillment_settings, customer_type) -> dict:
-    expiry_limit = 115
+    expiry_limit = 125
     today = datetime.date.today()
     to_pickup = quantity_booked
     average_price_list = list()
@@ -181,6 +180,7 @@ def handle_booked_quantity(items_data, quantity_booked, fulfillment_settings, cu
     else:
         if items_data[fulfillment_settings[f"{customer_type.lower()}_warehouse"]] > to_pickup:
             for batches in items_data["batches"]:
+                sales_data = dict()
                 if batches["t_warehouse"] != fulfillment_settings[f"{customer_type.lower()}_warehouse"]: continue
                 # verify expiry date
                 expiry_date = datetime.date.fromisoformat(batches["expiry_date"])
@@ -287,16 +287,15 @@ def fulfillment_settings_container(company):
 @frappe.whitelist()
 def add_sales_order(sales_data, customer):
     sales_data = json.loads(sales_data)
-    print(sales_data)
-    print(customer)
     delivery_date = datetime.datetime.today()
     delivery_date = delivery_date + datetime.timedelta(2)
-    print(delivery_date)
     data = dict()
     outerJson = {
         "doctype": "Sales Order",
+        "naming_series": "SO-DL-",
         "customer": customer,
         "delivery_date": delivery_date,
+        "pch_sales_order_purpose": "Delivery",
         "items": [],
     }
     for data in sales_data:
@@ -314,7 +313,7 @@ def add_sales_order(sales_data, customer):
     doc = frappe.new_doc("Sales Order")
     doc.update(outerJson)
     doc.save()
-    return outerJson
+    return dict(so_name = doc.name)
 
 # api to return item details (warehouse, batches, prices, etc ...)
 @frappe.whitelist()
@@ -322,7 +321,6 @@ def order_booking_container(fulfillment_settings, customer_type):
     fulfillment_settings = json.loads(fulfillment_settings)
     data = fetch_order_booking_details(customer_type, fulfillment_settings[0])
     sales_order_details = fetch_sales_order_details()
-    print("----------", sales_order_details)
     if data == []: return []
     else: items = handle_fetched_order_booking_details(data, sales_order_details)
     return items

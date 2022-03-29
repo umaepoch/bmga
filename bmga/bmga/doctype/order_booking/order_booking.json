@@ -10,9 +10,9 @@
   "company",
   "customer",
   "customer_type",
+  "order_booking_items",
   "order_booking_so",
-  "hunting_quotation",
-  "order_booking_items"
+  "hunting_quotation"
  ],
  "fields": [
   {
@@ -59,7 +59,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2022-03-24 18:32:33.437497",
+ "modified": "2022-03-29 15:36:45.045662",
  "modified_by": "Administrator",
  "module": "Bmga",
  "name": "Order Booking",
