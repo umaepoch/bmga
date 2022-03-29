@@ -6,6 +6,7 @@ var data = null;
 var fulfillment_settings = null;
 var customer_type = null;
 var sales_sum_data = {};
+var quotation_sum_data = {};
 var customer = null;
 
 // verifing variable to see if data has properly been fetched
@@ -86,23 +87,31 @@ frappe.ui.form.on('Order Booking', {
 		// add a botton to place the order
 		frm.add_custom_button("Book Order", function() {
 			if(customer){
-				let data = [];
+				let so_data = [];
+				let qo_data = [];
 				let keys = Object.keys(sales_sum_data)
 				for(var i=0; i<keys.length; i++) {
-					data.push(...sales_sum_data[keys[i]])
+					so_data.push(...sales_sum_data[keys[i]])
+					qo_data.push(quotation_sum_data[keys[i]])
 				}
-				console.log(data)
+				console.log(so_data)
+				console.log(qo_data)
 				frappe.call({
 					method: "bmga.bmga.doctype.order_booking.order_booking_api.add_sales_order",
 					args: {
-						sales_data: data,
+						sales_data: so_data,
+						qo_data: qo_data,
 						customer: customer
 					}
 				}).done(response => {
-					let so_name = response.message.so_name
-					frm.doc.order_booking_so = so_name
+					console.log("done")
+					console.log(response.message)
+					let names = response.message
+					frm.doc.hunting_quotation = names.qo_name
+					frm.doc.order_booking_so = names.so_name
 					frappe.msgprint("You Order has been Placed")
 					refresh_field("order_booking_so");
+					refresh_field("hunting_quotation");
 				})
 			}
 		})
@@ -143,11 +152,11 @@ frappe.ui.form.on('Order Booking Items', {
 			}
 			// check if order placed fits in the given available amount
 			if(details && item_code) {
-				if(details.quantity_booked < 0) {
+				if(details.quantity_booked <= 0) {
 					frappe.model.set_value(cdt, cdn, "quantity_booked", null);
 					refresh_field("order_booking_items");
 					frappe.msgprint("Booking Quantity Should be greater then Zero!");
-				} else if (details.quantity_booked <= details.quantity_available) {
+				} else {
 					frappe.call({
 						method:"bmga.bmga.doctype.order_booking.order_booking_api.order_booked_container",
 						args: {
@@ -166,7 +175,18 @@ frappe.ui.form.on('Order Booking Items', {
 						console.log("sales data", sales_data)
 						console.log("sales sum data", sales_sum_data)
 						if(new_data.hunt) {
-							frappe.msgprint(`Need to Hunt ${new_data.hunt_quantity} ${new_data.updated_item_detail.item_code}`)
+							let hunt_data = {
+								price: new_data.hunt_price,
+								qty: new_data.hunt_quantity,
+								item_code: new_data.updated_item_detail.item_code
+							}
+							quotation_sum_data[new_data.updated_item_detail.item_code] = hunt_data;
+
+							frappe.model.set_value(cdt, cdn, "average_price", new_data.average_price);
+							frappe.model.set_value(cdt, cdn, "amount", new_data.amount);
+							frappe.model.set_value(cdt, cdn, "amount_after_gst", new_data.amount_after_gst);
+							refresh_field("order_booking_items");
+							//frappe.msgprint(`Need to Hunt ${new_data.hunt_quantity} ${new_data.updated_item_detail.item_code}`)
 						} else {
 							frappe.model.set_value(cdt, cdn, "average_price", new_data.average_price);
 							frappe.model.set_value(cdt, cdn, "amount", new_data.amount);
@@ -174,9 +194,6 @@ frappe.ui.form.on('Order Booking Items', {
 							refresh_field("order_booking_items");
 						}
 					})
-				// add item to the Hunting list
-				} else {
-					frappe.msgprint("The Hunting is On");
 				}
 			}
 		}

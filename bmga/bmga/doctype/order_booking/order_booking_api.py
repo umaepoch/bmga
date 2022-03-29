@@ -107,7 +107,8 @@ def fetch_company_fulfillment_settings(company) -> dict:
     return settings
 
 def handle_booked_quantity(items_data, quantity_booked, fulfillment_settings, customer_type) -> dict:
-    expiry_limit = 125
+    expiry_limit = 115
+    gst = 1.2
     today = datetime.date.today()
     to_pickup = quantity_booked
     average_price_list = list()
@@ -209,6 +210,9 @@ def handle_booked_quantity(items_data, quantity_booked, fulfillment_settings, cu
     if to_pickup > 0:
         hunt = True
         hunt_quantity = to_pickup
+        hunt_price = items_data["batches"][-1]["price_list_rate"]
+        average_price_list.append(hunt_price)
+        average_price_qty.append(hunt_quantity)
     else:
         hunt = False
         hunt_quantity = 0
@@ -221,14 +225,15 @@ def handle_booked_quantity(items_data, quantity_booked, fulfillment_settings, cu
     else:
         average_price = 0
     amount = average_price * quantity_booked
-    amount_after_gst = amount*1.2
+    amount_after_gst = amount*gst
     data = dict(
         average_price = average_price,
         amount = amount,
         amount_after_gst = amount_after_gst,
         updated_item_detail = items_data,
         hunt = hunt,
-        hunt_quantity = hunt_quantity
+        hunt_quantity = hunt_quantity,
+        hunt_price = hunt_price
     )
     sum_data = dict(
         new_data = data,
@@ -285,12 +290,12 @@ def fulfillment_settings_container(company):
 
 # api to place sales orders
 @frappe.whitelist()
-def add_sales_order(sales_data, customer):
+def add_sales_order(sales_data, qo_data, customer):
     sales_data = json.loads(sales_data)
+    qo_data = json.loads(qo_data)
     delivery_date = datetime.datetime.today()
     delivery_date = delivery_date + datetime.timedelta(2)
-    data = dict()
-    outerJson = {
+    outerJson_so = {
         "doctype": "Sales Order",
         "naming_series": "SO-DL-",
         "customer": customer,
@@ -308,12 +313,41 @@ def add_sales_order(sales_data, customer):
             "warehouse": data["t_warehouse"],
             "pch_batch_no": data["batch_no"],
         }
-        outerJson["items"].append(innerJson)
-    
-    doc = frappe.new_doc("Sales Order")
-    doc.update(outerJson)
-    doc.save()
-    return dict(so_name = doc.name)
+        outerJson_so["items"].append(innerJson)
+    if len(outerJson_so["items"]) == 0:
+        so_name = "Na"
+    else:
+        doc_so = frappe.new_doc("Sales Order")
+        doc_so.update(outerJson_so)
+        doc_so.save()
+        so_name = doc_so.name
+
+    outerJson_qo = {
+        "doctype": "Quotation",
+        "naming_series": "QTN-DL-",
+        "party_name": customer,
+        "items": [],
+    }
+    for data in qo_data:
+        if data["qty"] == 0: continue
+        innerJson = {
+            "doctype": "Quotation Item",
+            "item_code": data["item_code"],
+            "qty": data["qty"],
+            "rate": data["price"],
+        }
+        outerJson_qo["items"].append(innerJson)
+    print(outerJson_qo)
+    if len(outerJson_qo["items"]) == 0:
+        qo_name = "Na"
+    else:
+        doc_qo = frappe.new_doc("Quotation")
+        doc_qo.update(outerJson_qo)
+        doc_qo.save()
+        qo_name = doc_qo.name
+
+    print(so_name, qo_name)
+    return dict(so_name = so_name, qo_name = qo_name)
 
 # api to return item details (warehouse, batches, prices, etc ...)
 @frappe.whitelist()
