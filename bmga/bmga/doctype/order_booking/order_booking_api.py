@@ -12,18 +12,11 @@ def fetch_order_booking_details(customer_type, fulfillment_settings) -> dict:
             WHERE t_warehouse = '{fulfillment_settings["retail_primary_warehouse"]}' or t_warehouse = '{fulfillment_settings["retail_bulk_warehouse"]}'""",
             as_dict=True
         )
-    elif "hospital" in customer_type.lower():
+    else:
         items = frappe.db.sql(
             f"""SELECT  t_warehouse, item_code, stock_uom, batch_no, qty
             FROM `tabStock Entry Detail`
-            WHERE t_warehouse = '{fulfillment_settings["hospital_warehouse"]}'""",
-            as_dict=True
-        )
-    elif "institutional" in customer_type.lower():
-        items = frappe.db.sql(
-            f"""SELECT  t_warehouse, item_code, stock_uom, batch_no, qty
-            FROM `tabStock Entry Detail`
-            WHERE t_warehouse = '{fulfillment_settings["institutional_warehouse"]}'""",
+            WHERE t_warehouse = '{fulfillment_settings[f"{customer_type.lower()}_warehouse"]}'""",
             as_dict=True
         )
     # add batch/price details for each batch
@@ -108,91 +101,99 @@ def handle_booked_quantity(items_data, quantity_booked, fulfillment_settings, cu
     to_pickup = quantity_booked
     average_price_list = list()
     average_price_qty = list()
+    # collect all sales order details
+    sales_sum_data = list()
     # check if the order can be fulfilled in the primary warehouse itself
     # take into count the customer type
     if "retail" in customer_type.lower():
-        print("instide retail")
         # see if its possible to pick from the retail first
-        if items_data[fulfillment_settings["retail_primary_warehouse"]] > to_pickup:
+        for batches in items_data["batches"]:
+            # collect required data for sales order
+            sales_data = dict()
+            if batches["t_warehouse"] != fulfillment_settings["retail_primary_warehouse"]: continue
+            # verify expiry date
+            expiry_date = datetime.date.fromisoformat(batches["expiry_date"])
+            date_delta = expiry_date - today
+            if date_delta.days < expiry_limit: continue
+            average_price_list.append(batches["price_list_rate"])
+            # sales order: add warehouse, price, qty, item
+            sales_data["item_code"] = items_data["item_code"]
+            sales_data["t_warehouse"] = batches["t_warehouse"]
+            sales_data["batch_no"] = batches["batch_no"]
+            sales_data["price"] = batches["price_list_rate"]
+            if batches["qty"] > to_pickup:
+                # add price to calculate average price and update batch quantity
+                batches["qty"] -= to_pickup
+                average_price_qty.append(to_pickup)
+                sales_data["qty"] = to_pickup
+                to_pickup = 0
+                sales_sum_data.append(sales_data)
+                break
+            else:
+                to_pickup -= batches["qty"]
+                average_price_qty.append(batches["qty"])
+                sales_data["qty"] = batches["qty"]
+                batches["qty"] = 0
+                sales_sum_data.append(sales_data)
+        # if to pick > 0 try to pick from the bulk to fulfill the order
+        if to_pickup > 0:
             for batches in items_data["batches"]:
-                if batches["t_warehouse"] != fulfillment_settings["retail_primary_warehouse"]: continue
+                sales_data = dict()
+                # add all sales order details
+                if batches["t_warehouse"] == fulfillment_settings["retail_primary_warehouse"]: continue
+                # verify expiry date
+                expiry_date = datetime.date.fromisoformat(batches["expiry_date"])
+                date_delta = expiry_date - today
+                if date_delta.days < expiry_limit: continue
+                print("fetching bulk")
+                average_price_list.append(batches["price_list_rate"])
+                sales_data["item_code"] = items_data["item_code"]
+                sales_data["t_warehouse"] = batches["t_warehouse"]
+                sales_data["batch_no"] = batches["batch_no"]
+                sales_data["price"] = batches["price_list_rate"]
+                if batches["qty"] > to_pickup:
+                    # add price to calculate average price and update batch quantity
+                    batches["qty"] -= to_pickup
+                    average_price_qty.append(to_pickup)
+                    sales_data["qty"] = to_pickup
+                    to_pickup = 0
+                    sales_sum_data.append(sales_data)
+                    break
+                else:
+                    to_pickup -= batches["qty"]
+                    average_price_qty.append(batches["qty"])
+                    sales_data["qty"] = batches["qty"]
+                    batches["qty"] = 0
+                    sales_sum_data.append(sales_data)
+    # else fetch from the selected warehouse
+    else:
+        if items_data[fulfillment_settings[f"{customer_type.lower()}_warehouse"]] > to_pickup:
+            for batches in items_data["batches"]:
+                if batches["t_warehouse"] != fulfillment_settings[f"{customer_type.lower()}_warehouse"]: continue
                 # verify expiry date
                 expiry_date = datetime.date.fromisoformat(batches["expiry_date"])
                 date_delta = expiry_date - today
                 if date_delta.days < expiry_limit: continue
                 average_price_list.append(batches["price_list_rate"])
+                sales_data["item_code"] = items_data["item_code"]
+                sales_data["t_warehouse"] = batches["t_warehouse"]
+                sales_data["batch_no"] = batches["batch_no"]
+                sales_data["price"] = batches["price_list_rate"]
                 if batches["qty"] > to_pickup:
                     # add price to calculate average price and update batch quantity
                     batches["qty"] -= to_pickup
                     average_price_qty.append(to_pickup)
+                    sales_data["qty"] = to_pickup
                     to_pickup = 0
+                    sales_sum_data.append(sales_data)
                     break
                 else:
                     to_pickup -= batches["qty"]
                     average_price_qty.append(batches["qty"])
+                    sales_data["qty"] = batches["qty"]
                     batches["qty"] = 0
-        # if not pick try to pick from the bulk to fulfill the order
-        else:
-            to_pickup = to_pickup - items_data[fulfillment_settings["retail_primary_warehouse"]]
-            for batches in items_data["batches"]:
-                if batches["t_warehouse"] == fulfillment_settings["retail_primary_warehouse"]: 
-                    batches["qty"] = 0
-                else:
-                    # verify expiry date
-                    expiry_date = datetime.date.fromisoformat(batches["expiry_date"])
-                    date_delta = expiry_date - today
-                    if date_delta.days < expiry_limit: continue
-                    average_price_list.append(batches["price_list_rate"])
-                    if batches["qty"] > to_pickup:
-                        # add price to calculate average price and update batch quantity
-                        batches["qty"] -= to_pickup
-                        average_price_qty.append(to_pickup)
-                        to_pickup = 0
-                        break
-                    else:
-                        to_pickup -= batches["qty"]
-                        average_price_qty.append(batches["qty"])
-                        batches["qty"] = 0
+                    sales_sum_data.append(sales_data)
 
-    elif "hospital" in customer_type.lower():
-        if items_data[fulfillment_settings["hospital_warehouse"]] > to_pickup:
-            for batches in items_data["batches"]:
-                if batches["t_warehouse"] != fulfillment_settings["hospital_warehouse"]: continue
-                # verify expiry date
-                expiry_date = datetime.date.fromisoformat(batches["expiry_date"])
-                date_delta = expiry_date - today
-                if date_delta.days < expiry_limit: continue
-                average_price_list.append(batches["price_list_rate"])
-                if batches["qty"] > to_pickup:
-                    # add price to calculate average price and update batch quantity
-                    batches["qty"] -= to_pickup
-                    average_price_qty.append(to_pickup)
-                    to_pickup = 0
-                    break
-                else:
-                    to_pickup -= batches["qty"]
-                    average_price_qty.append(batches["qty"])
-                    batches["qty"] = 0
-
-    elif "institutional" in customer_type.lower():
-        if items_data[fulfillment_settings["hospital_warehouse"]] > to_pickup:
-            for batches in items_data["batches"]:
-                if batches["t_warehouse"] != fulfillment_settings["hospital_warehouse"]: continue
-                # verify expiry date
-                expiry_date = datetime.date.fromisoformat(batches["expiry_date"])
-                date_delta = expiry_date - today
-                if date_delta.days < expiry_limit: continue
-                average_price_list.append(batches["price_list_rate"])
-                if batches["qty"] > to_pickup:
-                    # add price to calculate average price and update batch quantity
-                    batches["qty"] -= to_pickup
-                    average_price_qty.append(to_pickup)
-                    to_pickup = 0
-                    break
-                else:
-                    to_pickup -= batches["qty"]
-                    average_price_qty.append(batches["qty"])
-                    batches["qty"] = 0
     if to_pickup > 0:
         hunt = True
         hunt_quantity = to_pickup
@@ -200,6 +201,7 @@ def handle_booked_quantity(items_data, quantity_booked, fulfillment_settings, cu
         hunt = False
         hunt_quantity = 0
     if len(average_price_list) > 0:
+        # calculate average price according to the items picked from specific batches
         average_price = 0
         for i in range(len(average_price_list)):
             average_price += average_price_list[i]*average_price_qty[i]
@@ -216,7 +218,11 @@ def handle_booked_quantity(items_data, quantity_booked, fulfillment_settings, cu
         hunt = hunt,
         hunt_quantity = hunt_quantity
     )
-    return data
+    sum_data = dict(
+        new_data = data,
+        sales_data = sales_sum_data
+    )
+    return sum_data
 
 def fetch_customer_type(customer):
     customer_group = frappe.db.sql(
@@ -249,6 +255,37 @@ def order_booked_container(items_data, quantity_booked, fulfillment_settings, cu
 def fulfillment_settings_container(company):
     settings = fetch_company_fulfillment_settings(company)
     return settings
+
+# api to place sales orders
+@frappe.whitelist()
+def add_sales_order(sales_data, customer):
+    sales_data = json.loads(sales_data)
+    delivery_date = datetime.datetime.today()
+    delivery_date = delivery_date + datetime.timedelta(2)
+    print(delivery_date)
+    data = dict()
+    outerJson = {
+        "doctype": "Sales Order",
+        "customer": customer,
+        "delivery_date": delivery_date,
+        "items": [],
+    }
+    for data in sales_data:
+        print(data)
+        innerJson = {
+            "doctype": "Sales Order Item",
+            "item_code": data["item_code"],
+            "qty": data["qty"],
+            "rate": data["price"],
+            "warehouse": data["t_warehouse"],
+            "pch_batch_no": data["batch_no"],
+        }
+        outerJson["items"].append(innerJson)
+    
+    doc = frappe.new_doc("Sales Order")
+    doc.update(outerJson)
+    doc.save()
+    return outerJson
 
 # api to return item details (warehouse, batches, prices, etc ...)
 @frappe.whitelist()

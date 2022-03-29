@@ -6,6 +6,8 @@ var data = null;
 var item_code = null;
 var fulfillment_settings = null;
 var customer_type = null;
+var sales_sum_data = {};
+var customer = null;
 
 // verifing variable to see if data has properly been fetched
 var details_fetched = false;
@@ -15,7 +17,7 @@ frappe.ui.form.on('Order Booking', {
 	customer: function(frm) {
 		// fetch the warehouse details for the customer taking into count the company's settings
 		let company = frm.doc.company
-		let customer = frm.doc.customer
+		customer = frm.doc.customer
 		if(customer) {
 			frappe.call({
 				method: "bmga.bmga.doctype.order_booking.order_booking_api.customer_type_container",
@@ -45,7 +47,7 @@ frappe.ui.form.on('Order Booking', {
 						refresh_field("order_booking_items");
 					})
 				} else {
-					frappe.msgprint("Error Company/Customer/Fulfillment Settings for the mentioned company not set!");
+					frappe.msgprint("Error Company/Customer or Customer Type/Fulfillment Settings for the mentioned company not set!");
 					//setTimeout(window.location.reload(), 5000);
 				}
 			})
@@ -71,7 +73,23 @@ frappe.ui.form.on('Order Booking', {
 	refresh: function(frm) {
 		// add a botton to place the order
 		frm.add_custom_button("Book Order", function() {
-			frappe.msgprint("Order Placed")
+			if(customer){
+				let data = [];
+				let keys = Object.keys(sales_sum_data)
+				for(var i=0; i<keys.length; i++) {
+					data.push(...sales_sum_data[keys[i]])
+				}
+				console.log(data)
+				/* frappe.call({
+					method: "bmga.bmga.doctype.order_booking.order_booking_api.add_sales_order",
+					args: {
+						sales_data: sales_sum_data,
+						customer: customer
+					}
+				}).done(response => {
+					console.log(response.message)
+				}) */
+			}
 		})
 	},
 });
@@ -114,13 +132,18 @@ frappe.ui.form.on('Order Booking Items', {
 					// provide the amount details
 					}).done((response) => {
 						//new_data[response.message.updated_item_detail.item_code] = response.message.updated_item_detail;
-						console.log("data", data);
+						let sales_data = response.message.sales_data
+						let new_data = response.message.new_data
+						sales_sum_data[item_code] = sales_data
+						console.log("new data", new_data)
+						console.log("sales data", sales_data)
+						console.log("sales sum data", sales_sum_data)
 						if(response.message.hunt) {
-							frappe.msgprint(`Need to Hunt ${response.message.hunt_quantity} ${response.message.updated_item_detail.item_code}`)
+							frappe.msgprint(`Need to Hunt ${new_data.hunt_quantity} ${new_data.updated_item_detail.item_code}`)
 						} else {
-							frappe.model.set_value(cdt, cdn, "average_price", response.message.average_price);
-							frappe.model.set_value(cdt, cdn, "amount", response.message.amount);
-							frappe.model.set_value(cdt, cdn, "amount_after_gst", response.message.amount_after_gst);
+							frappe.model.set_value(cdt, cdn, "average_price", new_data.average_price);
+							frappe.model.set_value(cdt, cdn, "amount", new_data.amount);
+							frappe.model.set_value(cdt, cdn, "amount_after_gst", new_data.amount_after_gst);
 							refresh_field("order_booking_items");
 						}
 					})
