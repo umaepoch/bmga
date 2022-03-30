@@ -41,11 +41,15 @@ def fetch_order_booking_details(customer_type, fulfillment_settings) -> dict:
         return items
     else: return []
 
-def handle_fetched_order_booking_details(sum_data, sales_data) -> dict:
+def handle_fetched_order_booking_details(sum_data, sales_data, expiry_limit) -> dict:
     structure_data = dict()
     quantity_available = dict()
+    today = datetime.date.today()
     # collect quantity available/etc.. 
     for data in sum_data:
+        expiry_date = data["expiry_date"]
+        date_delta = expiry_date - today
+        if date_delta.days < expiry_limit: continue
         try:
             quantity_available[data["item_code"]] = quantity_available.get(data["item_code"], 0) + data["qty"] - sales_data[data["item_code"]][data["t_warehouse"]][data["batch_no"]]
         except:
@@ -106,9 +110,7 @@ def fetch_company_fulfillment_settings(company) -> dict:
         settings = []
     return settings
 
-def handle_booked_quantity(items_data, quantity_booked, fulfillment_settings, customer_type) -> dict:
-    expiry_limit = 115
-    gst = 1.2
+def handle_booked_quantity(items_data, quantity_booked, fulfillment_settings, customer_type, expiry_limit, gst) -> dict:
     today = datetime.date.today()
     to_pickup = quantity_booked
     average_price_list = list()
@@ -277,11 +279,26 @@ def customer_type_container(customer):
 # api to calculate batches to pickup and final amount
 @frappe.whitelist()
 def order_booked_container(items_data, quantity_booked, fulfillment_settings, customer_type):
+    expiry_limit = 125
+    gst = 1.2
+    
     items_data = json.loads(items_data)
     fulfillment_settings = json.loads(fulfillment_settings)
     quantity_booked = json.loads(quantity_booked)
-    data = handle_booked_quantity(items_data, quantity_booked, fulfillment_settings[0], customer_type)
+    data = handle_booked_quantity(items_data, quantity_booked, fulfillment_settings[0], customer_type, expiry_limit, gst)
     return data
+
+# api to return item details (warehouse, batches, prices, etc ...)
+@frappe.whitelist()
+def order_booking_container(fulfillment_settings, customer_type):
+    expiry_limit = 125
+
+    fulfillment_settings = json.loads(fulfillment_settings)
+    data = fetch_order_booking_details(customer_type, fulfillment_settings[0])
+    sales_order_details = fetch_sales_order_details()
+    if data == []: return []
+    else: items = handle_fetched_order_booking_details(data, sales_order_details, expiry_limit)
+    return items
 
 # api to return fulfillment settings
 @frappe.whitelist()
@@ -352,13 +369,3 @@ def add_sales_order(sales_data, qo_data, customer):
 
     print(so_name, qo_name)
     return dict(so_name = so_name, qo_name = qo_name)
-
-# api to return item details (warehouse, batches, prices, etc ...)
-@frappe.whitelist()
-def order_booking_container(fulfillment_settings, customer_type):
-    fulfillment_settings = json.loads(fulfillment_settings)
-    data = fetch_order_booking_details(customer_type, fulfillment_settings[0])
-    sales_order_details = fetch_sales_order_details()
-    if data == []: return []
-    else: items = handle_fetched_order_booking_details(data, sales_order_details)
-    return items
