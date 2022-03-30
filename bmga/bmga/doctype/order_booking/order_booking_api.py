@@ -216,6 +216,7 @@ def handle_booked_quantity(items_data, quantity_booked, fulfillment_settings, cu
     else:
         hunt = False
         hunt_quantity = 0
+        hunt_price = 0
     if len(average_price_list) > 0:
         # calculate average price according to the items picked from specific batches
         average_price = 0
@@ -315,36 +316,39 @@ def add_sales_order(sales_data, qo_data, customer):
         }
         outerJson_so["items"].append(innerJson)
     if len(outerJson_so["items"]) == 0:
-        so_name = "Na"
+        so_name = "NA"
     else:
         doc_so = frappe.new_doc("Sales Order")
         doc_so.update(outerJson_so)
         doc_so.save()
         so_name = doc_so.name
-
-    outerJson_qo = {
-        "doctype": "Quotation",
-        "naming_series": "QTN-DL-",
-        "party_name": customer,
-        "items": [],
-    }
-    for data in qo_data:
-        if data["qty"] == 0: continue
-        innerJson = {
-            "doctype": "Quotation Item",
-            "item_code": data["item_code"],
-            "qty": data["qty"],
-            "rate": data["price"],
+        
+    if qo_data[0]:
+        outerJson_qo = {
+            "doctype": "Quotation",
+            "naming_series": "QTN-DL-",
+            "party_name": customer,
+            "items": [],
         }
-        outerJson_qo["items"].append(innerJson)
-    print(outerJson_qo)
-    if len(outerJson_qo["items"]) == 0:
-        qo_name = "Na"
+        for data in qo_data:
+            if data["qty"] == 0: continue
+            innerJson = {
+                "doctype": "Quotation Item",
+                "item_code": data["item_code"],
+                "qty": data["qty"],
+                "rate": data["price"],
+            }
+            outerJson_qo["items"].append(innerJson)
+        print(outerJson_qo)
+        if len(outerJson_qo["items"]) == 0:
+            qo_name = "NA"
+        else:
+            doc_qo = frappe.new_doc("Quotation")
+            doc_qo.update(outerJson_qo)
+            doc_qo.save()
+            qo_name = doc_qo.name
     else:
-        doc_qo = frappe.new_doc("Quotation")
-        doc_qo.update(outerJson_qo)
-        doc_qo.save()
-        qo_name = doc_qo.name
+        qo_name = "NA"
 
     print(so_name, qo_name)
     return dict(so_name = so_name, qo_name = qo_name)
