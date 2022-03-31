@@ -257,7 +257,7 @@ def fetch_customer_type(customer):
 
 def fetch_sales_order_details():
     sales_data = frappe.db.sql(
-        """SELECT item_code, qty, pch_batch_no, warehouse
+        """SELECT item_code, qty, pch_batch_no, warehouse, delivered_qty
         FROM `tabSales Order Item`""",
         as_dict=True
     )
@@ -267,7 +267,7 @@ def fetch_sales_order_details():
             structure_data[data["item_code"]] = dict()
         if data["warehouse"] not in structure_data[data["item_code"]]:
             structure_data[data["item_code"]][data["warehouse"]] = dict() 
-        structure_data[data["item_code"]][data["warehouse"]][data["pch_batch_no"]] = structure_data[data["item_code"]][data["warehouse"]].get(data["pch_batch_no"], 0) + data["qty"]
+        structure_data[data["item_code"]][data["warehouse"]][data["pch_batch_no"]] = structure_data[data["item_code"]][data["warehouse"]].get(data["pch_batch_no"], 0) + data["qty"] - data["delivered_qty"]
     return structure_data
 
 # api to fetch customer type
@@ -279,7 +279,7 @@ def customer_type_container(customer):
 # api to calculate batches to pickup and final amount
 @frappe.whitelist()
 def order_booked_container(items_data, quantity_booked, fulfillment_settings, customer_type):
-    expiry_limit = 125
+    expiry_limit = 115
     gst = 1.2
     
     items_data = json.loads(items_data)
@@ -291,7 +291,7 @@ def order_booked_container(items_data, quantity_booked, fulfillment_settings, cu
 # api to return item details (warehouse, batches, prices, etc ...)
 @frappe.whitelist()
 def order_booking_container(fulfillment_settings, customer_type):
-    expiry_limit = 125
+    expiry_limit = 115
 
     fulfillment_settings = json.loads(fulfillment_settings)
     data = fetch_order_booking_details(customer_type, fulfillment_settings[0])
