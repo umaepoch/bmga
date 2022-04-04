@@ -45,9 +45,9 @@
   },
   {
    "fieldname": "warehouse",
-   "fieldtype": "Link",
+   "fieldtype": "Data",
    "label": "Warehouse",
-   "options": "Warehouse"
+   "read_only": 1
   },
   {
    "fieldname": "item_list",
@@ -64,7 +64,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2022-04-04 12:21:21.577693",
+ "modified": "2022-04-04 15:18:45.982595",
  "modified_by": "Administrator",
  "module": "Bmga",
  "name": "Pick Put List",

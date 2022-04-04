@@ -21,25 +21,27 @@ def fetch_order_booking_details(customer_type, fulfillment_settings) -> dict:
         )
     # add batch/price details for each batch
     if items:
-        for i in range(len(items)):
-            batch_details = frappe.db.sql(
-                f"""SELECT manufacturing_date, expiry_date
-                FROM `tabBatch`
-                WHERE batch_id = '{items[i]["batch_no"]}'""",
-                as_dict=True
-            )
-            price_details = frappe.db.sql(
-                f"""SELECT price_list_rate
-                FROM `tabItem Price`
-                WHERE batch_no = '{items[i]["batch_no"]}'""",
-                as_dict=True
-            )
+        items_filter = list()
+        for item in items:
             try:
-                items[i].update(batch_details[0])
-                items[i].update(price_details[0])
+                batch_details = frappe.db.sql(
+                    f"""SELECT manufacturing_date, expiry_date
+                    FROM `tabBatch`
+                    WHERE batch_id = '{item["batch_no"]}'""",
+                    as_dict=True
+                )
+                price_details = frappe.db.sql(
+                    f"""SELECT price_list_rate
+                    FROM `tabItem Price`
+                    WHERE batch_no = '{item["batch_no"]}'""",
+                    as_dict=True
+                )
+                item.update(batch_details[0])
+                item.update(price_details[0])
+                items_filter.append(item)
             except:
-                items.pop(i)
-        return items
+                pass
+        return items_filter
     else: return []
 
 def handle_fetched_order_booking_details(sum_data, sales_data, expiry_limit) -> dict:
