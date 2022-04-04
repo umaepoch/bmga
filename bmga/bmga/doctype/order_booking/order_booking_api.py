@@ -34,10 +34,11 @@ def fetch_order_booking_details(customer_type, fulfillment_settings) -> dict:
                 WHERE batch_no = '{items[i]["batch_no"]}'""",
                 as_dict=True
             )
-            if batch_details[0] and price_details[0]:
+            try:
                 items[i].update(batch_details[0])
                 items[i].update(price_details[0])
-            else: return []
+            except:
+                items.pop(i)
         return items
     else: return []
 

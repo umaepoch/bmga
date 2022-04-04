@@ -2,54 +2,69 @@
  "actions": [],
  "allow_rename": 1,
  "autoname": "PPL-DL-.####",
- "creation": "2022-03-31 16:02:54.854876",
+ "creation": "2022-04-04 11:30:23.494987",
  "doctype": "DocType",
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
-  "item",
-  "uom",
-  "wbs_storage_location",
-  "quantity_to_be_picked",
-  "quantity_picked",
-  "batch_picked"
+  "type",
+  "pick_list_stage",
+  "sales_order",
+  "customer",
+  "customer_group_type",
+  "warehouse",
+  "item_list"
  ],
  "fields": [
   {
-   "fieldname": "item",
+   "fieldname": "type",
+   "fieldtype": "Select",
+   "label": "Type",
+   "options": "Pick\nPut",
+   "read_only": 1
+  },
+  {
+   "fieldname": "sales_order",
    "fieldtype": "Link",
-   "label": "Item",
-   "options": "Item"
+   "label": "Sales Order",
+   "options": "Sales Order",
+   "read_only": 1
   },
   {
-   "fieldname": "uom",
-   "fieldtype": "Data",
-   "label": "UOM"
+   "fieldname": "customer",
+   "fieldtype": "Link",
+   "label": "Customer",
+   "options": "Customer",
+   "read_only": 1
   },
   {
-   "fieldname": "wbs_storage_location",
+   "fieldname": "customer_group_type",
    "fieldtype": "Data",
-   "label": "WBS Storage Location"
+   "label": "Customer Group Type",
+   "read_only": 1
   },
   {
-   "fieldname": "quantity_to_be_picked",
-   "fieldtype": "Data",
-   "label": "Quantity to be Picked"
+   "fieldname": "warehouse",
+   "fieldtype": "Link",
+   "label": "Warehouse",
+   "options": "Warehouse"
   },
   {
-   "fieldname": "quantity_picked",
-   "fieldtype": "Data",
-   "label": "Quantity Picked"
+   "fieldname": "item_list",
+   "fieldtype": "Table",
+   "label": "Item List",
+   "options": "Pick Put List Items"
   },
   {
-   "fieldname": "batch_picked",
+   "fieldname": "pick_list_stage",
    "fieldtype": "Data",
-   "label": "Batch Picked"
+   "label": "Pick List Stage",
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2022-03-31 16:02:54.854876",
+ "modified": "2022-04-04 12:21:21.577693",
  "modified_by": "Administrator",
  "module": "Bmga",
  "name": "Pick Put List",
