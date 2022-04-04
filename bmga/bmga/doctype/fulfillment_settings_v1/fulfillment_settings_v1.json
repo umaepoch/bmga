@@ -8,6 +8,7 @@
  "engine": "InnoDB",
  "field_order": [
   "company",
+  "expiry_date_limit",
   "fulfillment_settings_details"
  ],
  "fields": [
@@ -22,11 +23,19 @@
    "fieldtype": "Table",
    "label": "Fulfillment Settings Details",
    "options": "Fulfillment Settings Details V1"
+  },
+  {
+   "default": "125",
+   "fieldname": "expiry_date_limit",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Expiry Date Limit",
+   "reqd": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2022-03-23 15:27:40.971256",
+ "modified": "2022-04-04 10:05:35.101350",
  "modified_by": "Administrator",
  "module": "Bmga",
  "name": "Fulfillment Settings V1",

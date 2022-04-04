@@ -98,7 +98,7 @@ def handle_fetched_order_booking_details(sum_data, sales_data, expiry_limit) -> 
 
 def fetch_company_fulfillment_settings(company) -> dict:
     fs_name = frappe.db.sql(
-        f"""SELECT name FROM `tabFulfillment Settings V1` WHERE company = '{company}'""",
+        f"""SELECT name, expiry_date_limit FROM `tabFulfillment Settings V1` WHERE company = '{company}'""",
         as_dict=True
     )
     if fs_name:
@@ -106,8 +106,10 @@ def fetch_company_fulfillment_settings(company) -> dict:
             f"""SELECT retail_primary_warehouse, retail_bulk_warehouse, hospital_warehouse, institutional_warehouse
             FROM `tabFulfillment Settings Details V1` WHERE parent = '{fs_name[0]["name"]}'""", as_dict=True
         )
+        settings[0]["expiry_date_limit"] = fs_name[0]["expiry_date_limit"]
     else:
         settings = []
+    print("***********", settings)
     return settings
 
 def handle_booked_quantity(items_data, quantity_booked, fulfillment_settings, customer_type, expiry_limit, gst) -> dict:
@@ -258,7 +260,7 @@ def fetch_customer_type(customer):
 def fetch_sales_order_details():
     sales_data = frappe.db.sql(
         """SELECT item_code, qty, pch_batch_no, warehouse, delivered_qty
-        FROM `tabSales Order Item`""",
+        FROM `tabSales Order Item` WHERE docstatus = '1'""",
         as_dict=True
     )
     structure_data = dict()
@@ -279,22 +281,25 @@ def customer_type_container(customer):
 # api to calculate batches to pickup and final amount
 @frappe.whitelist()
 def order_booked_container(items_data, quantity_booked, fulfillment_settings, customer_type):
-    expiry_limit = 115
     gst = 1.2
     
     items_data = json.loads(items_data)
     fulfillment_settings = json.loads(fulfillment_settings)
     quantity_booked = json.loads(quantity_booked)
+    
+    expiry_limit = fulfillment_settings[0]["expiry_date_limit"]
+
     data = handle_booked_quantity(items_data, quantity_booked, fulfillment_settings[0], customer_type, expiry_limit, gst)
     return data
 
 # api to return item details (warehouse, batches, prices, etc ...)
 @frappe.whitelist()
 def order_booking_container(fulfillment_settings, customer_type):
-    expiry_limit = 115
-
     fulfillment_settings = json.loads(fulfillment_settings)
     data = fetch_order_booking_details(customer_type, fulfillment_settings[0])
+
+    expiry_limit = fulfillment_settings[0]["expiry_date_limit"]
+
     sales_order_details = fetch_sales_order_details()
     if data == []: return []
     else: items = handle_fetched_order_booking_details(data, sales_order_details, expiry_limit)
@@ -338,6 +343,7 @@ def add_sales_order(sales_data, qo_data, customer):
         doc_so = frappe.new_doc("Sales Order")
         doc_so.update(outerJson_so)
         doc_so.save()
+        doc_so.submit()
         so_name = doc_so.name
         
     if qo_data[0]:
