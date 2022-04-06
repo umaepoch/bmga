@@ -31,14 +31,9 @@ def fetch_item_details(item_code, customer_type, settings):
     stock_detail = fetch_stock_details(item_code, customer_type, settings)
     return stock_detail
 
-def handle_stock_details(stock_data, item_code):
-    sales_order = frappe.db.sql(
-        f"""SELECT qty - delivered_qty AS pending_qty FROM `tabSales Order Item` WHERE item_code = '{item_code}'""",
-        as_dict=True
-    )
-    pending_qty = sum(data["pending_qty"] for data in sales_order)
+def handle_stock_details(stock_data):
     available_qty = sum(data["qty"] for data in stock_data)
-    return dict(available_qty = available_qty - pending_qty, stock_data = stock_data)
+    return dict(available_qty = available_qty, stock_data = stock_data)
 
 def fetch_average_price(stock_data):
     average_price = 0
@@ -92,23 +87,56 @@ def sales_order_container(customer, order_list):
         "pch_sales_order_purpose": "Delivery",
         "items": [],
     }
+
+    outerJson_qo = {
+        "doctype": "Quotation",
+        "naming_series": "QTN-DL-",
+        "party_name": customer,
+        "items": []
+    }
+
     for data in order_list:
         if data["quantity_booked"] == 0: continue
-        innerJson_so = {
-            "doctype": "Sales Order Item",
-            "item_code": data["item_code"],
-            "qty": data["quantity_booked"],
-            "rate": data["average_price"],
-        }
+        if data["quantity_booked"] > data["quantity_available"]:
+            if data["quantity_available"] > 0:
+                innerJson_so = {
+                    "doctype": "Sales Order Item",
+                    "item_code": data["item_code"],
+                    "qty": data["quantity_available"],
+                    "rate": data["average_price"],
+                }
+            innerJson_qo = {
+                "doctype": "Quotation Item",
+                "item_code": data["item_code"],
+                "qty": data["quantity_booked"] - data["quantity_available"],
+                "rate": data["average_price"],
+            }
+            print("//////////", innerJson_qo)
+        else:
+            innerJson_so = {
+                    "doctype": "Sales Order Item",
+                    "item_code": data["item_code"],
+                    "qty": data["quantity_booked"],
+                    "rate": data["average_price"],
+                }
+        outerJson_qo["items"].append(innerJson_qo)
         outerJson_so["items"].append(innerJson_so)
+    print(outerJson_qo)
     so_name = "NA"
+    qo_name = "NA"
     if len(outerJson_so["items"]) > 0:
         doc_so = frappe.new_doc("Sales Order")
         doc_so.update(outerJson_so)
         doc_so.save()
         so_name = doc_so.name
 
-    return dict(so_name = so_name)
+    if len(outerJson_qo["items"]) > 0:
+        doc_qo = frappe.new_doc("Quotation")
+        doc_qo.update(outerJson_qo)
+        doc_qo.save()
+        qo_name = doc_qo.name
+
+    return dict(so_name = so_name, qo_name = qo_name)
 
 @frappe.whitelist()
 def customer_type_container(customer):
@@ -119,6 +147,6 @@ def customer_type_container(customer):
 def item_qty_container(company, item_code, customer_type):
     fulfillment_settings = fetch_fulfillment_settings(company)
     stock_detail = fetch_item_details(item_code, customer_type, fulfillment_settings[0])
-    handled_stock = handle_stock_details(stock_detail, item_code)
+    handled_stock = handle_stock_details(stock_detail)
     average_price = fetch_average_price(stock_detail)
     return dict(available_qty = handled_stock["available_qty"], average_price = average_price, stock = True) 
