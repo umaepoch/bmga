@@ -1,0 +1,99 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2022-04-05 13:38:05.751083",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "item_code",
+  "stock_uom",
+  "quantity_available",
+  "quantity_booked",
+  "average_price",
+  "amount",
+  "gst_rate",
+  "amount_after_gst"
+ ],
+ "fields": [
+  {
+   "columns": 1,
+   "fieldname": "item_code",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Item Code",
+   "options": "Item",
+   "reqd": 1
+  },
+  {
+   "columns": 1,
+   "fetch_from": "item_code.stock_uom",
+   "fieldname": "stock_uom",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Stock UOM",
+   "read_only": 1
+  },
+  {
+   "columns": 1,
+   "fieldname": "quantity_available",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Quantity Available",
+   "read_only": 1
+  },
+  {
+   "columns": 1,
+   "depends_on": "item_code",
+   "fieldname": "quantity_booked",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Quantity Booked",
+   "reqd": 1
+  },
+  {
+   "columns": 1,
+   "fieldname": "average_price",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Average Price",
+   "read_only": 1
+  },
+  {
+   "columns": 2,
+   "fieldname": "amount",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Amount",
+   "read_only": 1
+  },
+  {
+   "columns": 1,
+   "default": "12",
+   "fieldname": "gst_rate",
+   "fieldtype": "Percent",
+   "in_list_view": 1,
+   "label": "GST Rate",
+   "read_only": 1
+  },
+  {
+   "columns": 2,
+   "fieldname": "amount_after_gst",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Amount After GST",
+   "read_only": 1
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2022-04-05 14:33:05.635176",
+ "modified_by": "Administrator",
+ "module": "Bmga",
+ "name": "Order Booking Items V2",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC"
+}

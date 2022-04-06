@@ -1,0 +1,83 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "ORDRV2.####",
+ "creation": "2022-04-05 13:38:29.501768",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "company",
+  "customer",
+  "customer_type",
+  "order_booking_items_v2",
+  "order_booking_so",
+  "hunting_quotation"
+ ],
+ "fields": [
+  {
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Company",
+   "options": "Company",
+   "reqd": 1
+  },
+  {
+   "fieldname": "customer",
+   "fieldtype": "Link",
+   "label": "Customer",
+   "options": "Customer"
+  },
+  {
+   "fieldname": "customer_type",
+   "fieldtype": "Data",
+   "label": "Customer Type",
+   "read_only": 1
+  },
+  {
+   "fieldname": "order_booking_so",
+   "fieldtype": "Link",
+   "label": "Order Booking SO",
+   "options": "Sales Order",
+   "read_only": 1
+  },
+  {
+   "fieldname": "hunting_quotation",
+   "fieldtype": "Link",
+   "label": "Hunting Quotation",
+   "options": "Quotation",
+   "read_only": 1
+  },
+  {
+   "depends_on": "customer_type",
+   "fieldname": "order_booking_items_v2",
+   "fieldtype": "Table",
+   "label": "Order Booking Items V2",
+   "options": "Order Booking Items V2"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2022-04-06 11:47:49.705208",
+ "modified_by": "Administrator",
+ "module": "Bmga",
+ "name": "Order Booking V2",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC"
+}
