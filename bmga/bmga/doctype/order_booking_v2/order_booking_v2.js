@@ -28,6 +28,7 @@ frappe.ui.form.on('Order Booking V2', {
 					customer: customer
 				}
 			}).done((response) => {
+				console.log(response)
 				customer_type = response.message.pch_customer_type;
 				frm.set_value("customer_type", customer_type);
 				refresh_field("customer_type");

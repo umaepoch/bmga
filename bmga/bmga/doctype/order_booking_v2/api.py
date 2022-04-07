@@ -1,15 +1,14 @@
-from dataclasses import asdict
 import json
 import frappe
 import datetime
 
 def fetch_customer_type(customer):
     customer_group = frappe.db.sql(
-        f"""SELECT customer_group FROM `tabCustomer` WHERE customer_name = '{customer}'""",
+        f"""SELECT customer_group FROM `tabCustomer` WHERE name = '{customer}'""",
         as_dict=True
     )
     customer_type = frappe.db.sql(
-        f"""SELECT pch_customer_type FROM `tabCustomer Group` WHERE customer_group_name = '{customer_group[0]["customer_group"]}'""",
+        f"""SELECT pch_customer_type FROM `tabCustomer Group` WHERE name = '{customer_group[0]["customer_group"]}'""",
         as_dict=True
     )
     return customer_type[0]
@@ -111,7 +110,6 @@ def sales_order_container(customer, order_list):
                 "qty": data["quantity_booked"] - data["quantity_available"],
                 "rate": data["average_price"],
             }
-            print("//////////", innerJson_qo)
         else:
             innerJson_so = {
                     "doctype": "Sales Order Item",
@@ -119,8 +117,11 @@ def sales_order_container(customer, order_list):
                     "qty": data["quantity_booked"],
                     "rate": data["average_price"],
                 }
-        outerJson_qo["items"].append(innerJson_qo)
         outerJson_so["items"].append(innerJson_so)
+        try:
+            outerJson_qo["items"].append(innerJson_qo)
+        except:
+            pass
     print(outerJson_qo)
     so_name = "NA"
     qo_name = "NA"
