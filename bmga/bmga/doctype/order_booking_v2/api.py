@@ -43,8 +43,8 @@ def fetch_average_price(stock_data):
                 """SELECT price_list_rate FROM `tabItem Price` WHERE batch_no IS NULL""",
                 as_dict=True
             )
-            average_price += price_list[0]["price_list_rate"] * data["qty"]
             stock_count += data["qty"]
+            average_price += price_list[0]["price_list_rate"] * data["qty"]
         else:
             price_list = frappe.db.sql(
                 f"""SELECT price_list_rate FROM `tabItem Price` WHERE batch_no = '{data["batch_no"]}'""",
@@ -144,7 +144,10 @@ def sales_order_container(customer, order_list, company, customer_type):
                     "rate": data["average_price"],
                     "warehouse": delivery_warehouse,
                 }
-        outerJson_so["items"].append(innerJson_so)
+        try:
+            outerJson_so["items"].append(innerJson_so)
+        except:
+            pass
         try:
             outerJson_qo["items"].append(innerJson_qo)
         except:

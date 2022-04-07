@@ -7,6 +7,7 @@
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
+  "company",
   "type",
   "pick_list_stage",
   "sales_order",
@@ -60,11 +61,17 @@
    "fieldtype": "Data",
    "label": "Pick List Stage",
    "read_only": 1
+  },
+  {
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "label": "Company",
+   "options": "Company"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2022-04-04 15:18:45.982595",
+ "modified": "2022-04-07 15:33:40.681542",
  "modified_by": "Administrator",
  "module": "Bmga",
  "name": "Pick Put List",
