@@ -8,6 +8,7 @@
  "field_order": [
   "item",
   "uom",
+  "batch",
   "wbs_storage_location",
   "quantity_to_be_picked",
   "quantity_picked",
@@ -31,6 +32,7 @@
    "read_only": 1
   },
   {
+   "columns": 2,
    "fieldname": "wbs_storage_location",
    "fieldtype": "Data",
    "in_list_view": 1,
@@ -38,6 +40,7 @@
    "read_only": 1
   },
   {
+   "columns": 1,
    "fieldname": "quantity_to_be_picked",
    "fieldtype": "Data",
    "in_list_view": 1,
@@ -45,23 +48,34 @@
    "read_only": 1
   },
   {
+   "columns": 1,
    "fieldname": "quantity_picked",
    "fieldtype": "Data",
    "in_list_view": 1,
    "label": "Quantity Picked"
   },
   {
+   "columns": 2,
    "fieldname": "batch_picked",
    "fieldtype": "Link",
    "in_list_view": 1,
    "label": "Batch Picked",
    "options": "Batch"
+  },
+  {
+   "columns": 2,
+   "fieldname": "batch",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Batch",
+   "options": "Batch",
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2022-04-04 12:23:00.550911",
+ "modified": "2022-04-07 14:30:29.284876",
  "modified_by": "Administrator",
  "module": "Bmga",
  "name": "Pick Put List Items",

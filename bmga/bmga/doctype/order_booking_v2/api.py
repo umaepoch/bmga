@@ -52,7 +52,10 @@ def fetch_average_price(stock_data):
             )
             average_price += price_list[0]["price_list_rate"] * data["qty"]
             stock_count += data["qty"]
-    return average_price/stock_count
+    if stock_count > 0:
+        return average_price/stock_count
+    else:
+        return average_price
 
 def fetch_fulfillment_settings(company):
     fs_name = frappe.db.sql(
@@ -74,7 +77,28 @@ def fulfillment_settings_container(company):
     return fulfillment_settings[0]
 
 @frappe.whitelist()
-def sales_order_container(customer, order_list):
+def customer_type_container(customer):
+    customer_type = fetch_customer_type(customer)
+    return customer_type
+
+@frappe.whitelist()
+def item_qty_container(company, item_code, customer_type):
+    fulfillment_settings = fetch_fulfillment_settings(company)
+    stock_detail = fetch_item_details(item_code, customer_type, fulfillment_settings[0])
+    handled_stock = handle_stock_details(stock_detail)
+    average_price = fetch_average_price(stock_detail)
+    return dict(available_qty = handled_stock["available_qty"], average_price = average_price) 
+
+@frappe.whitelist()
+def sales_order_container(customer, order_list, company, customer_type):
+    fulfillment_settings = fetch_fulfillment_settings(company)
+    if customer_type == "Retail":
+        delivery_warehouse = fulfillment_settings[0]["retail_primary_warehouse"]
+    elif customer_type == "Hospital":
+        delivery_warehouse = fulfillment_settings[0]["hospital_warehouse"]
+    elif customer == "Institutional":
+        delivery_warehouse = fulfillment_settings[0]["institutional_warehouse"]
+
     order_list = json.loads(order_list)
     delivery_date = datetime.datetime.today()
     delivery_date = delivery_date + datetime.timedelta(2)
@@ -103,12 +127,14 @@ def sales_order_container(customer, order_list):
                     "item_code": data["item_code"],
                     "qty": data["quantity_available"],
                     "rate": data["average_price"],
+                    "warehouse": delivery_warehouse,
                 }
             innerJson_qo = {
                 "doctype": "Quotation Item",
                 "item_code": data["item_code"],
                 "qty": data["quantity_booked"] - data["quantity_available"],
                 "rate": data["average_price"],
+                "warehouse": delivery_warehouse,
             }
         else:
             innerJson_so = {
@@ -116,6 +142,7 @@ def sales_order_container(customer, order_list):
                     "item_code": data["item_code"],
                     "qty": data["quantity_booked"],
                     "rate": data["average_price"],
+                    "warehouse": delivery_warehouse,
                 }
         outerJson_so["items"].append(innerJson_so)
         try:
@@ -138,16 +165,3 @@ def sales_order_container(customer, order_list):
         qo_name = doc_qo.name
 
     return dict(so_name = so_name, qo_name = qo_name)
-
-@frappe.whitelist()
-def customer_type_container(customer):
-    customer_type = fetch_customer_type(customer)
-    return customer_type
-
-@frappe.whitelist()
-def item_qty_container(company, item_code, customer_type):
-    fulfillment_settings = fetch_fulfillment_settings(company)
-    stock_detail = fetch_item_details(item_code, customer_type, fulfillment_settings[0])
-    handled_stock = handle_stock_details(stock_detail)
-    average_price = fetch_average_price(stock_detail)
-    return dict(available_qty = handled_stock["available_qty"], average_price = average_price, stock = True) 

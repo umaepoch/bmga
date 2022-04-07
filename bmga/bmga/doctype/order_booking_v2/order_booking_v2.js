@@ -22,6 +22,7 @@ frappe.ui.form.on('Order Booking V2', {
 		if(customer) {
 			frm.set_value("order_booking_items_v2", [])
 			frm.set_value("order_booking_so", null)
+			frm.set_value("hunting_quotation", null)
 			frappe.call({
 				method: "bmga.bmga.doctype.order_booking_v2.api.customer_type_container",
 				args: {
@@ -40,12 +41,17 @@ frappe.ui.form.on('Order Booking V2', {
 		frm.add_custom_button("Book Order", function() {
 			let order_list = frm.doc.order_booking_items_v2;
 			let customer = frm.doc.customer;
+			let company = frm.doc.company;
+			let customer_type = frm.doc.customer_type
+			console.log(customer_type, company)
 			if(order_list) {
 				frappe.call({
 					method: "bmga.bmga.doctype.order_booking_v2.api.sales_order_container",
 					args: {
 						customer: customer,
 						order_list: order_list,
+						company: company,
+						customer_type: customer_type,
 					}
 				}).done((response) => {
 					console.log(response)
