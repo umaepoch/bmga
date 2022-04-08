@@ -194,4 +194,4 @@ def sales_order_container(customer, order_list, company, customer_type):
         doc_qo.save()
         qo_name = doc_qo.name
 
-    return dict(so_name = so_name, qo_name = qo_name)
+    return dict(so_name = so_name, qo_name = qo_name, outerJson_qo = outerJson_qo, outerJson_so = outerJson_so)

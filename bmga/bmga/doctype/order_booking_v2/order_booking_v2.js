@@ -44,6 +44,7 @@ frappe.ui.form.on('Order Booking V2', {
 			let company = frm.doc.company;
 			let customer_type = frm.doc.customer_type
 			console.log(customer_type, company)
+			console.log(order_list)
 			if(order_list) {
 				frappe.call({
 					method: "bmga.bmga.doctype.order_booking_v2.api.sales_order_container",
@@ -59,10 +60,10 @@ frappe.ui.form.on('Order Booking V2', {
 					refresh_field("order_booking_so");
 					frm.set_value("hunting_quotation", response.message.qo_name);
 					refresh_field("hunting_quotation");
-					if(response.message.so_name != "NA") {
+					if(response.message.so_name != "NA" || response.message.qo_name != "NA") {
 						frappe.msgprint("Order Booked!");
 					} else {
-						frappe.msgprint("No Order has been Placed");
+						frappe.msgprint("No Order has been Placed")
 					}
 				})
 			} else {
