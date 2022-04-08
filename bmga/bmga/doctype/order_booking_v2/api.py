@@ -41,6 +41,10 @@ def fetch_average_price(stock_data, item_code):
     average_price = 0
     stock_count = 0
     for data in stock_data:
+        try:
+            average_qty_list.append(data["qty"])
+        except:
+            pass
         if data["batch_no"] is None:
             print("None")
             price_list = frappe.db.sql(
@@ -50,7 +54,6 @@ def fetch_average_price(stock_data, item_code):
             try:
                 average_price += price_list[0]["price_list_rate"] * data["qty"]
                 average_price_list.append(price_list[0]["price_list_rate"])
-                average_qty_list.append(data["qty"])
                 stock_count += data["qty"]
             except:
                 pass
@@ -63,7 +66,6 @@ def fetch_average_price(stock_data, item_code):
                 average_price += price_list[0]["price_list_rate"] * data["qty"]
                 stock_count += data["qty"]
                 average_price_list.append(price_list[0]["price_list_rate"])
-                average_qty_list.append(data["qty"])
             except:
                 price_list = frappe.db.sql(
                 f"""SELECT price_list_rate FROM `tabItem Price` WHERE batch_no IS NULL AND item_code = '{item_code}'""",
@@ -73,7 +75,6 @@ def fetch_average_price(stock_data, item_code):
                     average_price += price_list[0]["price_list_rate"] * data["qty"]
                     stock_count += data["qty"]
                     average_price_list.append(price_list[0]["price_list_rate"])
-                    average_qty_list.append(data["qty"])
                 except:
                     pass
 
