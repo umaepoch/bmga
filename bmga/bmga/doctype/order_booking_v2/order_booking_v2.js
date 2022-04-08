@@ -95,6 +95,7 @@ frappe.ui.form.on('Order Booking Items V2', {
 						customer_type: customer_type,
 					}
 				}).done((response) => {
+					console.log(response)
 					frappe.model.set_value(cdt, cdn, "quantity_available", response.message.available_qty);
 					frappe.model.set_value(cdt, cdn, "average_price", response.message.average_price);
 					refresh_field("order_booking_items_v2");

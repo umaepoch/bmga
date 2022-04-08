@@ -36,6 +36,8 @@ def handle_stock_details(stock_data):
     return dict(available_qty = available_qty, stock_data = stock_data)
 
 def fetch_average_price(stock_data, item_code):
+    average_price_list = []
+    average_qty_list = []
     average_price = 0
     stock_count = 0
     for data in stock_data:
@@ -47,25 +49,41 @@ def fetch_average_price(stock_data, item_code):
             )
             try:
                 average_price += price_list[0]["price_list_rate"] * data["qty"]
+                average_price_list.append(price_list[0]["price_list_rate"])
+                average_qty_list.append(data["qty"])
                 stock_count += data["qty"]
             except:
                 pass
         else:
-            print("Batch")
             price_list = frappe.db.sql(
                 f"""SELECT price_list_rate FROM `tabItem Price` WHERE batch_no = '{data["batch_no"]}' AND item_code = '{item_code}'""",
                 as_dict=True
             )
-            average_price += price_list[0]["price_list_rate"] * data["qty"]
-            stock_count += data["qty"]
+            try:
+                average_price += price_list[0]["price_list_rate"] * data["qty"]
+                stock_count += data["qty"]
+                average_price_list.append(price_list[0]["price_list_rate"])
+                average_qty_list.append(data["qty"])
+            except:
+                price_list = frappe.db.sql(
+                f"""SELECT price_list_rate FROM `tabItem Price` WHERE batch_no IS NULL AND item_code = '{item_code}'""",
+                as_dict=True
+                )
+                try:
+                    average_price += price_list[0]["price_list_rate"] * data["qty"]
+                    stock_count += data["qty"]
+                    average_price_list.append(price_list[0]["price_list_rate"])
+                    average_qty_list.append(data["qty"])
+                except:
+                    pass
 
     print(sum(data["qty"] for data in stock_data))
     print(stock_count)
     print(average_price)
     if stock_count > 0:
-        return average_price/stock_count
+        return dict(average_price = average_price/stock_count, price_list = average_price_list, qty_list = average_qty_list)
     else:
-        return average_price
+        return dict(average_price = average_price, price_list = average_price_list, qty_list = average_qty_list)
 
 def fetch_fulfillment_settings(company):
     fs_name = frappe.db.sql(
@@ -96,8 +114,8 @@ def item_qty_container(company, item_code, customer_type):
     fulfillment_settings = fetch_fulfillment_settings(company)
     stock_detail = fetch_item_details(item_code, customer_type, fulfillment_settings[0])
     handled_stock = handle_stock_details(stock_detail)
-    average_price = fetch_average_price(stock_detail, item_code)
-    return dict(available_qty = handled_stock["available_qty"], average_price = average_price) 
+    price_details = fetch_average_price(stock_detail, item_code)
+    return dict(available_qty = handled_stock["available_qty"], average_price = price_details["average_price"], price_details = price_details, stock_data = handled_stock["stock_data"]) 
 
 @frappe.whitelist()
 def sales_order_container(customer, order_list, company, customer_type):
