@@ -15,7 +15,7 @@ def fetch_customer_type(customer):
 
 def fetch_stock_details(item_code, customer_type, settings):
     stock_data = frappe.db.sql(
-        f"""SELECT t_warehouse, batch_no, qty FROM `tabStock Entry Detail` WHERE item_code = '{item_code}'""",
+        f"""SELECT t_warehouse, batch_no, qty FROM `tabStock Entry Detail` WHERE item_code = '{item_code}' AND docstatus = 1""",
         as_dict=True
     )
     if customer_type == "Retail":
@@ -24,6 +24,7 @@ def fetch_stock_details(item_code, customer_type, settings):
         filter_data = [data for data in stock_data if settings["hospital_warehouse"] == data["t_warehouse"]]
     elif customer_type == "Institutional":
         filter_data = [data for data in stock_data if settings["institutional_warehouse"] == data["t_warehouse"]]
+    print(filter_data)
     return filter_data
 
 def fetch_item_details(item_code, customer_type, settings):
@@ -34,24 +35,33 @@ def handle_stock_details(stock_data):
     available_qty = sum(data["qty"] for data in stock_data)
     return dict(available_qty = available_qty, stock_data = stock_data)
 
-def fetch_average_price(stock_data):
+def fetch_average_price(stock_data, item_code):
     average_price = 0
     stock_count = 0
     for data in stock_data:
         if data["batch_no"] is None:
+            print("None")
             price_list = frappe.db.sql(
-                """SELECT price_list_rate FROM `tabItem Price` WHERE batch_no IS NULL""",
+                f"""SELECT price_list_rate FROM `tabItem Price` WHERE batch_no IS NULL AND item_code = '{item_code}'""",
                 as_dict=True
             )
-            stock_count += data["qty"]
-            average_price += price_list[0]["price_list_rate"] * data["qty"]
+            try:
+                average_price += price_list[0]["price_list_rate"] * data["qty"]
+                stock_count += data["qty"]
+            except:
+                pass
         else:
+            print("Batch")
             price_list = frappe.db.sql(
-                f"""SELECT price_list_rate FROM `tabItem Price` WHERE batch_no = '{data["batch_no"]}'""",
+                f"""SELECT price_list_rate FROM `tabItem Price` WHERE batch_no = '{data["batch_no"]}' AND item_code = '{item_code}'""",
                 as_dict=True
             )
             average_price += price_list[0]["price_list_rate"] * data["qty"]
             stock_count += data["qty"]
+
+    print(sum(data["qty"] for data in stock_data))
+    print(stock_count)
+    print(average_price)
     if stock_count > 0:
         return average_price/stock_count
     else:
@@ -86,7 +96,7 @@ def item_qty_container(company, item_code, customer_type):
     fulfillment_settings = fetch_fulfillment_settings(company)
     stock_detail = fetch_item_details(item_code, customer_type, fulfillment_settings[0])
     handled_stock = handle_stock_details(stock_detail)
-    average_price = fetch_average_price(stock_detail)
+    average_price = fetch_average_price(stock_detail, item_code)
     return dict(available_qty = handled_stock["available_qty"], average_price = average_price) 
 
 @frappe.whitelist()
