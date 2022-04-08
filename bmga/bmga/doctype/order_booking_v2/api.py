@@ -15,16 +15,15 @@ def fetch_customer_type(customer):
 
 def fetch_stock_details(item_code, customer_type, settings):
     stock_data = frappe.db.sql(
-        f"""SELECT t_warehouse, batch_no, qty FROM `tabStock Entry Detail` WHERE item_code = '{item_code}' AND docstatus = 1""",
+        f"""SELECT warehouse, batch_no, actual_qty FROM `tabStock Ledger Entry` WHERE item_code = '{item_code}' AND docstatus = 1 AND is_cancelled = 0""",
         as_dict=True
     )
     if customer_type == "Retail":
-        filter_data = [data for data in stock_data if settings["retail_primary_warehouse"] == data["t_warehouse"] or settings["retail_bulk_warehouse"] == data["t_warehouse"]]
+        filter_data = [data for data in stock_data if settings["retail_primary_warehouse"] == data["warehouse"] or settings["retail_bulk_warehouse"] == data["warehouse"]]
     elif customer_type == "Hospital":
-        filter_data = [data for data in stock_data if settings["hospital_warehouse"] == data["t_warehouse"]]
+        filter_data = [data for data in stock_data if settings["hospital_warehouse"] == data["warehouse"]]
     elif customer_type == "Institutional":
-        filter_data = [data for data in stock_data if settings["institutional_warehouse"] == data["t_warehouse"]]
-    print(filter_data)
+        filter_data = [data for data in stock_data if settings["institutional_warehouse"] == data["warehouse"]]
     return filter_data
 
 def fetch_item_details(item_code, customer_type, settings):
@@ -32,7 +31,7 @@ def fetch_item_details(item_code, customer_type, settings):
     return stock_detail
 
 def handle_stock_details(stock_data):
-    available_qty = sum(data["qty"] for data in stock_data)
+    available_qty = sum(data["actual_qty"] for data in stock_data)
     return dict(available_qty = available_qty, stock_data = stock_data)
 
 def fetch_average_price(stock_data, item_code):
@@ -42,7 +41,7 @@ def fetch_average_price(stock_data, item_code):
     stock_count = 0
     for data in stock_data:
         try:
-            average_qty_list.append(data["qty"])
+            average_qty_list.append(data["actual_qty"])
         except:
             pass
         if data["batch_no"] is None:
@@ -52,9 +51,9 @@ def fetch_average_price(stock_data, item_code):
                 as_dict=True
             )
             try:
-                average_price += price_list[0]["price_list_rate"] * data["qty"]
+                average_price += price_list[0]["price_list_rate"] * data["actual_qty"]
                 average_price_list.append(price_list[0]["price_list_rate"])
-                stock_count += data["qty"]
+                stock_count += data["actual_qty"]
             except:
                 pass
         else:
@@ -63,8 +62,8 @@ def fetch_average_price(stock_data, item_code):
                 as_dict=True
             )
             try:
-                average_price += price_list[0]["price_list_rate"] * data["qty"]
-                stock_count += data["qty"]
+                average_price += price_list[0]["price_list_rate"] * data["actual_qty"]
+                stock_count += data["actual_qty"]
                 average_price_list.append(price_list[0]["price_list_rate"])
             except:
                 price_list = frappe.db.sql(
@@ -72,13 +71,13 @@ def fetch_average_price(stock_data, item_code):
                 as_dict=True
                 )
                 try:
-                    average_price += price_list[0]["price_list_rate"] * data["qty"]
-                    stock_count += data["qty"]
+                    average_price += price_list[0]["price_list_rate"] * data["actual_qty"]
+                    stock_count += data["actual_qty"]
                     average_price_list.append(price_list[0]["price_list_rate"])
                 except:
                     pass
 
-    print(sum(data["qty"] for data in stock_data))
+    print(sum(data["actual_qty"] for data in stock_data))
     print(stock_count)
     print(average_price)
     if stock_count > 0:
@@ -137,6 +136,7 @@ def sales_order_container(customer, order_list, company, customer_type):
         "customer": customer,
         "delivery_date": delivery_date,
         "pch_sales_order_purpose": "Delivery",
+        "set_warehouse": delivery_warehouse,
         "items": [],
     }
 
@@ -144,6 +144,7 @@ def sales_order_container(customer, order_list, company, customer_type):
         "doctype": "Quotation",
         "naming_series": "QTN-DL-",
         "party_name": customer,
+        "set_warehouse": delivery_warehouse,
         "items": []
     }
 
@@ -156,14 +157,12 @@ def sales_order_container(customer, order_list, company, customer_type):
                     "item_code": data["item_code"],
                     "qty": data["quantity_available"],
                     "rate": data["average_price"],
-                    "warehouse": delivery_warehouse,
                 }
             innerJson_qo = {
                 "doctype": "Quotation Item",
                 "item_code": data["item_code"],
                 "qty": data["quantity_booked"] - data["quantity_available"],
                 "rate": data["average_price"],
-                "warehouse": delivery_warehouse,
             }
         else:
             innerJson_so = {
@@ -171,7 +170,6 @@ def sales_order_container(customer, order_list, company, customer_type):
                     "item_code": data["item_code"],
                     "qty": data["quantity_booked"],
                     "rate": data["average_price"],
-                    "warehouse": delivery_warehouse,
                 }
         try:
             outerJson_so["items"].append(innerJson_so)
