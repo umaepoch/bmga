@@ -71,7 +71,11 @@ def handle_stock_details(item_code, customer_type, settings):
             if w == data["warehouse"]:
                 t_stock+=data["qty_after_transaction"]
                 warehouse.remove(w)
-    return dict(available_qty = t_stock - sales_data[0]["pending_qty"], stock_data = stock_data)
+    if t_stock - sales_data[0]["pending_qty"] > 0:
+        available_qty = t_stock - sales_data[0]["pending_qty"]
+    else:
+        available_qty = 0
+    return dict(available_qty = available_qty, stock_data = stock_data)
 
 def fetch_average_price(stock_data, item_code):
     average_price_list = []
