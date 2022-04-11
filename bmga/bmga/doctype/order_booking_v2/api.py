@@ -15,28 +15,46 @@ def fetch_customer_type(customer):
 
 def fetch_stock_details(item_code, customer_type, settings):
     if customer_type == "Retail":
-        warehouse = (settings["retail_primary_warehouse"], settings["retail_bulk_warehouse"])
+        warehouse = [settings["retail_primary_warehouse"], settings["retail_bulk_warehouse"]]
     elif customer_type == "Hospital":
-        warehouse = (settings["hospital_warehouse"])
+        warehouse = [settings["hospital_warehouse"]]
     elif customer_type == "Institutional":
-        warehouse = (settings["institutional_warehouse"])
+        warehouse = [settings["institutional_warehouse"]]
+    if len(warehouse) > 1:
+        stock_data_batch = frappe.db.sql(f"""
+	    	select batch_id, sum(`tabStock Ledger Entry`.actual_qty) as actual_qty
+	    	from `tabBatch`
+	    		join `tabStock Ledger Entry` ignore index (item_code, warehouse)
+	    			on (`tabBatch`.batch_id = `tabStock Ledger Entry`.batch_no )
+	    	where `tabStock Ledger Entry`.item_code = '{item_code}' AND warehouse in {tuple(warehouse)}
+	    		and `tabStock Ledger Entry`.is_cancelled = 0
+	    	group by batch_id
+	    	order by `tabBatch`.creation ASC
+	    """, as_dict=True)
 
-    stock_data_batch = frappe.db.sql(f"""
-		select batch_id, sum(`tabStock Ledger Entry`.actual_qty) as actual_qty
-		from `tabBatch`
-			join `tabStock Ledger Entry` ignore index (item_code, warehouse)
-				on (`tabBatch`.batch_id = `tabStock Ledger Entry`.batch_no )
-		where `tabStock Ledger Entry`.item_code = '{item_code}' AND warehouse in {warehouse}
-			and `tabStock Ledger Entry`.is_cancelled = 0
-		group by batch_id
-		order by `tabBatch`.creation ASC
-	""", as_dict=True)
+        stock_data_batchless = frappe.db.sql(
+            f"""select batch_no as batch_id, sum(actual_qty) as actual_qty from `tabStock Ledger Entry`
+            where item_code = '{item_code}' and warehouse in {tuple(warehouse)} and (batch_no is null or batch_no = '')""",
+            as_dict=True
+        )
+    else:
+        stock_data_batch = frappe.db.sql(f"""
+	    	select batch_id, sum(`tabStock Ledger Entry`.actual_qty) as actual_qty
+	    	from `tabBatch`
+	    		join `tabStock Ledger Entry` ignore index (item_code, warehouse)
+	    			on (`tabBatch`.batch_id = `tabStock Ledger Entry`.batch_no )
+	    	where `tabStock Ledger Entry`.item_code = '{item_code}' and warehouse = '{warehouse[0]}'
+	    		and `tabStock Ledger Entry`.is_cancelled = 0
+	    	group by batch_id
+	    	order by `tabBatch`.creation ASC
+	    """, as_dict=True)
 
-    stock_data_batchless = frappe.db.sql(
-        f"""select batch_no as batch_id, sum(actual_qty) as actual_qty from `tabStock Ledger Entry`
-        where item_code = '{item_code}' and warehouse in {warehouse} and (batch_no is null or batch_no = '')""",
-        as_dict=True
-    )
+        stock_data_batchless = frappe.db.sql(
+            f"""select batch_no as batch_id, sum(actual_qty) as actual_qty from `tabStock Ledger Entry`
+            where item_code = '{item_code}' and warehouse = '{warehouse[0]}' and (batch_no is null or batch_no = '')""",
+            as_dict=True
+        )
+    print("done price")
     for data in stock_data_batchless:
         if data["actual_qty"] == None: continue
         stock_data_batch.append(data)
@@ -54,25 +72,41 @@ def handle_stock_details(item_code, customer_type, settings):
     elif customer_type == "Institutional":
         warehouse = [settings["institutional_warehouse"]]
 
-    stock_data =frappe.db.sql(f"""
-		select item_code, warehouse, posting_date, posting_time, actual_qty, qty_after_transaction
-		from `tabStock Ledger Entry`
-		where is_cancelled = 0 and docstatus < 2 and warehouse in {tuple(warehouse)} and item_code = '{item_code}'
-        order by posting_date DESC, qty_after_transaction DESC"""
-		, as_dict=1)
-    
-    sales_data = frappe.db.sql(
-        f"""select sum(qty - delivered_qty) as pending_qty from `tabSales Order Item` where item_code = '{item_code}'""", as_dict=True
-    )
+    if len(warehouse) > 1:
+        stock_data =frappe.db.sql(f"""
+	    	select item_code, warehouse, posting_date, posting_time, actual_qty, qty_after_transaction
+	    	from `tabStock Ledger Entry`
+	    	where is_cancelled = 0 and docstatus < 2 and warehouse in {tuple(warehouse)} and item_code = '{item_code}'
+            order by posting_date DESC, qty_after_transaction DESC"""
+	    	, as_dict=1)
 
+        sales_data = frappe.db.sql(
+            f"""select sum(qty - delivered_qty) as pending_qty from `tabSales Order Item` where item_code = '{item_code}' and warehouse in {tuple(warehouse)}""", as_dict=True
+        )
+    else:
+        stock_data =frappe.db.sql(f"""
+	    	select item_code, warehouse, posting_date, posting_time, actual_qty, qty_after_transaction
+	    	from `tabStock Ledger Entry`
+	    	where is_cancelled = 0 and docstatus < 2 and warehouse = '{warehouse[0]}' and item_code = '{item_code}'
+            order by posting_date DESC, qty_after_transaction DESC"""
+	    	, as_dict=1)
+        
+        sales_data = frappe.db.sql(
+            f"""select sum(qty - delivered_qty) as pending_qty from `tabSales Order Item` where item_code = '{item_code}' and warehouse = '{warehouse[0]}'""", as_dict=True
+        )
+    print(sales_data)
+    print("done available")
     t_stock = 0
     for data in stock_data:
         for w in warehouse:
             if w == data["warehouse"]:
                 t_stock+=data["qty_after_transaction"]
                 warehouse.remove(w)
-    available_qty = t_stock - sales_data[0]["pending_qty"]
-    return dict(available_qty = available_qty, stock_data = stock_data)
+    try:
+        available_qty = t_stock - sales_data[0]["pending_qty"]
+    except:
+        available_qty = t_stock
+    return dict(available_qty = available_qty, stock_data = stock_data, sales_qty = sales_data[0]["pending_qty"], total_qty = t_stock)
 
 def fetch_average_price(stock_data, item_code):
     average_price_list = []
