@@ -186,7 +186,7 @@ def item_qty_container(company, item_code, customer_type):
     stock_detail = fetch_item_details(item_code, customer_type, fulfillment_settings[0])
     handled_stock = handle_stock_details(item_code, customer_type, fulfillment_settings[0])
     price_details = fetch_average_price(stock_detail, item_code)
-    return dict(available_qty = handled_stock["available_qty"], average_price = price_details["average_price"], price_details = price_details, stock_detail = stock_detail) 
+    return dict(available_qty = handled_stock["available_qty"], average_price = price_details["average_price"], price_details = price_details, stock_detail = stock_detail, qty_detail = handled_stock) 
 
 @frappe.whitelist()
 def sales_order_container(customer, order_list, company, customer_type):
