@@ -81,7 +81,7 @@ def handle_stock_details(item_code, customer_type, settings):
 	    	, as_dict=1)
 
         sales_data = frappe.db.sql(
-            f"""select sum(qty - delivered_qty) as pending_qty from `tabSales Order Item` where item_code = '{item_code}' and warehouse in {tuple(warehouse)}""", as_dict=True
+            f"""select sum(qty - delivered_qty) as pending_qty from `tabSales Order Item` where docstatus = 1 and item_code = '{item_code}' and warehouse in {tuple(warehouse)}""", as_dict=True
         )
     else:
         stock_data =frappe.db.sql(f"""
@@ -92,7 +92,7 @@ def handle_stock_details(item_code, customer_type, settings):
 	    	, as_dict=1)
         
         sales_data = frappe.db.sql(
-            f"""select sum(qty - delivered_qty) as pending_qty from `tabSales Order Item` where item_code = '{item_code}' and warehouse = '{warehouse[0]}'""", as_dict=True
+            f"""select sum(qty - delivered_qty) as pending_qty from `tabSales Order Item` where docstatus = 1 and item_code = '{item_code}' and warehouse = '{warehouse[0]}'""", as_dict=True
         )
     print(sales_data)
     print("done available")
