@@ -21,27 +21,57 @@ def fetch_stock_details(item_code, customer_type, settings):
     elif customer_type == "Institutional":
         warehouse = (settings["institutional_warehouse"])
 
-    stock_data = frappe.db.sql(f"""
-		select warehouse, batch_id, sum(`tabStock Ledger Entry`.actual_qty) as actual_qty
+    stock_data_batch = frappe.db.sql(f"""
+		select batch_id, sum(`tabStock Ledger Entry`.actual_qty) as actual_qty
 		from `tabBatch`
 			join `tabStock Ledger Entry` ignore index (item_code, warehouse)
 				on (`tabBatch`.batch_id = `tabStock Ledger Entry`.batch_no )
 		where `tabStock Ledger Entry`.item_code = '{item_code}' AND warehouse in {warehouse}
 			and `tabStock Ledger Entry`.is_cancelled = 0
-			and (`tabBatch`.expiry_date >= CURDATE() or `tabBatch`.expiry_date IS NULL)
 		group by batch_id
-		order by `tabBatch`.expiry_date ASC, `tabBatch`.creation ASC
+		order by `tabBatch`.creation ASC
 	""", as_dict=True)
 
-    return stock_data
+    stock_data_batchless = frappe.db.sql(
+        f"""select batch_no as batch_id, sum(actual_qty) as actual_qty from `tabStock Ledger Entry`
+        where item_code = '{item_code}' and warehouse in {warehouse} and (batch_no is null or batch_no = '')""",
+        as_dict=True
+    )
+    for data in stock_data_batchless:
+        if data["actual_qty"] == None: continue
+        stock_data_batch.append(data)
+    return stock_data_batch
 
 def fetch_item_details(item_code, customer_type, settings):
     stock_detail = fetch_stock_details(item_code, customer_type, settings)
     return stock_detail
 
-def handle_stock_details(stock_data):
-    available_qty = sum(data["actual_qty"] for data in stock_data)
-    return dict(available_qty = available_qty, stock_data = stock_data)
+def handle_stock_details(item_code, customer_type, settings):
+    if customer_type == "Retail":
+        warehouse = [settings["retail_primary_warehouse"], settings["retail_bulk_warehouse"]]
+    elif customer_type == "Hospital":
+        warehouse = [settings["hospital_warehouse"]]
+    elif customer_type == "Institutional":
+        warehouse = [settings["institutional_warehouse"]]
+
+    stock_data =frappe.db.sql(f"""
+		select item_code, warehouse, posting_date, posting_time, actual_qty, qty_after_transaction
+		from `tabStock Ledger Entry`
+		where is_cancelled = 0 and docstatus < 2 and warehouse in {tuple(warehouse)} and item_code = '{item_code}'
+        order by posting_date DESC, qty_after_transaction DESC"""
+		, as_dict=1)
+    
+    sales_data = frappe.db.sql(
+        f"""select sum(qty - delivered_qty) as pending_qty from `tabSales Order Item` where item_code = '{item_code}'""", as_dict=True
+    )
+
+    t_stock = 0
+    for data in stock_data:
+        for w in warehouse:
+            if w == data["warehouse"]:
+                t_stock+=data["qty_after_transaction"]
+                warehouse.remove(w)
+    return dict(available_qty = t_stock - sales_data[0]["pending_qty"], stock_data = stock_data)
 
 def fetch_average_price(stock_data, item_code):
     average_price_list = []
@@ -53,7 +83,7 @@ def fetch_average_price(stock_data, item_code):
             average_qty_list.append(data["actual_qty"])
         except:
             pass
-        if data["batch_id"] is None:
+        if data["batch_id"] == '':
             print("None")
             price_list = frappe.db.sql(
                 f"""SELECT price_list_rate FROM `tabItem Price` WHERE batch_no IS NULL AND item_code = '{item_code}'""",
@@ -119,12 +149,13 @@ def customer_type_container(customer):
 def item_qty_container(company, item_code, customer_type):
     fulfillment_settings = fetch_fulfillment_settings(company)
     stock_detail = fetch_item_details(item_code, customer_type, fulfillment_settings[0])
-    handled_stock = handle_stock_details(stock_detail)
+    handled_stock = handle_stock_details(item_code, customer_type, fulfillment_settings[0])
     price_details = fetch_average_price(stock_detail, item_code)
-    return dict(available_qty = handled_stock["available_qty"], average_price = price_details["average_price"], price_details = price_details, stock_data = handled_stock["stock_data"]) 
+    return dict(available_qty = handled_stock["available_qty"], average_price = price_details["average_price"], price_details = price_details, stock_detail = stock_detail) 
 
 @frappe.whitelist()
 def sales_order_container(customer, order_list, company, customer_type):
+    print(order_list)
     fulfillment_settings = fetch_fulfillment_settings(company)
     if customer_type == "Retail":
         delivery_warehouse = fulfillment_settings[0]["retail_primary_warehouse"]
