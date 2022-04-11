@@ -14,17 +14,26 @@ def fetch_customer_type(customer):
     return customer_type[0]
 
 def fetch_stock_details(item_code, customer_type, settings):
-    stock_data = frappe.db.sql(
-        f"""SELECT warehouse, batch_no, actual_qty FROM `tabStock Ledger Entry` WHERE item_code = '{item_code}' AND docstatus = 1 AND is_cancelled = 0""",
-        as_dict=True
-    )
     if customer_type == "Retail":
-        filter_data = [data for data in stock_data if settings["retail_primary_warehouse"] == data["warehouse"] or settings["retail_bulk_warehouse"] == data["warehouse"]]
+        warehouse = (settings["retail_primary_warehouse"], settings["retail_bulk_warehouse"])
     elif customer_type == "Hospital":
-        filter_data = [data for data in stock_data if settings["hospital_warehouse"] == data["warehouse"]]
+        warehouse = (settings["hospital_warehouse"])
     elif customer_type == "Institutional":
-        filter_data = [data for data in stock_data if settings["institutional_warehouse"] == data["warehouse"]]
-    return filter_data
+        warehouse = (settings["institutional_warehouse"])
+
+    stock_data = frappe.db.sql(f"""
+		select warehouse, batch_id, sum(`tabStock Ledger Entry`.actual_qty) as actual_qty
+		from `tabBatch`
+			join `tabStock Ledger Entry` ignore index (item_code, warehouse)
+				on (`tabBatch`.batch_id = `tabStock Ledger Entry`.batch_no )
+		where `tabStock Ledger Entry`.item_code = '{item_code}' AND warehouse in {warehouse}
+			and `tabStock Ledger Entry`.is_cancelled = 0
+			and (`tabBatch`.expiry_date >= CURDATE() or `tabBatch`.expiry_date IS NULL)
+		group by batch_id
+		order by `tabBatch`.expiry_date ASC, `tabBatch`.creation ASC
+	""", as_dict=True)
+
+    return stock_data
 
 def fetch_item_details(item_code, customer_type, settings):
     stock_detail = fetch_stock_details(item_code, customer_type, settings)
@@ -44,7 +53,7 @@ def fetch_average_price(stock_data, item_code):
             average_qty_list.append(data["actual_qty"])
         except:
             pass
-        if data["batch_no"] is None:
+        if data["batch_id"] is None:
             print("None")
             price_list = frappe.db.sql(
                 f"""SELECT price_list_rate FROM `tabItem Price` WHERE batch_no IS NULL AND item_code = '{item_code}'""",
@@ -58,7 +67,7 @@ def fetch_average_price(stock_data, item_code):
                 pass
         else:
             price_list = frappe.db.sql(
-                f"""SELECT price_list_rate FROM `tabItem Price` WHERE batch_no = '{data["batch_no"]}' AND item_code = '{item_code}'""",
+                f"""SELECT price_list_rate FROM `tabItem Price` WHERE batch_no = '{data["batch_id"]}' AND item_code = '{item_code}'""",
                 as_dict=True
             )
             try:
@@ -77,9 +86,6 @@ def fetch_average_price(stock_data, item_code):
                 except:
                     pass
 
-    print(sum(data["actual_qty"] for data in stock_data))
-    print(stock_count)
-    print(average_price)
     if stock_count > 0:
         return dict(average_price = average_price/stock_count, price_list = average_price_list, qty_list = average_qty_list)
     else:
