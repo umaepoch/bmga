@@ -14,4 +14,4 @@ def pick_put_list_container(so_name):
 	doc_ppl.update(outerJson_ppl)
 	doc_ppl.save()
 
-	return dict(so_name = so_name)
+	return dict(so_name = so_name, ppl_name = doc_ppl.name)
