@@ -82,7 +82,7 @@ def handle_stock_details(item_code, customer_type, settings):
 	    	, as_dict=1)
 
         sales_data = frappe.db.sql(
-            f"""select sum(qty - delivered_qty) as pending_qty from `tabSales Order Item` where docstatus = 1 and item_code = '{item_code}' and warehouse in {tuple(warehouse)}""", as_dict=True
+            f"""select sum(qty - delivered_qty) as pending_qty from `tabSales Order Item` where item_code = '{item_code}' and warehouse in {tuple(warehouse)}""", as_dict=True
         )
     else:
         stock_data =frappe.db.sql(f"""
@@ -93,8 +93,9 @@ def handle_stock_details(item_code, customer_type, settings):
 	    	, as_dict=1)
         
         sales_data = frappe.db.sql(
-            f"""select sum(qty - delivered_qty) as pending_qty from `tabSales Order Item` where docstatus = 1 and item_code = '{item_code}' and warehouse = '{warehouse[0]}'""", as_dict=True
+            f"""select sum(qty - delivered_qty) as pending_qty from `tabSales Order Item` where item_code = '{item_code}' and warehouse = '{warehouse[0]}'""", as_dict=True
         )
+        print(sales_data)
     print("done available")
     t_stock = 0
     for data in stock_data:
@@ -102,13 +103,17 @@ def handle_stock_details(item_code, customer_type, settings):
             if w == data["warehouse"]:
                 t_stock+=data["qty_after_transaction"]
                 warehouse.remove(w)
+
+    t_stock_v2 = sum(data["actual_qty"] for data in stock_data)
+    print(t_stock_v2)
+
     try:
-        available_qty = t_stock - sales_data[0]["pending_qty"]
+        available_qty = t_stock_v2 - sales_data[0]["pending_qty"]
     except:
-        available_qty = t_stock
+        available_qty = t_stock_v2
     for data in stock_data:
         print(data)
-    return dict(available_qty = available_qty, stock_data = stock_data, sales_qty = sales_data[0]["pending_qty"], total_qty = t_stock)
+    return dict(available_qty = available_qty, stock_data = stock_data, sales_qty = sales_data[0]["pending_qty"], total_qty = t_stock_v2)
 
 def fetch_average_price(stock_data, item_code):
     average_price_list = []
