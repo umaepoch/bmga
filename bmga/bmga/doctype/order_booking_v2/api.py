@@ -58,6 +58,7 @@ def fetch_stock_details(item_code, customer_type, settings):
     for data in stock_data_batchless:
         if data["actual_qty"] == None: continue
         stock_data_batch.append(data)
+    print(stock_data_batch)
     return stock_data_batch
 
 def fetch_item_details(item_code, customer_type, settings):
@@ -77,7 +78,7 @@ def handle_stock_details(item_code, customer_type, settings):
 	    	select item_code, warehouse, posting_date, posting_time, actual_qty, qty_after_transaction
 	    	from `tabStock Ledger Entry`
 	    	where is_cancelled = 0 and docstatus < 2 and warehouse in {tuple(warehouse)} and item_code = '{item_code}'
-            order by posting_date DESC, qty_after_transaction DESC"""
+            order by posting_date DESC, posting_time DESC, qty_after_transaction DESC"""
 	    	, as_dict=1)
 
         sales_data = frappe.db.sql(
@@ -88,13 +89,12 @@ def handle_stock_details(item_code, customer_type, settings):
 	    	select item_code, warehouse, posting_date, posting_time, actual_qty, qty_after_transaction
 	    	from `tabStock Ledger Entry`
 	    	where is_cancelled = 0 and docstatus < 2 and warehouse = '{warehouse[0]}' and item_code = '{item_code}'
-            order by posting_date DESC, qty_after_transaction DESC"""
+            order by posting_date DESC, posting_time DESC, qty_after_transaction DESC"""
 	    	, as_dict=1)
         
         sales_data = frappe.db.sql(
             f"""select sum(qty - delivered_qty) as pending_qty from `tabSales Order Item` where docstatus = 1 and item_code = '{item_code}' and warehouse = '{warehouse[0]}'""", as_dict=True
         )
-    print(sales_data)
     print("done available")
     t_stock = 0
     for data in stock_data:
@@ -106,6 +106,8 @@ def handle_stock_details(item_code, customer_type, settings):
         available_qty = t_stock - sales_data[0]["pending_qty"]
     except:
         available_qty = t_stock
+    for data in stock_data:
+        print(data)
     return dict(available_qty = available_qty, stock_data = stock_data, sales_qty = sales_data[0]["pending_qty"], total_qty = t_stock)
 
 def fetch_average_price(stock_data, item_code):

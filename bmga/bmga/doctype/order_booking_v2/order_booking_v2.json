@@ -10,6 +10,9 @@
   "company",
   "customer",
   "customer_type",
+  "column_break_4",
+  "customer_name",
+  "section_break_4",
   "order_booking_items_v2",
   "order_booking_so",
   "hunting_quotation"
@@ -55,11 +58,27 @@
    "fieldtype": "Table",
    "label": "Order Booking Items V2",
    "options": "Order Booking Items V2"
+  },
+  {
+   "fieldname": "section_break_4",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "column_break_4",
+   "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "customer",
+   "fetch_from": "customer.customer_name",
+   "fieldname": "customer_name",
+   "fieldtype": "Data",
+   "label": "Customer Name",
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2022-04-06 11:47:49.705208",
+ "modified": "2022-04-13 11:43:39.839334",
  "modified_by": "Administrator",
  "module": "Bmga",
  "name": "Order Booking V2",

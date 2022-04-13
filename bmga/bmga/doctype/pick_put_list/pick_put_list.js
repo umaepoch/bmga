@@ -20,6 +20,7 @@ frappe.ui.form.on('Pick Put List', {
 					entry.item = e.item_code;
 					entry.uom = e.stock_uom;
 					entry.batch = e.batch_no;
+					entry.warehouse = e.warehouse;
 					entry.quantity_to_be_picked = e.qty;
 				})
 				refresh_field("item_list")
