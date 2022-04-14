@@ -161,6 +161,8 @@ def sales_order_handle(customer_type, sales_list, stock_data, expiry_date):
             try:
                 date_delta = stock["expiry_date"] - today
                 console(date_delta).log()
+                console(today).log()
+                console(stock["expiry_date"]).log
                 if date_delta < expiry_date: continue
             except:
                 pass
