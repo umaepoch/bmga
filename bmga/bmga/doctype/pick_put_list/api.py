@@ -1,7 +1,6 @@
 from curses.panel import top_panel
 import frappe
 import datetime
-from console import console
 
 def fetch_item_list(so_name):
     item_list = frappe.db.sql(
@@ -160,9 +159,6 @@ def sales_order_handle(customer_type, sales_list, stock_data, expiry_date):
         for stock in stock_data[sales["item_code"]]:
             try:
                 date_delta = stock["expiry_date"] - today
-                console(date_delta).log()
-                console(today).log()
-                console(stock["expiry_date"]).log
                 if date_delta < expiry_date: continue
             except:
                 pass
