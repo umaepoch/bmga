@@ -159,9 +159,11 @@ def sales_order_handle(customer_type, sales_list, stock_data, expiry_date):
         for stock in stock_data[sales["item_code"]]:
             try:
                 date_delta = stock["expiry_date"] - today
-		frappe.msgprint(date_delta)
+		frappe.errprint(date_delta)
                 if date_delta < expiry_date: continue
             except:
+		frappe.errprint(today)
+		frappe.errprint(stock["expiry_date"])
                 pass
             pick_up = {}
             pick_up["item_code"] = sales["item_code"]
