@@ -157,9 +157,10 @@ def sales_order_handle(customer_type, sales_list, stock_data, expiry_date):
 
         to_pickup = sales["qty"]
         for stock in stock_data[sales["item_code"]]:
+            if stock["actual_qty"] == 0: continue
             try:
-                date_delta = stock_data["expiry_date"] - today
-                if date_delta < expiry_date: continue
+                date_delta = stock["expiry_date"] - today
+                if date_delta.days < expiry_date: continue
             except:
                 pass
             pick_up = {}
