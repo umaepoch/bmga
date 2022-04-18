@@ -1,4 +1,3 @@
-from curses.panel import top_panel
 import frappe
 import datetime
 
