@@ -126,7 +126,7 @@ def handle_stock_details(item_code, customer_type, settings):
         if batch_info["expiry_date"] is not None: 
             date_delta = batch_info["expiry_date"] - today
             if date_delta.days < settings["expiry_date_limit"]: continue
-        print("batch expiry", date_delta.days, "qty", batch_info["actual_qty"])
+            print("batch expiry", date_delta.days, "qty", batch_info["actual_qty"])
         batch_total += batch_info["actual_qty"]
 
     batchless_total = sum(data["actual_qty"] for data in stock_data_batchless)
