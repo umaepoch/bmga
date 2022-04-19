@@ -56,7 +56,7 @@ def fetch_stock_details(customer_type, sales_list, settings):
                 where `tabStock Ledger Entry`.item_code in {tuple(items)} AND warehouse in {tuple(warehouse)}
                     and `tabStock Ledger Entry`.is_cancelled = 0
                 group by batch_id, warehouse
-                order by expiry_date ASC, warehouse DESC
+                order by warehouse DESC, expiry_date ASC
             """, as_dict=True)
 
             stock_data_batchless = frappe.db.sql(
@@ -74,7 +74,7 @@ def fetch_stock_details(customer_type, sales_list, settings):
                 where `tabStock Ledger Entry`.item_code in {tuple(items)} and warehouse = '{warehouse[0]}'
                     and `tabStock Ledger Entry`.is_cancelled = 0
                 group by batch_id, warehouse
-                order by expiry_date ASC, warehouse DESC
+                order by warehouse DESC, expiry_date ASC
             """, as_dict=True)
 
             stock_data_batchless = frappe.db.sql(
@@ -93,7 +93,7 @@ def fetch_stock_details(customer_type, sales_list, settings):
                 where `tabStock Ledger Entry`.item_code = '{items[0]}' AND warehouse in {tuple(warehouse)}
                     and `tabStock Ledger Entry`.is_cancelled = 0
                 group by batch_id, warehouse
-                order by expiry_date ASC, warehouse DESC
+                order by warehouse DESC, expiry_date ASC
             """, as_dict=True)
 
             stock_data_batchless = frappe.db.sql(
@@ -111,7 +111,7 @@ def fetch_stock_details(customer_type, sales_list, settings):
                 where `tabStock Ledger Entry`.item_code = '{items[0]}' and warehouse = '{warehouse[0]}'
                     and `tabStock Ledger Entry`.is_cancelled = 0
                 group by batch_id, warehouse
-                order by expiry_date ASC, warehouse DESC
+                order warehouse DESC, by expiry_date ASC
             """, as_dict=True)
 
             stock_data_batchless = frappe.db.sql(
@@ -123,6 +123,10 @@ def fetch_stock_details(customer_type, sales_list, settings):
     for data in stock_data_batchless:
         if data["actual_qty"] == None: continue
         stock_data_batch.append(data)
+    
+    print("STOCK FETCH DATA")
+    for data in stock_data_batch:
+        print(data)
 
     return stock_data_batch
 
