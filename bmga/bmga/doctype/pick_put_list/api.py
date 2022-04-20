@@ -187,16 +187,23 @@ def fetch_wbs_location(customer_type, sales_list, settings):
     )
     if len(wbs_setting_id) == 0:
         return {}
-    wbs_location = frappe.db.sql(
-        f"""select item_code, `tabWBS Storage Location`.name_of_attribute_id, `tabWBS Storage Location`.rarb_warehouse
-        from `tabWBS Stored Items`
-            join `tabWBS Storage Location`
-                on (`tabWBS Stored Items`.parent = `tabWBS Storage Location`.name)
-        where item_code in {tuple(items)} and wbs_settings_id = '{wbs_setting_id[0]["name"]}'""", as_dict=True
-    )
+    wbs_location_list = []
+    for item in items:
+        wbs_location = frappe.db.sql(
+            f"""select item_code, `tabWBS Storage Location`.name_of_attribute_id, `tabWBS Storage Location`.rarb_warehouse
+            from `tabWBS Stored Items`
+                join `tabWBS Storage Location`
+                    on (`tabWBS Stored Items`.parent = `tabWBS Storage Location`.name)
+            where item_code = '{item}' and wbs_settings_id = '{wbs_setting_id[0]["name"]}'""", as_dict=True
+        )
+        if len(wbs_location) > 0:
+            wbs_location_list.append(wbs_location[0])
+        else:
+            # fetch from wbs stock balance report
+            pass
 
     wbs_structured = {}
-    for data in wbs_location:
+    for data in wbs_location_list:
         print(data)
         if data["rarb_warehouse"] not in wbs_structured:
             wbs_structured[data["rarb_warehouse"]] = {}
