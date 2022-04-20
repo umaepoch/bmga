@@ -185,7 +185,8 @@ def fetch_wbs_location(customer_type, sales_list, settings):
     wbs_setting_id = frappe.db.sql(
         f"""select name, start_date from `tabWBS Settings` where warehouse = '{warehouse}' order by start_date DESC""", as_dict=True
     )
-    print("WBS settings id", wbs_setting_id[0]["name"])
+    if len(wbs_setting_id == 0):
+        return {}
     wbs_location = frappe.db.sql(
         f"""select item_code, `tabWBS Storage Location`.name_of_attribute_id, `tabWBS Storage Location`.rarb_warehouse
         from `tabWBS Stored Items`
@@ -266,8 +267,8 @@ def generate_json_transfer(payload, destination):
         "items": []
     }
     for data in payload:
+        to_pick += data["quantity_to_be_picked"]
         if "quantity_picked" and "batch_picked" in data and data["quantity_picked"] > 0:
-            to_pick += data["quantity_to_be_picked"]
             picked_up += data["quantity_picked"]
             innerJson = {
                 "doctype": "Stock Entry Detail",
