@@ -185,7 +185,7 @@ def fetch_wbs_location(customer_type, sales_list, settings):
     wbs_setting_id = frappe.db.sql(
         f"""select name, start_date from `tabWBS Settings` where warehouse = '{warehouse}' order by start_date DESC""", as_dict=True
     )
-    if len(wbs_setting_id == 0):
+    if len(wbs_setting_id) == 0:
         return {}
     wbs_location = frappe.db.sql(
         f"""select item_code, `tabWBS Storage Location`.name_of_attribute_id, `tabWBS Storage Location`.rarb_warehouse
