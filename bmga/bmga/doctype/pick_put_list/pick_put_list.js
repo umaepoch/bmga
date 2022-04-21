@@ -38,6 +38,14 @@ frappe.ui.form.on('Pick Put List', {
 	}, */
 
 	refresh: function(frm) {
+		frm.set_query('batch_picked', 'item_list', function() {
+			return {
+				filters: {
+					'item': frm.doc.item_list.item
+				}
+			};
+		});
+		
 		frm.add_custom_button("Pick Complete", function() {
 			let item_list = frm.doc.item_list;
 			let so_name = frm.doc.sales_order;

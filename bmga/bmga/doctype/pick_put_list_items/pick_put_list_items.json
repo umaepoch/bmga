@@ -55,7 +55,8 @@
    "fieldname": "quantity_picked",
    "fieldtype": "Int",
    "in_list_view": 1,
-   "label": "Quantity Picked"
+   "label": "Quantity Picked",
+   "reqd": 1
   },
   {
    "columns": 1,
@@ -87,7 +88,7 @@
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2022-04-20 00:27:25.200315",
+ "modified": "2022-04-20 16:38:14.166210",
  "modified_by": "Administrator",
  "module": "Bmga",
  "name": "Pick Put List Items",

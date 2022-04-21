@@ -67,20 +67,6 @@ def fetch_stock_details(customer_type, sales_list, settings):
                 group by item_code, warehouse""",
                 as_dict=True
             )
-
-            stock_data_batch_V2 = frappe.db.sql(f"""
-                select b.batch_id, b.stock_uom, b.item,  b.expiry_date,  sum(s.actual_qty) as actual_qty, w.rarb_warehouse, w.name, i.item_code, w.name_of_attribute_id
-	            from `tabBatch` b 
-                    left outer join `tabStock Ledger Entry` s ignore index(item_code, warehouse)
-                        on(b.batch_id = s.batch_no)
-                    left outer join `tabWBS Stored Items` i
-                    on  i.item_code = b.item
-                    left outer join `tabWBS Storage Location` w
-                        on(w.name = i.parent)
-                where i.item_code in {tuple(items)} and warehouse in {tuple(warehouse)}
-    	        group by b.batch_id
-                order by b.expiry_date ASC   
-            """, as_dict=True)
         else:
             stock_data_batch = frappe.db.sql(f"""
                 select batch_id, `tabBatch`.stock_uom, item as item_code, expiry_date, `tabStock Ledger Entry`.warehouse as warehouse, sum(`tabStock Ledger Entry`.actual_qty) as actual_qty
@@ -137,11 +123,8 @@ def fetch_stock_details(customer_type, sales_list, settings):
                 as_dict=True
             )
 
-    """ print("WBS")
-    for data in stock_data_batch_V2:
-        print(data)
 
-    print("STOCK V1")
+    """ print("STOCK V1")
     for data in stock_data_batch:
         print(data) """
 
