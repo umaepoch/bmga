@@ -37,15 +37,19 @@ frappe.ui.form.on('Pick Put List', {
 		}
 	}, */
 
-	refresh: function(frm) {
-		frm.set_query('batch_picked', 'item_list', function() {
+	refresh: function(frm, cdt, cdn) {
+		var doc = locals[cdt][cdn];
+		var item = doc.item;
+		console.log(item);
+
+		frm.fields_dict['item_list'].grid.get_field('batch_picked').get_query = function(doc, cdt, cdn) {
 			return {
-				filters: {
-					'item': frm.doc.item_list.item
-				}
-			};
-		});
-		
+				filters: [
+					["item", "=", 'ITM-0002']
+				]
+			}
+		}
+
 		frm.add_custom_button("Pick Complete", function() {
 			let item_list = frm.doc.item_list;
 			let so_name = frm.doc.sales_order;
@@ -91,3 +95,19 @@ frappe.ui.form.on('Pick Put List', {
 		}
 	}
 });
+
+/* frappe.ui.form.on('Pick Put List Items', {
+	batch_picked: function(frm, cdt, cdn) {
+		var doc = locals[cdt][cdn];
+		var item = doc.item;
+		console.log(item);
+
+		frm.fields_dict['item_list'].grid.get_field('batch_picked').get_query = function(doc, cdt, cdn) {
+			return {
+				filters: [
+					["item", "=", item]
+				]
+			}
+		}
+	}
+}); */

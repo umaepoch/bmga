@@ -157,7 +157,7 @@ def handle_stock_data(stock_data):
 
 def fetch_wbs_location(customer_type, sales_list, settings):
     items = [data["item_code"] for data in sales_list]
-    print(items)
+    # print(items)
     if customer_type == "Retail":
         warehouse = settings["retail_primary_warehouse"]
     elif customer_type == "Hospital":
@@ -180,18 +180,30 @@ def fetch_wbs_location(customer_type, sales_list, settings):
             where item_code = '{item}' and wbs_settings_id = '{wbs_setting_id[0]["name"]}'""", as_dict=True
         )
         if len(wbs_location) > 0:
+            # print("SPCIFIC")
+            # print(wbs_location)
             wbs_location_list.append(wbs_location[0])
         else:
             # fetch from wbs stock balance report
-            pass
+            wbs_location_anyitem = frappe.db.sql(
+                f"""select item_code, `tabWBS Storage Location`.name_of_attribute_id, `tabWBS Storage Location`.rarb_warehouse 
+                from `tabStock Entry Detail`
+                    join `tabWBS Storage Location`
+                        on (target_warehouse_storage_location = `tabWBS Storage Location`.name)
+                where item_code = '{item}' and target_warehouse_storage_location is not null and `tabStock Entry Detail`.docstatus = 1""",
+                as_dict=True
+            )
+            if len(wbs_location_anyitem) > 0:
+                wbs_location_list.append(wbs_location_anyitem[0])
+            
 
     wbs_structured = {}
     for data in wbs_location_list:
-        print(data)
+        # print(data)
         if data["rarb_warehouse"] not in wbs_structured:
             wbs_structured[data["rarb_warehouse"]] = {}
         wbs_structured[data["rarb_warehouse"]][data["item_code"]] = data["name_of_attribute_id"]
-    print(wbs_structured)
+    # print(wbs_structured)
     return wbs_structured
 
 def sales_order_handle(sales_list, stock_data, wbs_details, expiry_date):
@@ -258,15 +270,28 @@ def generate_json_transfer(payload, destination):
     }
     for data in payload:
         to_pick += data["quantity_to_be_picked"]
-        if "quantity_picked" and "batch_picked" in data and data["quantity_picked"] > 0:
+        
+        if data.get("quantity_picked") is None:
+            qty = data["quantity_to_be_picked"]
+            picked_up += data["quantity_to_be_picked"]
+            batch = data["batch"]
+        else:
+            qty = data["quantity_picked"]
             picked_up += data["quantity_picked"]
-            innerJson = {
-                "doctype": "Stock Entry Detail",
-                "item_code": data["item"],
-                "qty": data["quantity_picked"],
-                "batch_no": data["batch"]
-            }
-            outerJson["items"].append(innerJson)
+            if data.get("batch_picked") is None:
+                batch = data["batch"]
+            else:
+                batch = data["batch_picked"]
+        innerJson = {
+            "doctype": "Stock Entry Detail",
+            "item_code": data["item"],
+            "qty": qty,
+            "batch_no": batch
+        }
+        outerJson["items"].append(innerJson)
+
+    print("to pick", to_pick)
+    print("picked up", picked_up)
     
     return dict(outerJson = outerJson, complete_pick = to_pick - picked_up == 0)
 
@@ -275,10 +300,17 @@ def material_transfer_container(item_list, so_name, company):
     item_list = json.loads(item_list)
     customer_type = fetch_customer_type(so_name)
     settings = fetch_fulfillment_settings(company)
-    print(settings)
+    # print(settings)
     if customer_type == "Retail":
         retail_transfer = list(filter(lambda x: x["warehouse"] == settings["retail_primary_warehouse"], item_list))
         bulk_transfer = list(filter(lambda x: x["warehouse"] == settings["retail_bulk_warehouse"], item_list))
         retail_json = generate_json_transfer(retail_transfer, settings["qc_and_dispatch"])
         bulk_json = generate_json_transfer(bulk_transfer, settings["qc_and_dispatch"])
+        
+        print(bulk_json["outerJson"])
+        if len(bulk_json["outerJson"]["items"]) > 0:
+            doc_bulk = frappe.new_doc("Stock Entry")
+            doc_bulk.update(bulk_json["outerJson"])
+            doc_bulk.save()
+            bulk_name = doc_bulk.name
     return dict(retail = retail_json, bulk = bulk_json)
