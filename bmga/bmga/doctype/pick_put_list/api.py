@@ -47,6 +47,14 @@ def fetch_stock_details(customer_type, sales_list, settings):
         warehouse = [settings["hospital_warehouse"]]
     elif customer_type == "Institutional":
         warehouse = [settings["institutional_warehouse"]]
+    
+    print("primary", settings["retail_primary_warehouse"])
+    print("secondary", settings["retail_bulk_warehouse"])
+    
+    if settings["retail_primary_warehouse"] >= settings["retail_bulk_warehouse"] :
+        warehouse_order = "DESC"
+    else:
+        warehouse_order = "ASC"
 
     if len(items) > 1:
         if len(warehouse) > 1:
@@ -58,7 +66,7 @@ def fetch_stock_details(customer_type, sales_list, settings):
                 where `tabStock Ledger Entry`.item_code in {tuple(items)} AND warehouse in {tuple(warehouse)}
                     and `tabStock Ledger Entry`.is_cancelled = 0
                 group by batch_id, warehouse
-                order by warehouse DESC, expiry_date ASC
+                order by warehouse {warehouse_order}, expiry_date ASC
             """, as_dict=True)
 
             stock_data_batchless = frappe.db.sql(
@@ -76,7 +84,7 @@ def fetch_stock_details(customer_type, sales_list, settings):
                 where `tabStock Ledger Entry`.item_code in {tuple(items)} and warehouse = '{warehouse[0]}'
                     and `tabStock Ledger Entry`.is_cancelled = 0
                 group by batch_id, warehouse
-                order by warehouse DESC, expiry_date ASC
+                order by warehouse {warehouse_order}, expiry_date ASC
             """, as_dict=True)
 
             stock_data_batchless = frappe.db.sql(
@@ -95,7 +103,7 @@ def fetch_stock_details(customer_type, sales_list, settings):
                 where `tabStock Ledger Entry`.item_code = '{items[0]}' AND warehouse in {tuple(warehouse)}
                     and `tabStock Ledger Entry`.is_cancelled = 0
                 group by batch_id, warehouse
-                order by warehouse DESC, expiry_date ASC
+                order by warehouse {warehouse_order}, expiry_date ASC
             """, as_dict=True)
 
             stock_data_batchless = frappe.db.sql(
@@ -113,7 +121,7 @@ def fetch_stock_details(customer_type, sales_list, settings):
                 where `tabStock Ledger Entry`.item_code = '{items[0]}' and warehouse = '{warehouse[0]}'
                     and `tabStock Ledger Entry`.is_cancelled = 0
                 group by batch_id, warehouse
-                order by warehouse DESC, by expiry_date ASC
+                order by warehouse {warehouse_order}, expiry_date ASC
             """, as_dict=True)
 
             stock_data_batchless = frappe.db.sql(
@@ -123,18 +131,13 @@ def fetch_stock_details(customer_type, sales_list, settings):
                 as_dict=True
             )
 
-
-    """ print("STOCK V1")
-    for data in stock_data_batch:
-        print(data) """
-
     for data in stock_data_batchless:
         if data["actual_qty"] == None: continue
         stock_data_batch.append(data)
     
-    """ print("STOCK FETCH DATA")
+    print("STOCK FETCH DATA")
     for data in stock_data_batch:
-        print(data) """
+        print(data)
 
     return stock_data_batch
 
@@ -302,6 +305,11 @@ def material_transfer_container(item_list, so_name, company):
     customer_type = fetch_customer_type(so_name)
     settings = fetch_fulfillment_settings(company)
     # print(settings)
+    name = []
+    bulk_json = {}
+    hospital_json = {}
+    retail_json = {}
+
     if customer_type == "Retail":
         retail_transfer = list(filter(lambda x: x["warehouse"] == settings["retail_primary_warehouse"], item_list))
         bulk_transfer = list(filter(lambda x: x["warehouse"] == settings["retail_bulk_warehouse"], item_list))
@@ -316,10 +324,26 @@ def material_transfer_container(item_list, so_name, company):
                 doc_bulk = frappe.new_doc("Stock Entry")
                 doc_bulk.update(bulk_json["outerJson"])
                 doc_bulk.save()
-                bulk_name = doc_bulk.name
-            else:
-                bulk_name = None
-        else:
-            bulk_json = {}
-            bulk_name = None
-    return dict(retail = retail_json, bulk = bulk_json, bulk_transfer_name = bulk_name)
+                name.append(doc_bulk.name)
+
+    elif customer_type == "Hospital":
+        hospital_transfer = list(filter(lambda x: x["warehouse"] == settings["hospital_warehouse"], item_list))
+        if len(hospital_transfer) > 0:
+            hospital_json = generate_json_transfer(hospital_transfer, settings["qc_and_dispatch"])
+            if len(hospital_json["outerJson"]["items"]) > 0:
+                doc_hospital = frappe.new_doc("Stock Entry")
+                doc_hospital.update(hospital_json["outerJson"])
+                doc_hospital.save()
+                name.append(doc_hospital.name)
+    
+    elif customer_type == "Institutional":
+        institutional_transfer = list(filter(lambda x: x["warehouse"] == settings["institutional_warehouse"], item_list))
+        if len(institutional_transfer) > 0:
+            institutional_json = generate_json_transfer(institutional_transfer, settings["qc_and_dispatch"])
+            if len(hospital_json["outerJson"]["items"]) > 0:
+                doc_institutional = frappe.new_doc("Stock Entry")
+                doc_institutional.update(institutional_json["outerJson"])
+                doc_institutional.save()
+                name.append(doc_institutional.name)
+
+    return dict(retail = retail_json, bulk = bulk_json, transfer_name = name)

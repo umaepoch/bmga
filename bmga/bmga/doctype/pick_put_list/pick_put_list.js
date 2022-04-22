@@ -28,8 +28,8 @@ frappe.ui.form.on('Pick Put List', {
 					}
 				}).done((response) => {
 					console.log(response.message)
-					if(response.message.bulk_transfer_name) {
-						frappe.msgprint(`Material Transfer From Bulk to QC & Dispatch at ${response.message.bulk_transfer_name}`)
+					if(response.message.transfer_name.length > 0) {
+						frappe.msgprint(`Material Transfer Placed: ${response.message.transfer_name}`)
 					}
 				})
 			}
