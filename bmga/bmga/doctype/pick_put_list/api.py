@@ -316,6 +316,9 @@ def material_transfer_container(item_list, so_name, company):
                 doc_bulk.update(bulk_json["outerJson"])
                 doc_bulk.save()
                 bulk_name = doc_bulk.name
+            else:
+                bulk_name = ""
         else:
             bulk_json = {}
+            bulk_name = ""
     return dict(retail = retail_json, bulk = bulk_json, bulk_transfer_name = bulk_name)
