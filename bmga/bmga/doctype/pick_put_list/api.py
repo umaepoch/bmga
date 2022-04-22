@@ -306,6 +306,8 @@ def material_transfer_container(item_list, so_name, company):
         bulk_transfer = list(filter(lambda x: x["warehouse"] == settings["retail_bulk_warehouse"], item_list))
         if len(retail_transfer) > 0:
             retail_json = generate_json_transfer(retail_transfer, settings["qc_and_dispatch"])
+        else:
+            retail_json = {}
         if len(bulk_transfer) > 0:
             bulk_json = generate_json_transfer(bulk_transfer, settings["qc_and_dispatch"])
             print(bulk_json["outerJson"])
@@ -314,4 +316,6 @@ def material_transfer_container(item_list, so_name, company):
                 doc_bulk.update(bulk_json["outerJson"])
                 doc_bulk.save()
                 bulk_name = doc_bulk.name
+        else:
+            bulk_json = {}
     return dict(retail = retail_json, bulk = bulk_json, bulk_transfer_name = bulk_name)
