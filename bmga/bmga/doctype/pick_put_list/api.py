@@ -304,13 +304,14 @@ def material_transfer_container(item_list, so_name, company):
     if customer_type == "Retail":
         retail_transfer = list(filter(lambda x: x["warehouse"] == settings["retail_primary_warehouse"], item_list))
         bulk_transfer = list(filter(lambda x: x["warehouse"] == settings["retail_bulk_warehouse"], item_list))
-        retail_json = generate_json_transfer(retail_transfer, settings["qc_and_dispatch"])
-        bulk_json = generate_json_transfer(bulk_transfer, settings["qc_and_dispatch"])
-        
-        print(bulk_json["outerJson"])
-        if len(bulk_json["outerJson"]["items"]) > 0:
-            doc_bulk = frappe.new_doc("Stock Entry")
-            doc_bulk.update(bulk_json["outerJson"])
-            doc_bulk.save()
-            bulk_name = doc_bulk.name
-    return dict(retail = retail_json, bulk = bulk_json)
+        if len(retail_json) > 0:
+            retail_json = generate_json_transfer(retail_transfer, settings["qc_and_dispatch"])
+        if len(bulk_json) > 0:
+            bulk_json = generate_json_transfer(bulk_transfer, settings["qc_and_dispatch"])
+            print(bulk_json["outerJson"])
+            if len(bulk_json["outerJson"]["items"]) > 0:
+                doc_bulk = frappe.new_doc("Stock Entry")
+                doc_bulk.update(bulk_json["outerJson"])
+                doc_bulk.save()
+                bulk_name = doc_bulk.name
+    return dict(retail = retail_json, bulk = bulk_json, bulk_transfer_name = bulk_name)
