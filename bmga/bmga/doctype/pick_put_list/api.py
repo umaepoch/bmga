@@ -304,9 +304,9 @@ def material_transfer_container(item_list, so_name, company):
     if customer_type == "Retail":
         retail_transfer = list(filter(lambda x: x["warehouse"] == settings["retail_primary_warehouse"], item_list))
         bulk_transfer = list(filter(lambda x: x["warehouse"] == settings["retail_bulk_warehouse"], item_list))
-        if len(retail_json) > 0:
+        if len(retail_transfer) > 0:
             retail_json = generate_json_transfer(retail_transfer, settings["qc_and_dispatch"])
-        if len(bulk_json) > 0:
+        if len(bulk_transfer) > 0:
             bulk_json = generate_json_transfer(bulk_transfer, settings["qc_and_dispatch"])
             print(bulk_json["outerJson"])
             if len(bulk_json["outerJson"]["items"]) > 0:
