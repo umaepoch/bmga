@@ -2,54 +2,18 @@
 // For license information, please see license.txt
 
 frappe.ui.form.on('Pick Put List', {
-	/* onload: function(frm) {
-		frm.set_query('batch_picked', 'item_list', function() {
-			return {
-				filters: {
-					'item': frm.doc.item_list.item
-				}
-			};
-		});
-
-		let so_name = frm.doc.sales_order;
-		let company = frm.doc.company;
-		if(so_name) {
-			frappe.call({
-				method: "bmga.bmga.doctype.pick_put_list.api.item_list_container",
-				args: {
-					so_name: so_name,
-					company: company,
-				}
-			}).done((response) => {
-				console.log(response.message)
-				frm.doc.item_list = []
-				$.each(response.message.pick_put_list, function(_i, e) {
-					let entry = frm.add_child("item_list");
-					entry.item = e.item_code;
-					entry.uom = e.stock_uom;
-					entry.batch = e.batch_no;
-					entry.wbs_storage_location = e.wbs_storage_location;
-					entry.warehouse = e.warehouse;
-					entry.quantity_to_be_picked = e.qty;
-				})
-				refresh_field("item_list")
-			})
-		}
-	}, */
-
-	refresh: function(frm, cdt, cdn) {
-		var doc = locals[cdt][cdn];
-		var item = doc.item;
-		console.log(item);
-
-		frm.fields_dict['item_list'].grid.get_field('batch_picked').get_query = function(doc, cdt, cdn) {
+	setup: function(frm) {
+		frm.set_query("batch_picked", "item_list", function(doc, cdt, cdn) {
+			let item = locals[cdt][cdn].item;
 			return {
 				filters: [
-					["item", "=", 'ITM-0002']
+					["item", "=", item]
 				]
-			}
-		}
+			};
+		});
+	},
 
+	refresh: function(frm) {
 		frm.add_custom_button("Pick Complete", function() {
 			let item_list = frm.doc.item_list;
 			let so_name = frm.doc.sales_order;
@@ -64,6 +28,9 @@ frappe.ui.form.on('Pick Put List', {
 					}
 				}).done((response) => {
 					console.log(response.message)
+					if(response.message.bulk_transfer_name) {
+						frappe.msgprint(`Material Transfer From Bulk to QC & Dispatch at ${response.message.bulk_transfer_name}`)
+					}
 				})
 			}
 		})
@@ -95,19 +62,3 @@ frappe.ui.form.on('Pick Put List', {
 		}
 	}
 });
-
-/* frappe.ui.form.on('Pick Put List Items', {
-	batch_picked: function(frm, cdt, cdn) {
-		var doc = locals[cdt][cdn];
-		var item = doc.item;
-		console.log(item);
-
-		frm.fields_dict['item_list'].grid.get_field('batch_picked').get_query = function(doc, cdt, cdn) {
-			return {
-				filters: [
-					["item", "=", item]
-				]
-			}
-		}
-	}
-}); */

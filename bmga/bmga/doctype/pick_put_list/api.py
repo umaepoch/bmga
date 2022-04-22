@@ -262,7 +262,7 @@ def generate_json_transfer(payload, destination):
     picked_up = 0
     outerJson = {
         "doctype": "Stock Entry",
-        "naming_series": "SEMT-DL-",
+        "naming_series": "MAT-DL-",
         "stock_entry_type": "Material Transfer",
         "from_warehouse": payload[0]["warehouse"],
         "to_warehouse": destination,
@@ -275,13 +275,14 @@ def generate_json_transfer(payload, destination):
             qty = data["quantity_to_be_picked"]
             picked_up += data["quantity_to_be_picked"]
             batch = data["batch"]
-        else:
+        elif data["quantity_picked"] > 0:
             qty = data["quantity_picked"]
             picked_up += data["quantity_picked"]
             if data.get("batch_picked") is None:
                 batch = data["batch"]
             else:
                 batch = data["batch_picked"]
+        else: continue
         innerJson = {
             "doctype": "Stock Entry Detail",
             "item_code": data["item"],
@@ -317,8 +318,8 @@ def material_transfer_container(item_list, so_name, company):
                 doc_bulk.save()
                 bulk_name = doc_bulk.name
             else:
-                bulk_name = ""
+                bulk_name = None
         else:
             bulk_json = {}
-            bulk_name = ""
+            bulk_name = None
     return dict(retail = retail_json, bulk = bulk_json, bulk_transfer_name = bulk_name)
