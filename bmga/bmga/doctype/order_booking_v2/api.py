@@ -284,8 +284,8 @@ def sales_order_container(customer, order_list, company, customer_type):
         except:
             pass
     print(outerJson_qo)
-    so_name = "NA"
-    qo_name = "NA"
+    so_name = ""
+    qo_name = ""
     if len(outerJson_so["items"]) > 0:
         doc_so = frappe.new_doc("Sales Order")
         doc_so.update(outerJson_so)

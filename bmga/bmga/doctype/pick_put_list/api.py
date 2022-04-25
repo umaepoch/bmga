@@ -135,9 +135,9 @@ def fetch_stock_details(customer_type, sales_list, settings):
         if data["actual_qty"] == None: continue
         stock_data_batch.append(data)
     
-    print("STOCK FETCH DATA")
+    """ print("STOCK FETCH DATA")
     for data in stock_data_batch:
-        print(data)
+        print(data) """
 
     return stock_data_batch
 
