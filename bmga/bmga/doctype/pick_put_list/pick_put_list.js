@@ -14,6 +14,7 @@ frappe.ui.form.on('Pick Put List', {
 	},
 
 	refresh: function(frm) {
+
 		frm.add_custom_button("Pick Complete", function() {
 			let item_list = frm.doc.item_list;
 			let so_name = frm.doc.sales_order;
@@ -63,7 +64,7 @@ frappe.ui.form.on('Pick Put List', {
 						entry.item = e.item_code;
 						entry.uom = e.stock_uom;
 						entry.batch = e.batch_no;
-						entry.wbs_storage_location = e.wbs_storage_location;
+						entry.wbs_storage_location = e.wbs_storage_location_id;
 						entry.warehouse = e.warehouse;
 						entry.quantity_to_be_picked = e.qty;
 					})

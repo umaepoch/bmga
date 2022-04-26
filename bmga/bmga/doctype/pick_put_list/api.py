@@ -48,8 +48,8 @@ def fetch_stock_details(customer_type, sales_list, settings):
     elif customer_type == "Institutional":
         warehouse = [settings["institutional_warehouse"]]
     
-    print("primary", settings["retail_primary_warehouse"])
-    print("secondary", settings["retail_bulk_warehouse"])
+    """ print("primary", settings["retail_primary_warehouse"])
+    print("secondary", settings["retail_bulk_warehouse"]) """
     
     if settings["retail_primary_warehouse"] >= settings["retail_bulk_warehouse"] :
         warehouse_order = "DESC"
@@ -155,7 +155,7 @@ def handle_stock_data(stock_data):
         except:
             pass
         batch["actual_qty"] = data["actual_qty"]
-        stock_map[data["item_code"]].append(batch)
+        stock_map[data["item_code"]].append(batch) 
     return stock_map
 
 def fetch_wbs_location(customer_type, sales_list, settings):
@@ -176,7 +176,7 @@ def fetch_wbs_location(customer_type, sales_list, settings):
     wbs_location_list = []
     for item in items:
         wbs_location = frappe.db.sql(
-            f"""select item_code, `tabWBS Storage Location`.name_of_attribute_id, `tabWBS Storage Location`.rarb_warehouse
+            f"""select item_code, `tabWBS Storage Location`.name_of_attribute_id, `tabWBS Storage Location`.name, `tabWBS Storage Location`.rarb_warehouse
             from `tabWBS Stored Items`
                 join `tabWBS Storage Location`
                     on (`tabWBS Stored Items`.parent = `tabWBS Storage Location`.name)
@@ -189,11 +189,12 @@ def fetch_wbs_location(customer_type, sales_list, settings):
         else:
             # fetch from wbs stock balance report
             wbs_location_anyitem = frappe.db.sql(
-                f"""select item_code, `tabWBS Storage Location`.name_of_attribute_id, `tabWBS Storage Location`.rarb_warehouse 
+                f"""select item_code, `tabStock Entry Detail`.creation, `tabWBS Storage Location`.name_of_attribute_id, `tabWBS Storage Location`.name, `tabWBS Storage Location`.rarb_warehouse 
                 from `tabStock Entry Detail`
                     join `tabWBS Storage Location`
                         on (target_warehouse_storage_location = `tabWBS Storage Location`.name)
-                where item_code = '{item}' and target_warehouse_storage_location is not null and `tabStock Entry Detail`.docstatus = 1""",
+                where item_code = '{item}' and target_warehouse_storage_location is not null and `tabStock Entry Detail`.docstatus = 1
+                order by `tabStock Entry Detail`.creation DESC""",
                 as_dict=True
             )
             if len(wbs_location_anyitem) > 0:
@@ -202,10 +203,12 @@ def fetch_wbs_location(customer_type, sales_list, settings):
 
     wbs_structured = {}
     for data in wbs_location_list:
-        # print(data)
         if data["rarb_warehouse"] not in wbs_structured:
             wbs_structured[data["rarb_warehouse"]] = {}
-        wbs_structured[data["rarb_warehouse"]][data["item_code"]] = data["name_of_attribute_id"]
+        if data["item_code"] not in wbs_structured[data["rarb_warehouse"]]:
+            wbs_structured[data["rarb_warehouse"]][data["item_code"]] = {}
+        wbs_structured[data["rarb_warehouse"]][data["item_code"]]["wbs_storage_location_id"] = data["name_of_attribute_id"]
+        wbs_structured[data["rarb_warehouse"]][data["item_code"]]["wbs_storage_location"] = data["name"]
     # print(wbs_structured)
     return wbs_structured
 
@@ -232,8 +235,10 @@ def sales_order_handle(sales_list, stock_data, wbs_details, expiry_date):
             pick_up["stock_uom"] = stock["stock_uom"]
             pick_up["warehouse"] = stock["warehouse"]
             try:
-                pick_up["wbs_storage_location"] = wbs_details[stock["warehouse"]][sales["item_code"]]
+                pick_up["wbs_storage_location_id"] = wbs_details[stock["warehouse"]][sales["item_code"]]["wbs_storage_location_id"]
+                pick_up["wbs_storage_location"] = wbs_details[stock["warehouse"]][sales["item_code"]]["wbs_storage_location"]
             except:
+                pick_up["wbs_storage_location_id"] = ''
                 pick_up["wbs_storage_location"] = ''
             if stock["actual_qty"] >= to_pickup:
                 pick_up["batch_no"] = stock["batch_no"]
@@ -286,40 +291,69 @@ def generate_json_transfer(payload, destination):
             else:
                 batch = data["batch_picked"]
         else: continue
-        innerJson = {
-            "doctype": "Stock Entry Detail",
-            "item_code": data["item"],
-            "qty": qty,
-            "batch_no": batch
-        }
+        if data.get("wbs_storage_location_name") is None:
+            innerJson = {
+                "doctype": "Stock Entry Detail",
+                "item_code": data["item"],
+                "qty": qty,
+                "batch_no": batch
+            }
+        else:
+            innerJson = {
+                "doctype": "Stock Entry Detail",
+                "item_code": data["item"],
+                "source_warehouse_storage_location": data["wbs_storage_location_name"],
+                "source_storage_location_id": data["wbs_storage_location"],
+                "qty": qty,
+                "batch_no": batch
+            }
         outerJson["items"].append(innerJson)
 
-    print("to pick", to_pick)
-    print("picked up", picked_up)
+    """ print("to pick", to_pick)
+    print("picked up", picked_up) """
     
     return dict(outerJson = outerJson, complete_pick = to_pick - picked_up == 0)
+
+def handle_transfer_location(item_list):
+    for item in item_list:
+        if item["wbs_storage_location"] == "": continue
+        location_name = frappe.db.sql(
+            f"""select name from `tabWBS Storage Location` where name_of_attribute_id = '{item["wbs_storage_location"]}'""",
+            as_dict=True
+        )
+        item["wbs_storage_location_name"] = location_name[0]["name"]
+    return item_list
 
 @frappe.whitelist()
 def material_transfer_container(item_list, so_name, company):
     item_list = json.loads(item_list)
     customer_type = fetch_customer_type(so_name)
     settings = fetch_fulfillment_settings(company)
+    item_list = handle_transfer_location(item_list)
+    for item in item_list:
+        print(item)
     # print(settings)
     name = []
     bulk_json = {}
     hospital_json = {}
     retail_json = {}
+    institutional_json = {}
 
     if customer_type == "Retail":
         retail_transfer = list(filter(lambda x: x["warehouse"] == settings["retail_primary_warehouse"], item_list))
         bulk_transfer = list(filter(lambda x: x["warehouse"] == settings["retail_bulk_warehouse"], item_list))
+        # print("retail transfer", retail_transfer)
         if len(retail_transfer) > 0:
             retail_json = generate_json_transfer(retail_transfer, settings["qc_and_dispatch"])
+            if len(retail_json["outerJson"]["items"]) > 0:
+                doc_retail = frappe.new_doc("Stock Entry")
+                doc_retail.update(retail_json["outerJson"])
+                doc_retail.save()
+                name.append(doc_retail.name)
         else:
             retail_json = {}
         if len(bulk_transfer) > 0:
             bulk_json = generate_json_transfer(bulk_transfer, settings["qc_and_dispatch"])
-            print(bulk_json["outerJson"])
             if len(bulk_json["outerJson"]["items"]) > 0:
                 doc_bulk = frappe.new_doc("Stock Entry")
                 doc_bulk.update(bulk_json["outerJson"])
@@ -346,4 +380,4 @@ def material_transfer_container(item_list, so_name, company):
                 doc_institutional.save()
                 name.append(doc_institutional.name)
 
-    return dict(retail = retail_json, bulk = bulk_json, transfer_name = name)
+    return dict(retail = retail_json, bulk = bulk_json, hospital_json = hospital_json, institutional_json = institutional_json, transfer_name = name)
