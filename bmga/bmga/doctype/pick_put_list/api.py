@@ -72,7 +72,8 @@ def fetch_stock_details(customer_type, sales_list, settings):
             stock_data_batchless = frappe.db.sql(
                 f"""select batch_no as batch_id, item_code, warehouse, stock_uom, sum(actual_qty) as actual_qty from `tabStock Ledger Entry`
                 where item_code in {tuple(items)} and warehouse in {tuple(warehouse)} and (batch_no is null or batch_no = '')
-                group by item_code, warehouse""",
+                group by item_code, warehouse
+                order by warehouse {warehouse_order}""",
                 as_dict=True
             )
         else:
@@ -90,7 +91,8 @@ def fetch_stock_details(customer_type, sales_list, settings):
             stock_data_batchless = frappe.db.sql(
                 f"""select batch_no as batch_id, item_code, warehouse, stock_uom, sum(actual_qty) as acutal_qty from `tabStock Ledger Entry`
                 where item_code in {tuple(items)} and warehouse = '{warehouse[0]}' and (batch_no is null or batch_no = '')
-                group by item_code, warehouse""",
+                group by item_code, warehouse
+                order by warehouse {warehouse_order}""",
                 as_dict=True
             )
     else:
@@ -109,7 +111,8 @@ def fetch_stock_details(customer_type, sales_list, settings):
             stock_data_batchless = frappe.db.sql(
                 f"""select batch_no as batch_id, item_code, warehouse, stock_uom, sum(actual_qty) as actual_qty from `tabStock Ledger Entry`
                 where item_code = '{items[0]}' and warehouse in {tuple(warehouse)} and (batch_no is null or batch_no = '')
-                group by item_code, warehouse""",
+                group by item_code, warehouse
+                order by warehouse {warehouse_order}""",
                 as_dict=True
             )
         else:
@@ -127,7 +130,8 @@ def fetch_stock_details(customer_type, sales_list, settings):
             stock_data_batchless = frappe.db.sql(
                 f"""select batch_no as batch_id, item_code, warehouse, stock_uom, sum(actual_qty) as acutal_qty from `tabStock Ledger Entry`
                 where item_code = '{items[0]}' and warehouse = '{warehouse[0]}' and (batch_no is null or batch_no = '')
-                group by item_code, warehouse""",
+                group by item_code, warehouse
+                order by warehouse {warehouse_order}""",
                 as_dict=True
             )
 

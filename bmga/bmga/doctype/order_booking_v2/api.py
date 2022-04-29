@@ -145,6 +145,9 @@ def fetch_average_price(stock_data, item_code):
     average_price = 0
     stock_count = 0
     for data in stock_data:
+        print("*"*20)
+        print(item_code)
+        print(data)
         try:
             average_qty_list.append(data["actual_qty"])
         except:
@@ -152,9 +155,10 @@ def fetch_average_price(stock_data, item_code):
         if data["batch_id"] == '':
             print("None")
             price_list = frappe.db.sql(
-                f"""SELECT price_list_rate FROM `tabItem Price` WHERE batch_no IS NULL AND item_code = '{item_code}'""",
+                f"""SELECT price_list_rate FROM `tabItem Price` WHERE (batch_no IS NULL or batch_no = '') AND item_code = '{item_code}'""",
                 as_dict=True
             )
+            print("price list", price_list)
             try:
                 average_price += price_list[0]["price_list_rate"] * data["actual_qty"]
                 average_price_list.append(price_list[0]["price_list_rate"])
