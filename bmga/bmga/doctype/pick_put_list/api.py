@@ -307,13 +307,14 @@ def get_so_detail(so_name, item_code):
     
     return so_detail[0]
 
-def generate_sales_invoice_json(customer, so_name, item_list):
+def generate_sales_invoice_json(customer, so_name, company, item_list):
     due_date = datetime.datetime.today()
     # due_date = due_date + datetime.timedelta(2)
 
     outerJson = {
         "doctype": "Sales Invoice",
         "naming_series": "SINV-DL-",
+        "company": company,
         "customer": customer,
         "due_date": due_date,
         "update_stock": 1,
@@ -383,21 +384,68 @@ def generate_sales_invoice_json(customer, so_name, item_list):
     print(outerJson)
     return outerJson
 
+def update_average_price(item_list):
+    new_average_price = {}
+
+    for item in item_list:
+        if item.get("quantity_picked") is None:
+            qty = item.get("quantity_to_be_picked")
+        else:
+            try:
+                qty = int(item["quantity_picked"])
+            except:
+                qty = item.get("quantity_to_be_picked") 
+        if item.get("batch_picked") is None:
+            batch = item.get("batch")
+        else:
+            batch = item.get("batch_picked")
+        
+        if batch:
+            rate = fetch_batch_price(batch, item["item"])
+        else:
+            rate = fetch_batchless_price(item["item"])
+        
+        if item["item"] not in new_average_price:
+            new_average_price[item["item"]] = {
+                "qty": [qty],
+                "price": [rate["price"]]
+            }
+        else:
+            new_average_price[item["item"]]["qty"].append(qty)
+            new_average_price[item["item"]]["price"].append(rate["price"])
+        new_average_price[item["item"]]["average"] = sum([new_average_price[item["item"]]["qty"][i] * new_average_price[item["item"]]["price"][i] for i in range(len(new_average_price[item["item"]]["qty"]))]) / sum(new_average_price[item["item"]]["qty"])
+    
+    return new_average_price 
+
+def update_sales_order_json(sales_doc, average_price):
+    for child in sales_doc.get_all_children():
+            if child.doctype != "Sales Order Item": continue
+            sales_item_doc = frappe.get_doc(child.doctype, child.name)
+            print(sales_item_doc.name)
+            print(sales_item_doc.rate)
+            print(sales_item_doc.item_code)
+            sales_item_doc.rate = average_price[sales_item_doc.item_code]["average"]
+            print(sales_item_doc.rate)
+            sales_item_doc.save()
+
 @frappe.whitelist()
 def pick_status(item_list, so_name, company, stage_index, stage_list):
     item_list = json.loads(item_list)
     stage_list = json.loads(stage_list)
     stage_index = json.loads(stage_index)
     next_stage = stage_list[stage_index + 1]
+
+    average_price = update_average_price(item_list)
+
     if next_stage == "Invoiced":
         sales_doc = frappe.get_doc("Sales Order", so_name)
         sales_doc.pch_picking_status = next_stage
+        sales_doc.reload()
         sales_doc.save()
         sales_doc.submit()
-        sales_doc.reload()
 
         customer = get_customer(so_name)
-        outerJson = generate_sales_invoice_json(customer, so_name, item_list)
+        outerJson = generate_sales_invoice_json(customer, so_name, company, item_list)
         sales_invoice_doc = frappe.new_doc("Sales Invoice")
         sales_invoice_doc.update(outerJson)
         sales_invoice_doc.save()
@@ -406,7 +454,8 @@ def pick_status(item_list, so_name, company, stage_index, stage_list):
     else:
         sales_doc = frappe.get_doc("Sales Order", so_name)
         sales_doc.pch_picking_status = next_stage
-        sales_doc.save()
+        update_sales_order_json(sales_doc, average_price)
         sales_doc.reload()
+        sales_doc.save()
 
     return dict(next_stage = next_stage)
