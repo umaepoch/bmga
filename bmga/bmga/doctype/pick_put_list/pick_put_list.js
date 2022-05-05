@@ -14,34 +14,42 @@ frappe.ui.form.on('Pick Put List', {
 	},
 
 	refresh: function(frm) {
+		let stage_list = ["Ready for Picking", "QC Area", "Packing Area", "Dispatch Area", "Invoiced"]
+		let button_name = {"Ready for Picking": "Pick Complete", "QC Area": "QC Complete", "Packing Area": "Packing Complete", "Dispatch Area": "Invoice Picklist"}
+		if(frm.doc.pick_list_stage != "Invoiced") {
+			frm.add_custom_button(button_name[frm.doc.pick_list_stage], function() {
+				let item_list = frm.doc.item_list;
+				let so_name = frm.doc.sales_order;
+				let company = frm.doc.company;
+				let pick_stage = frm.doc.pick_list_stage;
 
-		frm.add_custom_button("Pick Complete", function() {
-			let item_list = frm.doc.item_list;
-			let so_name = frm.doc.sales_order;
-			let company = frm.doc.company;
-			let pick_stage = frm.doc.pick_list_stage;
+				if(item_list && pick_stage) {
+					frappe.call({
+						method: "bmga.bmga.doctype.pick_put_list.api.pick_status",
+						args: {
+							item_list: item_list,
+							so_name: so_name,
+							company: company,
+							stage_index: stage_list.indexOf(pick_stage),
+							stage_list: stage_list
+						}
+					}).done((response) => {
+						console.log(response);
+						frm.set_value('pick_list_stage', response.message.next_stage);
+						refresh_field('pick_list_stage');
 
-			if(item_list && pick_stage != "QC and Dispatch") {
-				frappe.call({
-					method: "bmga.bmga.doctype.pick_put_list.api.material_transfer_container",
-					args: {
-						item_list: item_list,
-						so_name: so_name,
-						company: company
-					}
-				}).done((response) => {
-					console.log(response.message)
-					if(response.message.transfer_name.length > 0) {
-						frappe.msgprint(`Material Transfer Placed: ${response.message.transfer_name}`);
-						frm.set_value("pick_list_stage", "QC and Dispatch");
-						refresh_field("pick_list_stage");
+						if(response.message.next_stage == "Invoiced") {
+							frm.set_value('sales_invoice', response.message.sales_invoice_name);
+							refresh_field('sales_invoice');
+						}
+
 						frm.save();
-					}
-				})
-			} else {
-				frappe.msgprint("No items or Already Picked!")
-			}
-		})
+					})
+				} else {
+					frappe.msgprint("No items or Already Picked!")
+				}
+			})
+		}
 
 		let pick_stage = frm.doc.pick_list_stage;
 
