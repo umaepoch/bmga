@@ -11,9 +11,12 @@
   "type",
   "pick_list_stage",
   "sales_order",
+  "column_break_5",
+  "sales_invoice",
   "customer",
   "customer_group_type",
   "warehouse",
+  "section_break_10",
   "item_list"
  ],
  "fields": [
@@ -67,11 +70,27 @@
    "fieldtype": "Link",
    "label": "Company",
    "options": "Company"
+  },
+  {
+   "fieldname": "sales_invoice",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Sales Invoice",
+   "options": "Sales Invoice",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_5",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "section_break_10",
+   "fieldtype": "Section Break"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2022-04-07 15:33:40.681542",
+ "modified": "2022-05-04 00:26:55.017254",
  "modified_by": "Administrator",
  "module": "Bmga",
  "name": "Pick Put List",

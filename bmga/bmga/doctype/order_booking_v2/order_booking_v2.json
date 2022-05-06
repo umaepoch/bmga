@@ -70,6 +70,12 @@
    "label": "Promos",
    "options": "Order Booking V2 Sales Promo",
    "read_only": 1
+  },
+  {
+   "fieldname": "spacing",
+   "fieldtype": "HTML",
+   "label": "Spacing",
+   "options": "<div style=\"margin-bottom: 15%;\"></div>"
   }
  ],
  "index_web_pages_for_search": 1,

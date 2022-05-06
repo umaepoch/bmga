@@ -63,7 +63,8 @@ frappe.ui.form.on('Order Booking V2', {
 					refresh_field("order_booking_so");
 					frm.set_value("hunting_quotation", response.message.qo_name);
 					refresh_field("hunting_quotation");
-					if(response.message.so_name != "NA" || response.message.qo_name != "NA") {
+					frm.save();
+					if(response.message.so_name != "" || response.message.qo_name != "") {
 						frappe.msgprint("Order Booked!");
 					} else {
 						frappe.msgprint("No Order has been Placed")
