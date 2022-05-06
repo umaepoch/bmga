@@ -211,6 +211,7 @@ def fetch_fulfillment_settings(company):
     else:
         settings = [None]
     return settings
+    
 # Buy x get same x
 def fetch_sales_promos_get_same_item(item_code, customer_type):
     sales_promos_quantity = []
@@ -253,7 +254,6 @@ def fetch_sales_promos_get_same_item(item_code, customer_type):
         for i in range (len(promos)):
             if(promos[i]["start_date"] <= today <= promos[i]["end_date"]): 
                 for j in item_code:
-                    # for a in sales_data:
                     if promos[i]["bought_item"] == j["item_code"]:
                         sales_promos_details = ((j["quantity_booked"])//(promos[i]["for_every_quantity_that_is_bought"]))
                         sales_promos_quantity = sales_promos_details*((promos[i]["quantity_of_free_items_thats_given"]))
@@ -267,7 +267,6 @@ def fetch_sales_promos_get_diff_item(item_code, customer_type):
     sales_promos_quantity = []
     promos_sale = []
     free_items = []
-    discounts = []
     i = [x["item_code"] for x in item_code]
     
     today = datetime.datetime.today()
@@ -298,8 +297,7 @@ def fetch_sales_promos_get_diff_item(item_code, customer_type):
     print("......", promos)
     if len(promos) > 0:
         for i in range (len(promos)):
-            free_items.append({"free_item" : promos[i]["free_item"]})
-            print("Hai.....", free_items)
+            free_items.append(promos[i]["free_item"])
             if len(free_items) > 1:
                 sales_data = frappe.db.sql(
                     f"""select sum(qty - delivered_qty) as pending_qty from `tabSales Order Item` where item_code in {tuple(free_items)} and warehouse = 'Free - YR'""", as_dict=True
@@ -309,7 +307,6 @@ def fetch_sales_promos_get_diff_item(item_code, customer_type):
                     f"""select sum(qty - delivered_qty) as pending_qty from `tabSales Order Item` where item_code = '{free_items[0]}' and warehouse = 'Free - YR'""", as_dict=True
                 )
 
-                print("......>???>>>>", sales_data)
             if(promos[i]["start_date"] <= today <= promos[i]["end_date"]): 
                 for j in item_code:
                     if promos[i]["bought_item"] == j["item_code"]:
