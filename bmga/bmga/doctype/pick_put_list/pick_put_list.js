@@ -16,6 +16,7 @@ frappe.ui.form.on('Pick Put List', {
 	refresh: function(frm) {
 		frm.add_custom_button("Pick Complete", function() {
 			let item_list = frm.doc.item_list;
+			console.log("item", item_list)
 			let so_name = frm.doc.sales_order;
 			let company = frm.doc.company;
 			if(item_list) {
@@ -48,6 +49,7 @@ frappe.ui.form.on('Pick Put List', {
 			}).done((response) => {
 				console.log(response.message)
 				frm.doc.item_list = []
+				console.log("hai...",response.message.pick_put_list)
 				$.each(response.message.pick_put_list, function(_i, e) {
 					let entry = frm.add_child("item_list");
 					entry.item = e.item_code;

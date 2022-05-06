@@ -249,6 +249,8 @@ def sales_order_handle(sales_list, stock_data, wbs_details, expiry_date):
     return pick_up_list
 
 
+
+
 @frappe.whitelist()
 def item_list_container(so_name, company):
     sales_list = fetch_item_list(so_name)

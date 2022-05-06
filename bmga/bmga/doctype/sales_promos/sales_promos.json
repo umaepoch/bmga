@@ -1,0 +1,102 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "SAP.#####",
+ "creation": "2022-04-28 14:26:53.951564",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "sales_promo",
+  "section_break_1",
+  "start_date",
+  "column_break_4",
+  "end_date",
+  "section_break_6",
+  "promo_type",
+  "promos_table_of_same_item",
+  "promos_table_of_different_items",
+  "free_item_for_eligible_quantity"
+ ],
+ "fields": [
+  {
+   "fieldname": "sales_promo",
+   "fieldtype": "Select",
+   "label": "Sales Promo",
+   "options": "\nOrder Booking\nDispatch/Invoice"
+  },
+  {
+   "fieldname": "start_date",
+   "fieldtype": "Datetime",
+   "in_list_view": 1,
+   "label": "Start Date"
+  },
+  {
+   "fieldname": "end_date",
+   "fieldtype": "Datetime",
+   "label": "End Date"
+  },
+  {
+   "fieldname": "promo_type",
+   "fieldtype": "Select",
+   "label": "Promo Type",
+   "options": "\nQuantity  Based Discount\nBuy X of Item, get Y of Same Item Free\nBuy X of Item, Get Y of another Item Free\nAmount Based Discount\nFree Item for Eligible Quantity, Discount for ineligible Quantity"
+  },
+  {
+   "fieldname": "section_break_1",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "column_break_4",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "section_break_6",
+   "fieldtype": "Section Break"
+  },
+  {
+   "depends_on": "eval:doc.promo_type == \"Buy X of Item, get Y of Same Item Free\"",
+   "fieldname": "promos_table_of_same_item",
+   "fieldtype": "Table",
+   "label": "Promos Table Of Same Item",
+   "options": "Promo Type 2"
+  },
+  {
+   "depends_on": "eval:doc.promo_type == \"Buy X of Item, Get Y of another Item Free\"",
+   "fieldname": "promos_table_of_different_items",
+   "fieldtype": "Table",
+   "label": "Promos Table Of Different Items",
+   "options": "Promo Type 3"
+  },
+  {
+   "depends_on": "eval:doc.promo_type == \"Free Item for Eligible Quantity, Discount for ineligible Quantity\"",
+   "fieldname": "free_item_for_eligible_quantity",
+   "fieldtype": "Table",
+   "label": "Free Item For Eligible Quantity",
+   "options": "Promo Type 5"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2022-05-06 09:29:12.176738",
+ "modified_by": "Administrator",
+ "module": "Bmga",
+ "name": "Sales Promos",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC"
+}

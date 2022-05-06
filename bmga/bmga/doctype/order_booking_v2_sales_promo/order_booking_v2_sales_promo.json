@@ -1,0 +1,47 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2022-05-02 07:45:15.337909",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "bought_item",
+  "free_items",
+  "quantity",
+  "warehouse_quantity"
+ ],
+ "fields": [
+  {
+   "fieldname": "bought_item",
+   "fieldtype": "Data",
+   "label": "Bought Item"
+  },
+  {
+   "fieldname": "free_items",
+   "fieldtype": "Data",
+   "label": "Free Items"
+  },
+  {
+   "fieldname": "quantity",
+   "fieldtype": "Data",
+   "label": "Quantity"
+  },
+  {
+   "fieldname": "warehouse_quantity",
+   "fieldtype": "Data",
+   "label": "Warehouse Quantity"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2022-05-06 07:15:23.502035",
+ "modified_by": "Administrator",
+ "module": "Bmga",
+ "name": "Order Booking V2 Sales Promo",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC"
+}
