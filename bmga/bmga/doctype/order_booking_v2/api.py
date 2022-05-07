@@ -1,6 +1,7 @@
 from errno import EALREADY
 import json
 from operator import le
+from tkinter.messagebox import NO
 from tracemalloc import start
 from braintree import Discount
 import frappe
@@ -216,6 +217,7 @@ def fetch_fulfillment_settings(company):
 def fetch_sales_promos_get_same_item(item_code, customer_type, free_warehouse):
     sales_promos_quantity = []
     promos_sale = []
+    sales_data = None
     i = [x["item_code"] for x in item_code]
     print("Item",i)
     
@@ -268,6 +270,7 @@ def fetch_sales_promos_get_diff_item(item_code, customer_type, free_warehouse):
     print("freeware", free_warehouse)
     promos_sale = []
     free_items = []
+    sales_data = None
     i = [x["item_code"] for x in item_code]
     
     today = datetime.datetime.today()
