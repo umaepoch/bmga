@@ -88,7 +88,7 @@ frappe.ui.form.on('Order Booking V2', {
 						company : company,
 					}
 				}).done((respose) =>{
-					console.log(respose)
+					console.log("Hai",respose)
 					$.each(respose.message.sales_promos_items, function(_i, e) {
 						let entry = frm.add_child("promos");
 						entry.bought_item = e.bought_item;

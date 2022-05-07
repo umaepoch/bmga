@@ -259,7 +259,7 @@ def fetch_sales_promos_get_same_item(item_code, customer_type, free_warehouse):
                         sales_promos_quantity = sales_promos_details*((promos[i]["quantity_of_free_items_thats_given"]))
                         qty = promos[i]["actual_qty"] - sales_data[0]["pending_qty"]
                         promos_sale.append({"qty":sales_promos_quantity, "bought_item":promos[i]["bought_item"], "promo_item": promos[i]["bought_item"], "w_qty" : qty})
-    return promos_sale
+    return dict({"Promo_sales" : promos_sale, "Promos" : promos, "sales_data" : sales_data})
   
 
 # buy x get another y item
@@ -316,7 +316,7 @@ def fetch_sales_promos_get_diff_item(item_code, customer_type, free_warehouse):
                         qty = promos[i]["actual_qty"] - sales_data[0]["pending_qty"]
                         promos_sale.append({"qty" : sales_promos_quantity, "bought_item":promos[i]["bought_item"], "promo_item" : promos[i]["free_item"], "w_qty" : promos[i]["actual_qty"], "w_qty" : qty})
                         print("sales qunt diif", sales_promos_quantity)
-    return promos_sale
+    return dict({"Promo_sales" : promos_sale, "Promos" : promos, "sales_data" : sales_data})
 
 
 
@@ -340,7 +340,7 @@ def sales_promos(item_code, customer_type, company):
     print("Sales Promo....", sales_promos_same_item)
     sales_promo_diff_items = fetch_sales_promos_get_diff_item(item_code, customer_type, settings[0]["free_warehouse"])
     print("Sales promo diff items",sales_promo_diff_items)
-    sales_promos_items = sales_promos_same_item + sales_promo_diff_items
+    sales_promos_items = sales_promos_same_item["Promo_sales"] + sales_promo_diff_items["Promo_sales"]
     print("sales promos items", sales_promos_items)
 
     return dict(sales_promos_items= sales_promos_items, bought_item = item_code, sales_promos_same_item = sales_promos_same_item, sales_promo_diff_items = sales_promo_diff_items )
