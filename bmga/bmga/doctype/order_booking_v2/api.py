@@ -1,13 +1,6 @@
-from errno import EALREADY
 import json
-from operator import le
-from tkinter.messagebox import NO
-from tracemalloc import start
-from braintree import Discount
 import frappe
 import datetime
-
-from numpy import promote_types
 
 def fetch_customer_type(customer):
     customer_group = frappe.db.sql(
