@@ -78,12 +78,14 @@ frappe.ui.form.on('Order Booking V2', {
 			let item_code_list = frm.doc.order_booking_items_v2.map(function(d) {
 				return {item_code: d.item_code, quantity_booked: d.quantity_booked}
 			})
+			let company = frm.doc.company;
 			if (item_code_list) {
 				frappe.call({
 					method : "bmga.bmga.doctype.order_booking_v2.api.sales_promos",
 					args :{
 						item_code: 	JSON.stringify(item_code_list),
 						customer_type: customer_type,
+						company : company,
 					}
 				}).done((respose) =>{
 					console.log(respose)

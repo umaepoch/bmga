@@ -204,7 +204,7 @@ def fetch_fulfillment_settings(company):
     )
     if fs_name:
         settings = frappe.db.sql(
-            f"""SELECT retail_primary_warehouse, retail_bulk_warehouse, hospital_warehouse, institutional_warehouse
+            f"""SELECT retail_primary_warehouse, retail_bulk_warehouse, hospital_warehouse, institutional_warehouse, free_warehouse
             FROM `tabFulfillment Settings Details V1` WHERE parent = '{fs_name[0]["name"]}'""", as_dict=True
         )
         settings[0]["expiry_date_limit"] = fs_name[0]["expiry_date_limit"]
@@ -213,7 +213,7 @@ def fetch_fulfillment_settings(company):
     return settings
     
 # Buy x get same x
-def fetch_sales_promos_get_same_item(item_code, customer_type):
+def fetch_sales_promos_get_same_item(item_code, customer_type, free_warehouse):
     sales_promos_quantity = []
     promos_sale = []
     i = [x["item_code"] for x in item_code]
@@ -223,7 +223,7 @@ def fetch_sales_promos_get_same_item(item_code, customer_type):
     # if customer_type == "Retail":
     if len(item_code) > 1:
         sales_data = frappe.db.sql(
-            f"""select sum(qty - delivered_qty) as pending_qty from `tabSales Order Item` where item_code in {tuple(i)} and warehouse = 'Free - YR'""", as_dict=True
+            f"""select sum(qty - delivered_qty) as pending_qty from `tabSales Order Item` where item_code in {tuple(i)} and warehouse = '{free_warehouse}'""", as_dict=True
         )
         promos = frappe.db.sql(
             f""" select sp.start_date, sp.end_date, 
@@ -232,12 +232,12 @@ def fetch_sales_promos_get_same_item(item_code, customer_type):
             from  `tabSales Promos` as sp  
             inner join `tabPromo Type 2` as pt on pt.parent = sp.name
             inner join `tabStock Ledger Entry` as sle on pt.bought_item = sle.item_code
-            where pt.bought_item in {tuple(i)} and sle.warehouse = 'free - YR'
+            where pt.bought_item in {tuple(i)} and sle.warehouse = '{free_warehouse}'
             """, as_dict = True
         )
     else:
         sales_data = frappe.db.sql(
-            f"""select sum(qty - delivered_qty) as pending_qty from `tabSales Order Item` where item_code = '{i[0]}' and warehouse = 'Free - YR'""", as_dict=True
+            f"""select sum(qty - delivered_qty) as pending_qty from `tabSales Order Item` where item_code = '{i[0]}' and warehouse = '{free_warehouse}'""", as_dict=True
         )
         promos = frappe.db.sql(
             f""" select sp.start_date, sp.end_date, 
@@ -246,7 +246,7 @@ def fetch_sales_promos_get_same_item(item_code, customer_type):
             from  `tabSales Promos` as sp  
             inner join `tabPromo Type 2` as pt on pt.parent = sp.name
             inner join `tabStock Ledger Entry` as sle on pt.bought_item = sle.item_code
-            where pt.bought_item = '{i[0]}' and sle.warehouse = 'Free - YR'
+            where pt.bought_item = '{i[0]}' and sle.warehouse = '{free_warehouse}'
             """, as_dict = True
         )
     print("promos......", promos)
@@ -263,8 +263,9 @@ def fetch_sales_promos_get_same_item(item_code, customer_type):
   
 
 # buy x get another y item
-def fetch_sales_promos_get_diff_item(item_code, customer_type):
+def fetch_sales_promos_get_diff_item(item_code, customer_type, free_warehouse):
     sales_promos_quantity = []
+    print("freeware", free_warehouse)
     promos_sale = []
     free_items = []
     i = [x["item_code"] for x in item_code]
@@ -280,7 +281,7 @@ def fetch_sales_promos_get_diff_item(item_code, customer_type):
             from  `tabSales Promos` as sp  
             inner join `tabPromo Type 3` as pt on pt.parent = sp.name
             inner join `tabStock Ledger Entry` as sle on pt.bought_item = sle.item_code
-            where pt.bought_item in {tuple(i)} and sle.warehouse = 'Free - YR'
+            where pt.bought_item in {tuple(i)} and sle.warehouse = '{free_warehouse}'
             """, as_dict = True
         )
     else:
@@ -291,7 +292,7 @@ def fetch_sales_promos_get_diff_item(item_code, customer_type):
             from  `tabSales Promos` as sp  
             inner join `tabPromo Type 3` as pt on pt.parent = sp.name
             inner join `tabStock Ledger Entry` as sle on pt.bought_item = sle.item_code
-            where pt.bought_item = '{i[0]}' and sle.warehouse = 'Free - YR'
+            where pt.bought_item = '{i[0]}' and sle.warehouse = '{free_warehouse}'
             """, as_dict = True
         )
     print("......", promos)
@@ -300,11 +301,11 @@ def fetch_sales_promos_get_diff_item(item_code, customer_type):
             free_items.append(promos[i]["free_item"])
             if len(free_items) > 1:
                 sales_data = frappe.db.sql(
-                    f"""select sum(qty - delivered_qty) as pending_qty from `tabSales Order Item` where item_code in {tuple(free_items)} and warehouse = 'Free - YR'""", as_dict=True
+                    f"""select sum(qty - delivered_qty) as pending_qty from `tabSales Order Item` where item_code in {tuple(free_items)} and warehouse = '{free_warehouse}'""", as_dict=True
                 )
             else:
                 sales_data = frappe.db.sql(
-                    f"""select sum(qty - delivered_qty) as pending_qty from `tabSales Order Item` where item_code = '{free_items[0]}' and warehouse = 'Free - YR'""", as_dict=True
+                    f"""select sum(qty - delivered_qty) as pending_qty from `tabSales Order Item` where item_code = '{free_items[0]}' and warehouse = '{free_warehouse}'""", as_dict=True
                 )
 
             if(promos[i]["start_date"] <= today <= promos[i]["end_date"]): 
@@ -330,12 +331,14 @@ def customer_type_container(customer):
     return customer_type
 
 @frappe.whitelist()
-def sales_promos(item_code, customer_type):
+def sales_promos(item_code, customer_type, company):
     item_code = json.loads(item_code)
+    settings = fetch_fulfillment_settings(company)
+    print("settings", settings)
     print('item code received', item_code, type(item_code))
-    sales_promos_same_item = fetch_sales_promos_get_same_item(item_code, customer_type)
+    sales_promos_same_item = fetch_sales_promos_get_same_item(item_code, customer_type, settings[0]["free_warehouse"])
     print("Sales Promo....", sales_promos_same_item)
-    sales_promo_diff_items = fetch_sales_promos_get_diff_item(item_code, customer_type)
+    sales_promo_diff_items = fetch_sales_promos_get_diff_item(item_code, customer_type, settings[0]["free_warehouse"])
     print("Sales promo diff items",sales_promo_diff_items)
     sales_promos_items = sales_promos_same_item + sales_promo_diff_items
     print("sales promos items", sales_promos_items)
@@ -356,7 +359,6 @@ def item_qty_container(company, item_code, customer_type):
 @frappe.whitelist()
 def sales_order_container(customer, order_list, company, customer_type, free_promos):
     print(order_list)
-    print(">>>>>>",free_promos)
     fulfillment_settings = fetch_fulfillment_settings(company)
     if customer_type == "Retail":
         delivery_warehouse = fulfillment_settings[0]["retail_primary_warehouse"]
