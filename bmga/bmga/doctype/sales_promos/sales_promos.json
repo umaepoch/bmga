@@ -27,13 +27,13 @@
   },
   {
    "fieldname": "start_date",
-   "fieldtype": "Datetime",
+   "fieldtype": "Date",
    "in_list_view": 1,
    "label": "Start Date"
   },
   {
    "fieldname": "end_date",
-   "fieldtype": "Datetime",
+   "fieldtype": "Date",
    "label": "End Date"
   },
   {
@@ -78,7 +78,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2022-05-06 09:29:12.176738",
+ "modified": "2022-05-09 07:15:44.356939",
  "modified_by": "Administrator",
  "module": "Bmga",
  "name": "Sales Promos",
