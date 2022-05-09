@@ -10,6 +10,9 @@
   "company",
   "customer",
   "customer_type",
+  "column_break_4",
+  "spacing",
+  "customer_name",
   "section_break_4",
   "order_booking_items_v2",
   "promos",
@@ -72,15 +75,28 @@
    "read_only": 1
   },
   {
+   "fieldname": "column_break_4",
+   "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "customer",
+   "fetch_from": "customer.customer_name",
+   "fieldname": "customer_name",
+   "fieldtype": "Data",
+   "label": "Customer Name",
+   "read_only": 1
+  },
+  {
    "fieldname": "spacing",
    "fieldtype": "HTML",
    "label": "Spacing",
-   "options": "<div style=\"margin-bottom: 15%;\"></div>"
+   "options": "<div style=\"margin-bottom: 15%;\"></div>",
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2022-05-04 03:57:41.022069",
+ "modified": "2022-05-09 11:57:58.523964",
  "modified_by": "Administrator",
  "module": "Bmga",
  "name": "Order Booking V2",

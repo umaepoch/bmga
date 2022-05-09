@@ -217,30 +217,34 @@ def fetch_sales_promos_get_same_item(item_code, customer_type, free_warehouse):
     today = datetime.date.today()
     # if customer_type == "Retail":
     if len(item_code) > 1:
+        print("DOUBLE PROMO ITEM")
         promos = frappe.db.sql(
-            f""" select sp.start_date, sp.end_date, 
+            f"""select sp.start_date, sp.end_date, 
             pt.for_every_quantity_that_is_bought, pt.quantity_of_free_items_thats_given,
-            pt.bought_item, sle.actual_qty
+            pt.bought_item, sum(sle.actual_qty) as actual_qty
             from  `tabSales Promos` as sp  
-            inner join `tabPromo Type 2` as pt on pt.parent = sp.name
-            inner join `tabStock Ledger Entry` as sle on pt.bought_item = sle.item_code
+                inner join `tabPromo Type 2` as pt on pt.parent = sp.name
+                inner join `tabStock Ledger Entry` as sle on pt.bought_item = sle.item_code
             where pt.bought_item in {tuple(i)} and sle.warehouse = '{free_warehouse}'
+            group by sle.item_code
             """, as_dict = True
         )
     else:
+        print("SINGLE PROMO ITEM")
         promos = frappe.db.sql(
             f""" select sp.start_date, sp.end_date, 
             pt.for_every_quantity_that_is_bought, pt.quantity_of_free_items_thats_given,
-            pt.bought_item, sle.actual_qty
+            pt.bought_item, sum(sle.actual_qty) as actual_qty
             from  `tabSales Promos` as sp  
-            inner join `tabPromo Type 2` as pt on pt.parent = sp.name
-            inner join `tabStock Ledger Entry` as sle on pt.bought_item = sle.item_code
+                inner join `tabPromo Type 2` as pt on pt.parent = sp.name
+                inner join `tabStock Ledger Entry` as sle on pt.bought_item = sle.item_code
             where pt.bought_item = '{i[0]}' and sle.warehouse = '{free_warehouse}'
             """, as_dict = True
         )
     print("promos......", promos)
     if len(promos) > 0:
         for i in range (len(promos)):
+            if promos[i].get("start_date") is None: continue
             if(promos[i]["start_date"] <= today <= promos[i]["end_date"]): 
                 for j in item_code:
                     if promos[i]["bought_item"] == j["item_code"]:
@@ -269,31 +273,34 @@ def fetch_sales_promos_get_diff_item(item_code, customer_type, free_warehouse):
     today = datetime.date.today()
     # if customer_type == "Retail":
     if len(item_code) > 1:
-        
+        print("DIFFERENT ITEMS")
         promos = frappe.db.sql(
             f""" select sp.start_date, sp.end_date, 
             pt.for_every_quantity_that_is_bought, pt.quantity_of_free_items_thats_given,
-            pt.bought_item, pt.free_item, sle.actual_qty
+            pt.bought_item, pt.free_item, sum(sle.actual_qty) as actual_qty
             from  `tabSales Promos` as sp  
-            inner join `tabPromo Type 3` as pt on pt.parent = sp.name
-            inner join `tabStock Ledger Entry` as sle on pt.bought_item = sle.item_code
+                inner join `tabPromo Type 3` as pt on pt.parent = sp.name
+                inner join `tabStock Ledger Entry` as sle on pt.free_item = sle.item_code
             where pt.bought_item in {tuple(i)} and sle.warehouse = '{free_warehouse}'
+            group by sle.item_code
             """, as_dict = True
         )
     else:
+        print("DIFFERENT ITEM", i[0])
         promos = frappe.db.sql(
             f""" select sp.start_date, sp.end_date, 
             pt.for_every_quantity_that_is_bought, pt.quantity_of_free_items_thats_given,
-            pt.bought_item, pt.free_item, sle.actual_qty
+            pt.bought_item, pt.free_item, sum(sle.actual_qty) as actual_qty
             from  `tabSales Promos` as sp  
-            inner join `tabPromo Type 3` as pt on pt.parent = sp.name
-            inner join `tabStock Ledger Entry` as sle on pt.bought_item = sle.item_code
+                inner join `tabPromo Type 3` as pt on pt.parent = sp.name
+                inner join `tabStock Ledger Entry` as sle on pt.free_item = sle.item_code
             where pt.bought_item = '{i[0]}' and sle.warehouse = '{free_warehouse}'
             """, as_dict = True
         )
     print("......", promos)
     if len(promos) > 0:
         for i in range (len(promos)):
+            if promos[i].get("start_date") is None: continue
             if(promos[i]["start_date"] <= today <= promos[i]["end_date"]): 
                 for j in item_code:
                     if promos[i]["bought_item"] == j["item_code"]:
