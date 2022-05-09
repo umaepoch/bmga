@@ -4,7 +4,7 @@ import datetime
 
 def fetch_item_list(so_name):
     item_list = frappe.db.sql(
-        f"""SELECT item_code, qty FROM `tabSales Order Item` WHERE parent = '{so_name}'""",
+        f"""SELECT item_code, qty, warehouse FROM `tabSales Order Item` WHERE parent = '{so_name}'""",
         as_dict=True
     )
     return item_list
@@ -31,13 +31,110 @@ def fetch_fulfillment_settings(company):
     )
     if fs_name:
         settings = frappe.db.sql(
-            f"""SELECT retail_primary_warehouse, retail_bulk_warehouse, hospital_warehouse, institutional_warehouse, qc_and_dispatch
+            f"""SELECT retail_primary_warehouse, retail_bulk_warehouse, hospital_warehouse, institutional_warehouse, qc_and_dispatch, free_warehouse
             FROM `tabFulfillment Settings Details V1` WHERE parent = '{fs_name[0]["name"]}'""", as_dict=True
         )
         settings[0]["expiry_date_limit"] = fs_name[0]["expiry_date_limit"]
     else:
         settings = [None]
     return settings[0]
+
+def fetch_pick_put_list_data(customer_type, sales_list, settings):
+    items = [data["item_code"] for data in sales_list]
+    if customer_type == "Retail":
+        warehouse = [settings["retail_primary_warehouse"], settings["retail_bulk_warehouse"]]
+    elif customer_type == "Hospital":
+        warehouse = [settings["hospital_warehouse"]]
+    elif customer_type == "Institutional":
+        warehouse = [settings["institutional_warehouse"]]
+
+    if len(items) > 1:
+        if len(warehouse) > 1:
+            pick_put_list_stock = frappe.db.sql(
+                f"""select ppli.item as item_code, ppli.batch, batch_picked, ppli.warehouse, ppli.quantity_to_be_picked, quantity_picked, ppli.warehouse
+                from `tabPick Put List Items` as ppli
+                    join `tabPick Put List` as ppl on (ppli.parent = ppl.name)
+                where ppli.item in {tuple(items)} and ppl.pick_list_stage != 'Invoiced' and ppl.pick_list_stage != 'Ready for Picking' and ppl.docstatus < 2 and ppli.warehouse in {tuple(warehouse)}""",
+                as_dict=1
+            )
+        else:
+            pick_put_list_stock = frappe.db.sql(
+                f"""select ppli.item as item_code, ppli.batch, batch_picked, ppli.warehouse, ppli.quantity_to_be_picked, quantity_picked, ppli.warehouse
+                from `tabPick Put List Items` as ppli
+                    join `tabPick Put List` as ppl on (ppli.parent = ppl.name)
+                where ppli.item in {tuple(items)} and ppl.pick_list_stage != 'Invoiced' and ppl.pick_list_stage != 'Ready for Picking' and ppl.docstatus < 2 and ppli.warehouse in '{warehouse[0]}'""",
+                as_dict=1
+            )
+    else:
+        if len(warehouse) > 1:
+            pick_put_list_stock = frappe.db.sql(
+                f"""select ppli.item as item_code, ppli.batch, batch_picked, ppli.warehouse, ppli.quantity_to_be_picked, quantity_picked, ppli.warehouse
+                from `tabPick Put List Items` as ppli
+                    join `tabPick Put List` as ppl on (ppli.parent = ppl.name)
+                where ppli.item = '{items[0]}' and ppl.pick_list_stage != 'Invoiced' and ppl.pick_list_stage != 'Ready for Picking' and ppl.docstatus < 2 and ppli.warehouse in {tuple(warehouse)}""",
+                as_dict=1
+            )
+        else:
+            pick_put_list_stock = frappe.db.sql(
+                f"""select ppli.item as item_code, ppli.batch, batch_picked, ppli.warehouse, ppli.quantity_to_be_picked, quantity_picked, ppli.warehouse
+                from `tabPick Put List Items` as ppli
+                    join `tabPick Put List` as ppl on (ppli.parent = ppl.name)
+                where ppli.item = '{items[0]}' and ppl.pick_list_stage != 'Invoiced' and ppl.pick_list_stage != 'Ready for Picking' and ppl.docstatus < 2 and ppli.warehouse in '{warehouse[0]}'""",
+                as_dict=1
+            )
+    return pick_put_list_stock
+
+def update_stock_detail_with_picked_stock(stock_data, picked_data):
+    print("*"*100)
+    for s in stock_data:
+        print(s)
+
+    struct_pick = {}
+
+    print("-"*100)
+    for p in picked_data:
+        print(p)
+        if p["quantity_picked"] is not None:
+            p_qty = p["quantity_picked"]
+        elif p["quantity_to_be_picked"] is not None:
+            p_qty = p["quantity_to_be_picked"]
+        else:
+            p_qty = 0
+        
+        if p["batch_picked"] is not None:
+            p_batch = p["batch_picked"]
+        elif p["batch"] is not None:
+            p_batch = p["batch"]
+        else:
+            p_batch = ''
+        if p["warehouse"] not in struct_pick:  
+            struct_pick[p["warehouse"]] = {}
+            struct_pick[p["warehouse"]][p["item_code"]] = {}
+            struct_pick[p["warehouse"]][p["item_code"]][p_batch] = p_qty  
+            if p["item_code"] not in struct_pick[p["warehouse"]]:
+                struct_pick[p["warehouse"]][p["item_code"]] = {}
+                struct_pick[p["warehouse"]][p["item_code"]][p_batch] = p_qty
+            else:
+                struct_pick[p["warehouse"]][p["item_code"]][p_batch] = p_qty
+        else:
+            if p["item_code"] not in struct_pick[p["warehouse"]]:
+                struct_pick[p["warehouse"]][p["item_code"]] = {}
+                struct_pick[p["warehouse"]][p["item_code"]][p_batch] = p_qty
+            else:
+                struct_pick[p["warehouse"]][p["item_code"]][p_batch] = p_qty
+         
+    print(struct_pick)     
+    for s in stock_data:
+        try:
+            s["actual_qty"] -= struct_pick[s["warehouse"]][s["item_code"]][s["batch_id"]]
+        except:
+            pass
+    
+    for s in stock_data:
+        print(s)
+    
+    return stock_data
+        
 
 def fetch_stock_details(customer_type, sales_list, settings):
     items = [data["item_code"] for data in sales_list]
@@ -260,14 +357,31 @@ def sales_order_handle(sales_list, stock_data, wbs_details, expiry_date):
 
 @frappe.whitelist()
 def item_list_container(so_name, company):
-    sales_list = fetch_item_list(so_name)
-    customer_type = fetch_customer_type(so_name)
     fulfillment_settings = fetch_fulfillment_settings(company)
-    stock_data = fetch_stock_details(customer_type, sales_list, fulfillment_settings)
+    print("Settings", fulfillment_settings)
+    customer_type = fetch_customer_type(so_name)
+
+    if customer_type == "Retail":
+        warehouse = fulfillment_settings["retail_primary_warehouse"]
+    elif customer_type == "Hospital":
+        warehouse = fulfillment_settings["hospital_warehouse"]
+    elif customer_type == "Institutional":
+        warehouse = fulfillment_settings["institutional_warehouse"]
+
+    sales_list = fetch_item_list(so_name)
+    print("SALES LIST", sales_list)
+    free_list = list(filter(lambda x:x["warehouse"] == fulfillment_settings["free_warehouse"], sales_list))
+    print("Free List", free_list)
+    order_list = list(filter(lambda x:x["warehouse"] in warehouse, sales_list))
+    print("Order List", order_list)
+
+    stock_data = fetch_stock_details(customer_type, order_list, fulfillment_settings)
+    p_stock = fetch_pick_put_list_data(customer_type, order_list, fulfillment_settings)
+    stock_data = update_stock_detail_with_picked_stock(stock_data, p_stock)
     handled_data = handle_stock_data(stock_data)
-    wbs_details = fetch_wbs_location(customer_type, sales_list, fulfillment_settings)
-    pick_put_list = sales_order_handle(sales_list, handled_data, wbs_details, fulfillment_settings["expiry_date_limit"])
-    return dict(wbs_details = wbs_details, pick_put_list = pick_put_list ,sales_list = sales_list, customer_type = customer_type, settings = fulfillment_settings, stock_data = handled_data)
+    wbs_details = fetch_wbs_location(customer_type, order_list, fulfillment_settings)
+    pick_put_list = sales_order_handle(order_list, handled_data, wbs_details, fulfillment_settings["expiry_date_limit"])
+    return dict(order_list = order_list, free_list = free_list, p_stock = p_stock, wbs_details = wbs_details, pick_put_list = pick_put_list ,sales_list = sales_list, customer_type = customer_type, settings = fulfillment_settings, stock_data = handled_data)
 
 def get_customer(so_name):
     customer = frappe.db.sql(
