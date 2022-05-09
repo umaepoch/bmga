@@ -42,7 +42,9 @@ frappe.ui.form.on('Order Booking V2', {
 			let order_list = frm.doc.order_booking_items_v2;
 			let customer = frm.doc.customer;
 			let company = frm.doc.company;
-			let customer_type = frm.doc.customer_type
+			let customer_type = frm.doc.customer_type;
+			let free_promos = frm.doc.promos;
+			console.log("frre_items", free_promos)
 			console.log(customer_type, company)
 			console.log(order_list)
 			if(order_list) {
@@ -53,6 +55,7 @@ frappe.ui.form.on('Order Booking V2', {
 						order_list: order_list,
 						company: company,
 						customer_type: customer_type,
+						free_promos: free_promos,
 					}
 				}).done((response) => {
 					console.log(response)
@@ -71,8 +74,37 @@ frappe.ui.form.on('Order Booking V2', {
 				frappe.msgprint("Select Customer First");
 			}
 		})
+		frm.add_custom_button("Apply Promo", function(){
+			let item_code_list = frm.doc.order_booking_items_v2.map(function(d) {
+				return {item_code: d.item_code, quantity_booked: d.quantity_booked}
+			})
+			let company = frm.doc.company;
+			if (item_code_list) {
+				frappe.call({
+					method : "bmga.bmga.doctype.order_booking_v2.api.sales_promos",
+					args :{
+						item_code: 	JSON.stringify(item_code_list),
+						customer_type: customer_type,
+						company : company,
+					}
+				}).done((respose) =>{
+					console.log("Hai",respose)
+					$.each(respose.message.sales_promos_items, function(_i, e) {
+						let entry = frm.add_child("promos");
+						entry.bought_item = e.bought_item;
+						entry.free_items = e.promo_item;
+						entry.quantity = e.qty;
+						entry.warehouse_quantity = e.w_qty
+					})
+					refresh_field("promos")
+					frappe.msgprint("Promos Applied")
+
+				})
+			}	
+		})
 	}
 });
+
 
 frappe.ui.form.on('Order Booking Items V2', {
 	item_code: function(frm, cdt, cdn) {
@@ -125,3 +157,4 @@ frappe.ui.form.on('Order Booking Items V2', {
 		}
 	}
 });
+

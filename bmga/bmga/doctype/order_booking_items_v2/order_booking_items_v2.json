@@ -7,6 +7,7 @@
  "engine": "InnoDB",
  "field_order": [
   "item_code",
+  "free_items",
   "stock_uom",
   "quantity_available",
   "quantity_booked",
@@ -84,12 +85,17 @@
    "in_list_view": 1,
    "label": "Amount After GST",
    "read_only": 1
+  },
+  {
+   "fieldname": "free_items",
+   "fieldtype": "Int",
+   "label": "Free Items"
   }
  ],
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2022-04-08 22:07:55.414503",
+ "modified": "2022-04-29 07:05:55.218665",
  "modified_by": "Administrator",
  "module": "Bmga",
  "name": "Order Booking Items V2",

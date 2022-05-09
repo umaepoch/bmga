@@ -1,0 +1,69 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "PT2.####",
+ "creation": "2022-04-28 14:19:58.670391",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "promo_based_on",
+  "bought_item",
+  "for_every_quantity_that_is_bought",
+  "quantity_of_free_items_thats_given",
+  "section_break_5",
+  "type",
+  "quantity"
+ ],
+ "fields": [
+  {
+   "fieldname": "promo_based_on",
+   "fieldtype": "Select",
+   "label": "Promo Based On ",
+   "options": "\nItem Code\nItem Group\nBrand"
+  },
+  {
+   "fieldname": "bought_item",
+   "fieldtype": "Link",
+   "label": "Bought Item",
+   "options": "Item"
+  },
+  {
+   "fieldname": "for_every_quantity_that_is_bought",
+   "fieldtype": "Int",
+   "label": "For every Quantity that is bought"
+  },
+  {
+   "fieldname": "quantity_of_free_items_thats_given",
+   "fieldtype": "Int",
+   "label": "Quantity of Free items that's given"
+  },
+  {
+   "fieldname": "section_break_5",
+   "fieldtype": "Section Break",
+   "label": "Promo Limitation"
+  },
+  {
+   "fieldname": "type",
+   "fieldtype": "Select",
+   "label": "Type",
+   "options": "\nAcross All Customers\nFor Each Customer\nFor Each Order"
+  },
+  {
+   "fieldname": "quantity",
+   "fieldtype": "Int",
+   "label": "Quantity"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2022-05-03 20:08:01.205336",
+ "modified_by": "Administrator",
+ "module": "Bmga",
+ "name": "Promo Type 2",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC"
+}

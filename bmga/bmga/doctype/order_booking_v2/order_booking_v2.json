@@ -10,11 +10,9 @@
   "company",
   "customer",
   "customer_type",
-  "column_break_4",
-  "spacing",
-  "customer_name",
   "section_break_4",
   "order_booking_items_v2",
+  "promos",
   "order_booking_so",
   "hunting_quotation"
  ],
@@ -28,15 +26,11 @@
    "reqd": 1
   },
   {
-   "fieldname": "customer",
-   "fieldtype": "Link",
-   "label": "Customer",
-   "options": "Customer"
-  },
-  {
+   "depends_on": "customer",
+   "fetch_from": "customer.customer_name",
    "fieldname": "customer_type",
    "fieldtype": "Data",
-   "label": "Customer Type",
+   "label": "Customer type",
    "read_only": 1
   },
   {
@@ -65,15 +59,16 @@
    "fieldtype": "Section Break"
   },
   {
-   "fieldname": "column_break_4",
-   "fieldtype": "Column Break"
+   "fieldname": "customer",
+   "fieldtype": "Link",
+   "label": "Customer ",
+   "options": "Customer"
   },
   {
-   "depends_on": "customer",
-   "fetch_from": "customer.customer_name",
-   "fieldname": "customer_name",
-   "fieldtype": "Data",
-   "label": "Customer Name",
+   "fieldname": "promos",
+   "fieldtype": "Table",
+   "label": "Promos",
+   "options": "Order Booking V2 Sales Promo",
    "read_only": 1
   },
   {
@@ -85,7 +80,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2022-04-27 15:17:53.003818",
+ "modified": "2022-05-04 03:57:41.022069",
  "modified_by": "Administrator",
  "module": "Bmga",
  "name": "Order Booking V2",
