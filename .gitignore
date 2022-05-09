@@ -4,3 +4,4 @@
 *.swp
 tags
 bmga/docs/current
+__pycache__
