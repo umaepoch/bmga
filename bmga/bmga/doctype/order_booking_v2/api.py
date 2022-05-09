@@ -418,7 +418,7 @@ def sales_order_container(customer, order_list, company, customer_type, free_pro
                     "doctype": "Sales Order Item",
                     "item_code": free["free_items"],
                     "qty": free["quantity"],
-                    "warehouse": "Free - YR"
+                    "warehouse": fulfillment_settings[0]["free_warehouse"]
                 }
         try:
             outerJson_so["items"].append(innerJson_so)
