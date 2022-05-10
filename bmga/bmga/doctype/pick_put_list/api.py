@@ -675,8 +675,8 @@ def pick_status(item_list, so_name, company, stage_index, stage_list):
     if next_stage == "Invoiced":
         sales_doc = frappe.get_doc("Sales Order", so_name)
         sales_doc.pch_picking_status = next_stage
-        sales_doc.reload()
         sales_doc.save()
+        sales_doc.reload()
         sales_doc.submit()
 
         customer = get_customer(so_name)
@@ -688,7 +688,11 @@ def pick_status(item_list, so_name, company, stage_index, stage_list):
 
     else:
         sales_doc = frappe.get_doc("Sales Order", so_name)
+        print(sales_doc.pch_picking_status)
+        print("changing sales.pch_picking_status")
         sales_doc.pch_picking_status = next_stage
+        sales_doc.save()
+        print(sales_doc.pch_picking_status)
         update_sales_order_json(sales_doc, average_price)
         sales_doc.reload()
         sales_doc.save()
