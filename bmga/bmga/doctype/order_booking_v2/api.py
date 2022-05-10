@@ -382,6 +382,7 @@ def sales_order_container(customer, order_list, company, customer_type, free_pro
         "naming_series": "SO-DL-",
         "customer": customer,
         "delivery_date": delivery_date,
+        "pch_picking_status": "Ready for Picking",
         "pch_sales_order_purpose": "Delivery",
         "set_warehouse": delivery_warehouse,
         "items": [],
@@ -428,7 +429,7 @@ def sales_order_container(customer, order_list, company, customer_type, free_pro
             pass
 
     for free in free_promos:
-        if free["warehouse_quantity"] > 0:
+        if int(free["warehouse_quantity"]) > 0:
             innerJson_so = {
                     "doctype": "Sales Order Item",
                     "item_code": free["free_items"],
