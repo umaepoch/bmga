@@ -410,7 +410,7 @@ def fetch_free_stock_detail(free_list, free_warehouse):
         """, as_dict=True)
 
         stock_data_batchless = frappe.db.sql(
-            f"""select batch_no as batch_id, item_code, warehouse, stock_uom, sum(actual_qty) as acutal_qty from `tabStock Ledger Entry`
+            f"""select batch_no as batch_id, item_code, warehouse, stock_uom, sum(actual_qty) as actual_qty from `tabStock Ledger Entry`
             where item_code in {tuple(items)} and warehouse = '{free_warehouse}' and (batch_no is null or batch_no = '')
             group by item_code, warehouse
             """,
@@ -429,7 +429,7 @@ def fetch_free_stock_detail(free_list, free_warehouse):
         """, as_dict=True)
 
         stock_data_batchless = frappe.db.sql(
-            f"""select batch_no as batch_id, item_code, warehouse, stock_uom, sum(actual_qty) as acutal_qty from `tabStock Ledger Entry`
+            f"""select batch_no as batch_id, item_code, warehouse, stock_uom, sum(actual_qty) as actual_qty from `tabStock Ledger Entry`
             where item_code = '{items[0]}' and warehouse = '{free_warehouse}' and (batch_no is null or batch_no = '')
             group by item_code, warehouse
             """,
