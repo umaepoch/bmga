@@ -501,7 +501,7 @@ def fetch_batch_price(batch, item_code):
         as_dict=1
     )
     if price: return price[0]
-    else: return dict(price = 0)
+    else: fetch_batchless_price(item_code)
 
 def fetch_batchless_price(item_code):
     price = frappe.db.sql(
