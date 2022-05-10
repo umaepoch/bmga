@@ -230,7 +230,7 @@ def fetch_stock_details(customer_type, sales_list, settings):
             )
 
     for data in stock_data_batchless:
-        if data["actual_qty"] == None: continue
+        if data.get("actual_qty") is None: continue
         stock_data_batch.append(data)
 
     return stock_data_batch
@@ -435,7 +435,7 @@ def fetch_free_stock_detail(free_list, free_warehouse):
         )
     
     for data in stock_data_batchless:
-        if data["actual_qty"] == None: continue
+        if data.get("actual_qty") is None: continue
         stock_data_batch.append(data)
     
     print("*-/"*50)
@@ -482,7 +482,7 @@ def item_list_container(so_name, company):
     print(handled_data)
     wbs_details = fetch_wbs_location(customer_type, order_list, fulfillment_settings)
     pick_put_list = sales_order_handle(sales_list, handled_data, handled_free, wbs_details, fulfillment_settings["expiry_date_limit"], fulfillment_settings["free_warehouse"])
-    return dict(order_list = order_list, free_list = free_list, p_stock = p_stock, wbs_details = wbs_details, pick_put_list = pick_put_list ,sales_list = sales_list, customer_type = customer_type, settings = fulfillment_settings, stock_data = handled_data)
+    return dict(free_data = free_data, order_list = order_list, free_list = free_list, p_stock = p_stock, wbs_details = wbs_details, pick_put_list = pick_put_list ,sales_list = sales_list, customer_type = customer_type, settings = fulfillment_settings, stock_data = handled_data)
 
 def get_customer(so_name):
     customer = frappe.db.sql(
