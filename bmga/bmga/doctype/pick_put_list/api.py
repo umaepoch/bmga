@@ -472,6 +472,9 @@ def item_list_container(so_name, company):
     stock_data = fetch_stock_details(customer_type, order_list, fulfillment_settings)
     free_data = fetch_free_stock_detail(free_list, fulfillment_settings["free_warehouse"])
     p_stock = fetch_pick_put_list_data(customer_type, order_list, fulfillment_settings)
+    print("*"*100)
+    for p in p_stock:
+        print(p)
     stock_data = update_stock_detail_with_picked_stock(stock_data, p_stock)
     print("STOCK DATA")
     for s in stock_data:
@@ -516,15 +519,15 @@ def fetch_storage_location_from_id(id):
 
     return location[0]
 
-def get_so_detail(so_name, item_code):
+def get_so_detail(so_name, item_code, warehouse):
     so_detail = frappe.db.sql(
-        f"""select name from `tabSales Order Item` where parent = '{so_name}' and item_code = '{item_code}'""",
+        f"""select name from `tabSales Order Item` where parent = '{so_name}' and item_code = '{item_code}' and warehouse = '{warehouse}'""",
         as_dict=1
     )
     
     return so_detail[0]
 
-def generate_sales_invoice_json(customer, so_name, company, item_list):
+def generate_sales_invoice_json(customer, so_name, company, item_list, free_warehouse):
     due_date = datetime.datetime.today()
     # due_date = due_date + datetime.timedelta(2)
 
@@ -539,7 +542,7 @@ def generate_sales_invoice_json(customer, so_name, company, item_list):
     }
 
     for item in item_list:
-        so_detail = get_so_detail(so_name, item["item"])
+        so_detail = get_so_detail(so_name, item["item"], item["warehouse"])
         print("so_detail", so_detail)
 
         if item.get("quantity_picked") is None:
@@ -564,41 +567,55 @@ def generate_sales_invoice_json(customer, so_name, company, item_list):
         print("batch", batch)
         print("rate", rate)
         print(item)
-
-        if item.get("wbs_storage_location") != '':
-            storage_id = item["wbs_storage_location"]
-            storage_location = fetch_storage_location_from_id(storage_id)
-            print("*" * 50)
-            print("location", storage_location["name"], storage_id)
-            innerJson = {
-                "doctype": "Sales Invoice Item",
-                "item_code": item["item"],
-                "qty": qty,
-                "price_list_rate": rate["price"],
-                "rate": rate["price"],
-                "warehouse": item["warehouse"],
-                "warehouse_storage_location": storage_location["name"],
-                "storage_location_id": storage_id,
-                "batch_no": item["batch"],
-                "sales_order": so_name,
-                "so_detail": so_detail["name"],
-                "delivered_qty": qty
-            }
+        if item["warehouse"] != free_warehouse:
+            if item.get("wbs_storage_location") != '':
+                storage_id = item["wbs_storage_location"]
+                storage_location = fetch_storage_location_from_id(storage_id)
+                print("*" * 50)
+                print("location", storage_location["name"], storage_id)
+                innerJson = {
+                    "doctype": "Sales Invoice Item",
+                    "item_code": item["item"],
+                    "qty": qty,
+                    "price_list_rate": rate["price"],
+                    "rate": rate["price"],
+                    "warehouse": item["warehouse"],
+                    "warehouse_storage_location": storage_location["name"],
+                    "storage_location_id": storage_id,
+                    "batch_no": item["batch"],
+                    "sales_order": so_name,
+                    "so_detail": so_detail["name"],
+                    "delivered_qty": qty
+                }
+            else:
+                innerJson = {
+                    "doctype": "Sales Invoice Item",
+                    "item_code": item["item"],
+                    "qty": qty,
+                    "price_list_rate": rate["price"],
+                    "rate": rate["price"],
+                    "warehouse": item["warehouse"],
+                    "batch_no": item["batch"],
+                    "sales_order": so_name,
+                    "so_detail": so_detail["name"],
+                    "delivered_qty": qty,
+                }
         else:
             innerJson = {
-                "doctype": "Sales Invoice Item",
-                "item_code": item["item"],
-                "qty": qty,
-                "price_list_rate": rate["price"],
-                "rate": rate["price"],
-                "warehouse": item["warehouse"],
-                "batch_no": item["batch"],
-                "sales_order": so_name,
-                "so_detail": so_detail["name"],
-                "delivered_qty": qty,
-            }
+                    "doctype": "Sales Invoice Item",
+                    "item_code": item["item"],
+                    "qty": qty,
+                    "price_list_rate": 0,
+                    "rate": 0,
+                    "warehouse": item["warehouse"],
+                    "batch_no": item["batch"],
+                    "sales_order": so_name,
+                    "so_detail": so_detail["name"],
+                    "delivered_qty": qty,
+                }
         outerJson["items"].append(innerJson)
-    print(outerJson)
+    for d in outerJson["items"]:
+        print(d["item_code"], d["sales_order"], d["warehouse"], d["so_detail"], d["delivered_qty"], d["rate"])
     return outerJson
 
 def update_average_price(item_list):
@@ -638,11 +655,7 @@ def update_sales_order_json(sales_doc, average_price):
     for child in sales_doc.get_all_children():
             if child.doctype != "Sales Order Item": continue
             sales_item_doc = frappe.get_doc(child.doctype, child.name)
-            print(sales_item_doc.name)
-            print(sales_item_doc.rate)
-            print(sales_item_doc.item_code)
             sales_item_doc.rate = average_price[sales_item_doc.item_code]["average"]
-            print(sales_item_doc.rate)
             sales_item_doc.save()
 
 @frappe.whitelist()
@@ -651,8 +664,13 @@ def pick_status(item_list, so_name, company, stage_index, stage_list):
     stage_list = json.loads(stage_list)
     stage_index = json.loads(stage_index)
     next_stage = stage_list[stage_index + 1]
+    settings = fetch_fulfillment_settings(company)
 
     average_price = update_average_price(item_list)
+    print(average_price)
+
+    """ customer = get_customer(so_name)
+    outerJson = generate_sales_invoice_json(customer, so_name, company, item_list, settings["free_warehouse"]) """
 
     if next_stage == "Invoiced":
         sales_doc = frappe.get_doc("Sales Order", so_name)
@@ -662,7 +680,7 @@ def pick_status(item_list, so_name, company, stage_index, stage_list):
         sales_doc.submit()
 
         customer = get_customer(so_name)
-        outerJson = generate_sales_invoice_json(customer, so_name, company, item_list)
+        outerJson = generate_sales_invoice_json(customer, so_name, company, item_list, settings["free_warehouse"])
         sales_invoice_doc = frappe.new_doc("Sales Invoice")
         sales_invoice_doc.update(outerJson)
         sales_invoice_doc.save()

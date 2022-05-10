@@ -365,6 +365,8 @@ def item_qty_container(company, item_code, customer_type):
 def sales_order_container(customer, order_list, company, customer_type, free_promos):
     print(order_list)
     fulfillment_settings = fetch_fulfillment_settings(company)
+    print("SETTINGS IN SALES ORDER", fulfillment_settings)
+    delivery_warehouse = ""
     if customer_type == "Retail":
         delivery_warehouse = fulfillment_settings[0]["retail_primary_warehouse"]
     elif customer_type == "Hospital":
