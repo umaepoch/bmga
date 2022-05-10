@@ -145,9 +145,6 @@ def fetch_stock_details(customer_type, sales_list, settings):
     elif customer_type == "Institutional":
         warehouse = [settings["institutional_warehouse"]]
     
-    """ print("primary", settings["retail_primary_warehouse"])
-    print("secondary", settings["retail_bulk_warehouse"]) """
-    
     if settings["retail_primary_warehouse"] >= settings["retail_bulk_warehouse"] :
         warehouse_order = "DESC"
     else:
@@ -235,16 +232,29 @@ def fetch_stock_details(customer_type, sales_list, settings):
     for data in stock_data_batchless:
         if data["actual_qty"] == None: continue
         stock_data_batch.append(data)
-    
-    """ print("STOCK FETCH DATA")
-    for data in stock_data_batch:
-        print(data) """
 
     return stock_data_batch
 
 def handle_stock_data(stock_data):
     stock_map = {}
     for data in stock_data:
+        if data["item_code"] not in stock_map:
+            stock_map[data["item_code"]] = []
+        batch = {}
+        batch["batch_no"] = data["batch_id"]
+        batch["warehouse"] = data["warehouse"]
+        batch["stock_uom"] = data["stock_uom"]
+        try:
+            batch["expiry_date"] = data["expiry_date"]
+        except:
+            pass
+        batch["actual_qty"] = data["actual_qty"]
+        stock_map[data["item_code"]].append(batch) 
+    return stock_map
+
+def handle_free_data(free_data):
+    stock_map = {}
+    for data in free_data:
         if data["item_code"] not in stock_map:
             stock_map[data["item_code"]] = []
         batch = {}
@@ -313,49 +323,126 @@ def fetch_wbs_location(customer_type, sales_list, settings):
     # print(wbs_structured)
     return wbs_structured
 
-def sales_order_handle(sales_list, stock_data, wbs_details, expiry_date):
+def sales_order_handle(sales_list, stock_data, free_data, wbs_details, expiry_date, free_warehouse):
     today = datetime.date.today()
     pick_up_list = []
-
-    """ for key, val in stock_data.items():
-        print()
-        for batch in stock_data[key]:
-            print(batch) """
+    free_pick_list = []
 
     for sales in sales_list:
         to_pickup = sales["qty"]
-        for stock in stock_data[sales["item_code"]]:
-            if stock["actual_qty"] == 0: continue
-            try:
-                date_delta = stock["expiry_date"] - today
-                if date_delta.days < expiry_date: continue
-            except:
-                pass
-            pick_up = {}
-            pick_up["item_code"] = sales["item_code"]
-            pick_up["stock_uom"] = stock["stock_uom"]
-            pick_up["warehouse"] = stock["warehouse"]
-            try:
-                pick_up["wbs_storage_location_id"] = wbs_details[stock["warehouse"]][sales["item_code"]]["wbs_storage_location_id"]
-                pick_up["wbs_storage_location"] = wbs_details[stock["warehouse"]][sales["item_code"]]["wbs_storage_location"]
-            except:
-                pick_up["wbs_storage_location_id"] = ''
-                pick_up["wbs_storage_location"] = ''
-            if stock["actual_qty"] >= to_pickup:
-                pick_up["batch_no"] = stock["batch_no"]
-                pick_up["qty"] = to_pickup
-                to_pickup = 0
-            else:
-                pick_up["batch_no"] = stock["batch_no"]
-                pick_up["qty"] = stock["actual_qty"]
-                to_pickup -= stock["actual_qty"]
-            pick_up_list.append(pick_up)
-            if to_pickup == 0: break
-            
-    return pick_up_list
+        print(sales)
+        if sales["warehouse"] != free_warehouse:
+            print("Normal Data")
+            for stock in stock_data[sales["item_code"]]:
+                if stock["actual_qty"] == 0: continue
+                try:
+                    date_delta = stock["expiry_date"] - today
+                    if date_delta.days < expiry_date: continue
+                except:
+                    pass
+                pick_up = {}
+                pick_up["item_code"] = sales["item_code"]
+                pick_up["stock_uom"] = stock["stock_uom"]
+                pick_up["warehouse"] = stock["warehouse"]
+                try:
+                    pick_up["wbs_storage_location_id"] = wbs_details[stock["warehouse"]][sales["item_code"]]["wbs_storage_location_id"]
+                    pick_up["wbs_storage_location"] = wbs_details[stock["warehouse"]][sales["item_code"]]["wbs_storage_location"]
+                except:
+                    pick_up["wbs_storage_location_id"] = ''
+                    pick_up["wbs_storage_location"] = ''
+                if stock["actual_qty"] >= to_pickup:
+                    pick_up["batch_no"] = stock["batch_no"]
+                    pick_up["qty"] = to_pickup
+                    to_pickup = 0
+                else:
+                    pick_up["batch_no"] = stock["batch_no"]
+                    pick_up["qty"] = stock["actual_qty"]
+                    to_pickup -= stock["actual_qty"]
+                pick_up_list.append(pick_up)
+                if to_pickup == 0: break
+        else:
+            print("Free Data")
+            for stock in free_data[sales["item_code"]]:
+                if stock["actual_qty"] == 0: continue
+                try:
+                    date_delta = stock["expiry_date"] - today
+                    if date_delta.days < expiry_date: continue
+                except:
+                    pass
+                pick_up = {}
+                pick_up["item_code"] = sales["item_code"]
+                pick_up["stock_uom"] = stock["stock_uom"]
+                pick_up["warehouse"] = stock["warehouse"]
+                try:
+                    pick_up["wbs_storage_location_id"] = wbs_details[stock["warehouse"]][sales["item_code"]]["wbs_storage_location_id"]
+                    pick_up["wbs_storage_location"] = wbs_details[stock["warehouse"]][sales["item_code"]]["wbs_storage_location"]
+                except:
+                    pick_up["wbs_storage_location_id"] = ''
+                    pick_up["wbs_storage_location"] = ''
+                if stock["actual_qty"] >= to_pickup:
+                    pick_up["batch_no"] = stock["batch_no"]
+                    pick_up["qty"] = to_pickup
+                    to_pickup = 0
+                else:
+                    pick_up["batch_no"] = stock["batch_no"]
+                    pick_up["qty"] = stock["actual_qty"]
+                    to_pickup -= stock["actual_qty"]
+                free_pick_list.append(pick_up)
+                if to_pickup == 0: break
+        
+    return pick_up_list + free_pick_list
 
+def fetch_free_stock_detail(free_list, free_warehouse):
+    print("Free warehouse fetch!")
+    items = [data["item_code"] for data in free_list]
+    if len(items) > 1:
+        stock_data_batch = frappe.db.sql(f"""
+            select batch_id, `tabBatch`.stock_uom, item as item_code, expiry_date, `tabStock Ledger Entry`.warehouse as warehouse, sum(`tabStock Ledger Entry`.actual_qty) as actual_qty
+            from `tabBatch`
+                join `tabStock Ledger Entry` ignore index (item_code, warehouse)
+                    on (`tabBatch`.batch_id = `tabStock Ledger Entry`.batch_no )
+            where `tabStock Ledger Entry`.item_code in {tuple(items)} and warehouse = '{free_warehouse}'
+                and `tabStock Ledger Entry`.is_cancelled = 0
+            group by batch_id, warehouse
+            order by expiry_date ASC
+        """, as_dict=True)
 
+        stock_data_batchless = frappe.db.sql(
+            f"""select batch_no as batch_id, item_code, warehouse, stock_uom, sum(actual_qty) as acutal_qty from `tabStock Ledger Entry`
+            where item_code in {tuple(items)} and warehouse = '{free_warehouse}' and (batch_no is null or batch_no = '')
+            group by item_code, warehouse
+            """,
+            as_dict=True
+        )
+    else:
+        stock_data_batch = frappe.db.sql(f"""
+            select batch_id, `tabBatch`.stock_uom, item as item_code, expiry_date, `tabStock Ledger Entry`.warehouse as warehouse, sum(`tabStock Ledger Entry`.actual_qty) as actual_qty
+            from `tabBatch`
+                join `tabStock Ledger Entry` ignore index (item_code, warehouse)
+                    on (`tabBatch`.batch_id = `tabStock Ledger Entry`.batch_no )
+            where `tabStock Ledger Entry`.item_code = '{items[0]}' and warehouse = '{free_warehouse}'
+                and `tabStock Ledger Entry`.is_cancelled = 0
+            group by batch_id, warehouse
+            order by expiry_date ASC
+        """, as_dict=True)
 
+        stock_data_batchless = frappe.db.sql(
+            f"""select batch_no as batch_id, item_code, warehouse, stock_uom, sum(actual_qty) as acutal_qty from `tabStock Ledger Entry`
+            where item_code = '{items[0]}' and warehouse = '{free_warehouse}' and (batch_no is null or batch_no = '')
+            group by item_code, warehouse
+            """,
+            as_dict=True
+        )
+    
+    for data in stock_data_batchless:
+        if data["actual_qty"] == None: continue
+        stock_data_batch.append(data)
+    
+    print("*-/"*50)
+    for data in stock_data_batch:
+        print(data)
+    
+    return stock_data_batch
 
 @frappe.whitelist()
 def item_list_container(so_name, company):
@@ -371,18 +458,30 @@ def item_list_container(so_name, company):
         warehouse = fulfillment_settings["institutional_warehouse"]
 
     sales_list = fetch_item_list(so_name)
+    print()
     print("SALES LIST", sales_list)
     free_list = list(filter(lambda x:x["warehouse"] == fulfillment_settings["free_warehouse"], sales_list))
+    print()
     print("Free List", free_list)
     order_list = list(filter(lambda x:x["warehouse"] in warehouse, sales_list))
+    print()
     print("Order List", order_list)
 
     stock_data = fetch_stock_details(customer_type, order_list, fulfillment_settings)
+    free_data = fetch_free_stock_detail(free_list, fulfillment_settings["free_warehouse"])
     p_stock = fetch_pick_put_list_data(customer_type, order_list, fulfillment_settings)
     stock_data = update_stock_detail_with_picked_stock(stock_data, p_stock)
+    print("STOCK DATA")
+    for s in stock_data:
+        print(s)
     handled_data = handle_stock_data(stock_data)
+    handled_free = handle_free_data(free_data)
+    print("HANDLED FREE")
+    print(handled_free)
+    print("HANDLED DATA")
+    print(handled_data)
     wbs_details = fetch_wbs_location(customer_type, order_list, fulfillment_settings)
-    pick_put_list = sales_order_handle(order_list, handled_data, wbs_details, fulfillment_settings["expiry_date_limit"])
+    pick_put_list = sales_order_handle(sales_list, handled_data, handled_free, wbs_details, fulfillment_settings["expiry_date_limit"], fulfillment_settings["free_warehouse"])
     return dict(order_list = order_list, free_list = free_list, p_stock = p_stock, wbs_details = wbs_details, pick_put_list = pick_put_list ,sales_list = sales_list, customer_type = customer_type, settings = fulfillment_settings, stock_data = handled_data)
 
 def get_customer(so_name):
