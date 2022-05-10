@@ -65,7 +65,7 @@ def fetch_item_details(item_code, customer_type, settings):
     stock_detail = fetch_stock_details(item_code, customer_type, settings)
     return stock_detail
 
-def handle_stock_details(item_code, customer_type, settings):
+def available_stock_details(item_code, customer_type, settings):
     today = datetime.date.today()
 
     if customer_type == "Retail":
@@ -95,7 +95,10 @@ def handle_stock_details(item_code, customer_type, settings):
         )
 
         sales_data = frappe.db.sql(
-            f"""select sum(qty - delivered_qty) as pending_qty from `tabSales Order Item` where docstatus = 1 and item_code = '{item_code}' and warehouse in {tuple(warehouse)}""", as_dict=True
+            f"""select sum(soi.qty - soi.delivered_qty) as pending_qty
+            from `tabSales Order Item` as soi
+                join `tabSales Order` as so on (soi.parent = so.name)
+            where soi.docstatus = 1 and soi.item_code = '{item_code}' and soi.warehouse in {tuple(warehouse)} and so.pch_picking_status != ''""", as_dict=True
         )
     else:
         stock_data_batch = frappe.db.sql(f"""
@@ -117,7 +120,10 @@ def handle_stock_details(item_code, customer_type, settings):
         )
         
         sales_data = frappe.db.sql(
-            f"""select sum(qty - delivered_qty) as pending_qty from `tabSales Order Item` where docstatus = 1 and item_code = '{item_code}' and warehouse = '{warehouse[0]}'""", as_dict=True
+            f"""select sum(soi.qty - soi.delivered_qty) as pending_qty
+            from `tabSales Order Item` as soi
+                join `tabSales Order` as so on (soi.parent = so.name)
+            where soi.docstatus = 1 and soi.item_code = '{item_code}' and soi.warehouse = '{warehouse[0]} and so.pch_picking_status != ''""", as_dict=True
         )
     
     print("expiry limit", settings["expiry_date_limit"])
@@ -137,7 +143,7 @@ def handle_stock_details(item_code, customer_type, settings):
     except:
         available_qty = batch_total + batchless_total
 
-    return dict(available_qty = available_qty, stock_data = stock_data_batch.extend(stock_data_batchless), sales_qty = sales_data[0]["pending_qty"])
+    return dict(available_qty = available_qty, sales_qty = sales_data[0]["pending_qty"])
 
 def fetch_average_price(stock_data, item_code):
     average_price_list = []
@@ -350,7 +356,7 @@ def sales_promos(item_code, customer_type, company):
 def item_qty_container(company, item_code, customer_type):
     fulfillment_settings = fetch_fulfillment_settings(company)
     stock_detail = fetch_item_details(item_code, customer_type, fulfillment_settings[0])
-    handled_stock = handle_stock_details(item_code, customer_type, fulfillment_settings[0])
+    handled_stock = available_stock_details(item_code, customer_type, fulfillment_settings[0])
     price_details = fetch_average_price(stock_detail, item_code)
     # sales_promo = fetch_sales_promos(item_code)
     return dict(available_qty = handled_stock["available_qty"], average_price = price_details["average_price"], price_details = price_details, stock_detail = stock_detail, qty_detail = handled_stock) 

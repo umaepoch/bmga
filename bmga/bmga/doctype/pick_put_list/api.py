@@ -333,6 +333,7 @@ def sales_order_handle(sales_list, stock_data, free_data, wbs_details, expiry_da
         print(sales)
         if sales["warehouse"] != free_warehouse:
             print("Normal Data")
+            if stock_data.get(sales["item_code"]) is None: continue
             for stock in stock_data[sales["item_code"]]:
                 if stock["actual_qty"] == 0: continue
                 try:
@@ -362,6 +363,7 @@ def sales_order_handle(sales_list, stock_data, free_data, wbs_details, expiry_da
                 if to_pickup == 0: break
         else:
             print("Free Data")
+            if free_data.get(sales["item_code"]) is None: continue
             for stock in free_data[sales["item_code"]]:
                 if stock["actual_qty"] == 0: continue
                 try:
