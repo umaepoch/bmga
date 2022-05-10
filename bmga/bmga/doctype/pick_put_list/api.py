@@ -651,10 +651,11 @@ def update_average_price(item_list):
     
     return new_average_price 
 
-def update_sales_order_json(sales_doc, average_price):
+def update_sales_order_json(sales_doc, average_price, free_warehouse):
     for child in sales_doc.get_all_children():
             if child.doctype != "Sales Order Item": continue
             sales_item_doc = frappe.get_doc(child.doctype, child.name)
+            if sales_item_doc.warehouse == free_warehouse: continue
             sales_item_doc.rate = average_price[sales_item_doc.item_code]["average"]
             sales_item_doc.save()
 
@@ -693,7 +694,7 @@ def pick_status(item_list, so_name, company, stage_index, stage_list):
         sales_doc.pch_picking_status = next_stage
         sales_doc.save()
         print(sales_doc.pch_picking_status)
-        update_sales_order_json(sales_doc, average_price)
+        update_sales_order_json(sales_doc, average_price, settings["free_warehouse"])
         sales_doc.reload()
         sales_doc.save()
 
