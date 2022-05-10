@@ -434,6 +434,7 @@ def sales_order_container(customer, order_list, company, customer_type, free_pro
                     "doctype": "Sales Order Item",
                     "item_code": free["free_items"],
                     "qty": free["quantity"],
+                    "rate": 0,
                     "warehouse": fulfillment_settings[0]["free_warehouse"]
                 }
         try:
