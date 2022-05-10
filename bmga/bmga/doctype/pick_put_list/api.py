@@ -51,7 +51,7 @@ def fetch_pick_put_list_data(customer_type, sales_list, settings):
     if len(items) > 1:
         if len(warehouse) > 1:
             pick_put_list_stock = frappe.db.sql(
-                f"""select ppli.item as item_code, ppli.batch, batch_picked, ppli.warehouse, ppli.quantity_to_be_picked, quantity_picked, ppli.warehouse
+                f"""select ppli.item as item_code, ppli.batch, ppli.batch_picked, ppli.warehouse, ppli.quantity_to_be_picked, ppli.quantity_picked, ppli.warehouse
                 from `tabPick Put List Items` as ppli
                     join `tabPick Put List` as ppl on (ppli.parent = ppl.name)
                 where ppli.item in {tuple(items)} and ppl.pick_list_stage != 'Invoiced' and ppl.pick_list_stage != 'Ready for Picking' and ppl.docstatus < 2 and ppli.warehouse in {tuple(warehouse)}""",
@@ -59,7 +59,7 @@ def fetch_pick_put_list_data(customer_type, sales_list, settings):
             )
         else:
             pick_put_list_stock = frappe.db.sql(
-                f"""select ppli.item as item_code, ppli.batch, batch_picked, ppli.warehouse, ppli.quantity_to_be_picked, quantity_picked, ppli.warehouse
+                f"""select ppli.item as item_code, ppli.batch, ppli.batch_picked, ppli.warehouse, ppli.quantity_to_be_picked, ppli.quantity_picked, ppli.warehouse
                 from `tabPick Put List Items` as ppli
                     join `tabPick Put List` as ppl on (ppli.parent = ppl.name)
                 where ppli.item in {tuple(items)} and ppl.pick_list_stage != 'Invoiced' and ppl.pick_list_stage != 'Ready for Picking' and ppl.docstatus < 2 and ppli.warehouse in '{warehouse[0]}'""",
@@ -68,7 +68,7 @@ def fetch_pick_put_list_data(customer_type, sales_list, settings):
     else:
         if len(warehouse) > 1:
             pick_put_list_stock = frappe.db.sql(
-                f"""select ppli.item as item_code, ppli.batch, batch_picked, ppli.warehouse, ppli.quantity_to_be_picked, quantity_picked, ppli.warehouse
+                f"""select ppli.item as item_code, ppli.batch, ppli.batch_picked, ppli.warehouse, ppli.quantity_to_be_picked, ppli.quantity_picked, ppli.warehouse
                 from `tabPick Put List Items` as ppli
                     join `tabPick Put List` as ppl on (ppli.parent = ppl.name)
                 where ppli.item = '{items[0]}' and ppl.pick_list_stage != 'Invoiced' and ppl.pick_list_stage != 'Ready for Picking' and ppl.docstatus < 2 and ppli.warehouse in {tuple(warehouse)}""",
@@ -76,7 +76,7 @@ def fetch_pick_put_list_data(customer_type, sales_list, settings):
             )
         else:
             pick_put_list_stock = frappe.db.sql(
-                f"""select ppli.item as item_code, ppli.batch, batch_picked, ppli.warehouse, ppli.quantity_to_be_picked, quantity_picked, ppli.warehouse
+                f"""select ppli.item as item_code, ppli.batch, ppli.batch_picked, ppli.warehouse, ppli.quantity_to_be_picked, ppli.quantity_picked, ppli.warehouse
                 from `tabPick Put List Items` as ppli
                     join `tabPick Put List` as ppl on (ppli.parent = ppl.name)
                 where ppli.item = '{items[0]}' and ppl.pick_list_stage != 'Invoiced' and ppl.pick_list_stage != 'Ready for Picking' and ppl.docstatus < 2 and ppli.warehouse in '{warehouse[0]}'""",
