@@ -500,7 +500,7 @@ def fetch_batch_price(batch, item_code):
         f"""select price_list_rate as price from `tabItem Price` where batch_no = '{batch}' and  item_code = '{item_code}'""",
         as_dict=1
     )
-    if len(price) > 0: return price[0]
+    if price[0]["price"] is not None: return price[0]
     else: fetch_batchless_price(item_code)
 
 def fetch_batchless_price(item_code):
@@ -508,7 +508,7 @@ def fetch_batchless_price(item_code):
         f"""select price_list_rate as price from `tabItem Price` where (batch_no is null or batch_no = '') and item_code = '{item_code}'""",
         as_dict=1
     )
-    if len(price) > 0: return price[0]
+    if price[0]["price"] is not None: return price[0]
     else: return dict(price = 0)
 
 def fetch_storage_location_from_id(id):
@@ -698,4 +698,4 @@ def pick_status(item_list, so_name, company, stage_index, stage_list):
         sales_doc.reload()
         sales_doc.save()
 
-    return dict(next_stage = next_stage)
+    return dict(next_stage = next_stage, average_price = average_price)
