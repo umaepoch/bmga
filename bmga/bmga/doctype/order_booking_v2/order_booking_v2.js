@@ -44,7 +44,9 @@ frappe.ui.form.on('Order Booking V2', {
 			let company = frm.doc.company;
 			let customer_type = frm.doc.customer_type;
 			let free_promos = frm.doc.promos;
-			console.log("frre_items", free_promos)
+			let promo_dis = frm.doc.promos_discount;
+			console.log("dis...", promo_dis)
+			console.log("free_items", free_promos)
 			console.log(customer_type, company)
 			console.log(order_list)
 			if(order_list) {
@@ -56,6 +58,7 @@ frappe.ui.form.on('Order Booking V2', {
 						company: company,
 						customer_type: customer_type,
 						free_promos: free_promos,
+						promo_dis: promo_dis
 					}
 				}).done((response) => {
 					console.log(response)
@@ -76,7 +79,7 @@ frappe.ui.form.on('Order Booking V2', {
 		})
 		frm.add_custom_button("Apply Promo", function(){
 			let item_code_list = frm.doc.order_booking_items_v2.map(function(d) {
-				return {item_code: d.item_code, quantity_booked: d.quantity_booked}
+				return {item_code: d.item_code, quantity_booked: d.quantity_booked, average_price:d.average_price}
 			})
 			
 			frm.doc.promos = [];
@@ -97,12 +100,20 @@ frappe.ui.form.on('Order Booking V2', {
 						let entry = frm.add_child("promos");
 						entry.bought_item = e.bought_item;
 						entry.free_items = e.promo_item;
+						entry.discount_rate = e.rate;
 						entry.quantity = e.qty;
 						entry.warehouse_quantity = e.w_qty
+					}),
+					refresh_field("promos"),
+					$.each(respose.message.sales_promo_discount.Promo_sales, function(_i, e){
+						let entry = frm.add_child("promos_discount");
+						entry.bought_item = e.bought_item;
+						entry.free_item = e.promo_item;
+						entry.qty = e.dic_qty;
+						entry.discount = e.dic
 					})
-					refresh_field("promos")
+					refresh_field("promos_discount")
 					frappe.msgprint("Promos Applied")
-
 				})
 			}	
 		})

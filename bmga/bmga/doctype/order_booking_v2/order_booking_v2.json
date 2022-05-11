@@ -16,6 +16,7 @@
   "section_break_4",
   "order_booking_items_v2",
   "promos",
+  "promos_discount",
   "order_booking_so",
   "hunting_quotation"
  ],
@@ -92,11 +93,18 @@
    "label": "Spacing",
    "options": "<div style=\"margin-bottom: 15%;\"></div>",
    "read_only": 1
+  },
+  {
+   "fieldname": "promos_discount",
+   "fieldtype": "Table",
+   "label": "Promos Discount",
+   "options": "Order Booking V2 Sales Discount",
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2022-05-09 11:57:58.523964",
+ "modified": "2022-05-11 10:19:03.946388",
  "modified_by": "Administrator",
  "module": "Bmga",
  "name": "Order Booking V2",
