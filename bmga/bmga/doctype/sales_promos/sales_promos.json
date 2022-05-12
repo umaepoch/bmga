@@ -14,6 +14,7 @@
   "end_date",
   "section_break_6",
   "promo_type",
+  "promo_table_for_quantityamount_based_discount",
   "promos_table_of_same_item",
   "promos_table_of_different_items",
   "free_item_for_eligible_quantity"
@@ -40,7 +41,7 @@
    "fieldname": "promo_type",
    "fieldtype": "Select",
    "label": "Promo Type",
-   "options": "\nQuantity  Based Discount\nBuy X of Item, get Y of Same Item Free\nBuy X of Item, Get Y of another Item Free\nAmount Based Discount\nFree Item for Eligible Quantity, Discount for ineligible Quantity"
+   "options": "\nQuantity/Amount Based Discount\nBuy X of Item, get Y of Same Item Free\nBuy X of Item, Get Y of another Item Free\nFree Item for Eligible Quantity, Discount for ineligible Quantity"
   },
   {
    "fieldname": "section_break_1",
@@ -74,11 +75,18 @@
    "fieldtype": "Table",
    "label": "Free Item For Eligible Quantity",
    "options": "Promo Type 5"
+  },
+  {
+   "depends_on": "eval:doc.promo_type == \"Quantity/Amount Based Discount\"",
+   "fieldname": "promo_table_for_quantityamount_based_discount",
+   "fieldtype": "Table",
+   "label": "Promo Table For Quantity/Amount Based Discount",
+   "options": "Promo Type 1"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2022-05-09 07:15:44.356939",
+ "modified": "2022-05-11 16:23:54.897821",
  "modified_by": "Administrator",
  "module": "Bmga",
  "name": "Sales Promos",

@@ -79,7 +79,7 @@ frappe.ui.form.on('Order Booking V2', {
 		})
 		frm.add_custom_button("Apply Promo", function(){
 			let item_code_list = frm.doc.order_booking_items_v2.map(function(d) {
-				return {item_code: d.item_code, quantity_booked: d.quantity_booked, average_price:d.average_price}
+				return {item_code: d.item_code, quantity_booked: d.quantity_booked, average_price:d.average_price, }
 			})
 			
 			frm.doc.promos = [];
@@ -100,7 +100,7 @@ frappe.ui.form.on('Order Booking V2', {
 						let entry = frm.add_child("promos");
 						entry.bought_item = e.bought_item;
 						entry.free_items = e.promo_item;
-						entry.discount_rate = e.rate;
+						entry.price = e.rate;
 						entry.quantity = e.qty;
 						entry.warehouse_quantity = e.w_qty
 					}),
@@ -109,7 +109,7 @@ frappe.ui.form.on('Order Booking V2', {
 						let entry = frm.add_child("promos_discount");
 						entry.bought_item = e.bought_item;
 						entry.free_item = e.promo_item;
-						entry.qty = e.dic_qty;
+						entry.quantity = e.dic_qty;
 						entry.discount = e.dic
 					})
 					refresh_field("promos_discount")
