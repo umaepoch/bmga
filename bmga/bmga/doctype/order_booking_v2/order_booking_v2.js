@@ -110,7 +110,8 @@ frappe.ui.form.on('Order Booking V2', {
 						entry.bought_item = e.bought_item;
 						entry.free_item = e.promo_item;
 						entry.quantity = e.dic_qty;
-						entry.discount = e.dic
+						entry.discount = e.dic;
+						entry.amount= e.amount
 					})
 					refresh_field("promos_discount")
 					frappe.msgprint("Promos Applied")
