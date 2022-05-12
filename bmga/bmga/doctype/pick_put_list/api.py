@@ -42,11 +42,11 @@ def fetch_fulfillment_settings(company):
 def fetch_pick_put_list_data(customer_type, sales_list, settings):
     items = [data["item_code"] for data in sales_list]
     if customer_type == "Retail":
-        warehouse = [settings["retail_primary_warehouse"], settings["retail_bulk_warehouse"]]
+        warehouse = [settings["retail_primary_warehouse"], settings["retail_bulk_warehouse"], settings["free_warehouse"]]
     elif customer_type == "Hospital":
-        warehouse = [settings["hospital_warehouse"]]
+        warehouse = [settings["hospital_warehouse"], settings["free_warehouse"]]
     elif customer_type == "Institutional":
-        warehouse = [settings["institutional_warehouse"]]
+        warehouse = [settings["institutional_warehouse"], settings["free_warehouse"]]
 
     if len(items) > 1:
         if len(warehouse) > 1:
@@ -84,7 +84,7 @@ def fetch_pick_put_list_data(customer_type, sales_list, settings):
             )
     return pick_put_list_stock
 
-def update_stock_detail_with_picked_stock(stock_data, picked_data):
+def update_stock_detail_with_picked_stock(stock_data, free_data, picked_data):
     print("*"*100)
     for s in stock_data:
         print(s)
@@ -122,18 +122,36 @@ def update_stock_detail_with_picked_stock(stock_data, picked_data):
                 struct_pick[p["warehouse"]][p["item_code"]][p_batch] = p_qty
             else:
                 struct_pick[p["warehouse"]][p["item_code"]][p_batch] = p_qty
-         
+    
+    print("Struct pick")
     print(struct_pick)     
     for s in stock_data:
         try:
-            s["actual_qty"] -= struct_pick[s["warehouse"]][s["item_code"]][s["batch_id"]]
+            if s["actual_qty"] > struct_pick[s["warehouse"]][s["item_code"]][s["batch_id"]]:
+                s["actual_qty"] -= struct_pick[s["warehouse"]][s["item_code"]][s["batch_id"]]
+            else:
+                s["actual_qty"] = 0
         except:
             pass
     
+    for f in free_data:
+        try:
+            if f["actual_qty"] > struct_pick[f["warehouse"]][f["item_code"]][f["batch_id"]]:
+                f["actual_qty"] -= struct_pick[f["warehouse"]][f["item_code"]][f["batch_id"]]
+            else:
+                f["actual_qty"] = 0
+        except:
+            pass
+    
+    print("stock after pick -")
     for s in stock_data:
         print(s)
     
-    return stock_data
+    print("free after pick -")
+    for f in free_data:
+        print(f)
+    
+    return stock_data, free_data
         
 
 def fetch_stock_details(customer_type, sales_list, settings):
@@ -475,7 +493,7 @@ def item_list_container(so_name, company):
     print("*"*100)
     for p in p_stock:
         print(p)
-    stock_data = update_stock_detail_with_picked_stock(stock_data, p_stock)
+    stock_data, free_data = update_stock_detail_with_picked_stock(stock_data, free_data, p_stock)
     print("STOCK DATA")
     for s in stock_data:
         print(s)
@@ -655,8 +673,10 @@ def update_sales_order_json(sales_doc, average_price, free_warehouse):
     for child in sales_doc.get_all_children():
             if child.doctype != "Sales Order Item": continue
             sales_item_doc = frappe.get_doc(child.doctype, child.name)
-            if sales_item_doc.warehouse == free_warehouse: continue
-            sales_item_doc.rate = average_price[sales_item_doc.item_code]["average"]
+            if sales_item_doc.warehouse == free_warehouse:
+                sales_item_doc.rate = 0
+            else:
+                sales_item_doc.rate = average_price[sales_item_doc.item_code]["average"]
             sales_item_doc.save()
 
 @frappe.whitelist()
