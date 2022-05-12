@@ -262,10 +262,13 @@ def fetch_sales_promos_get_same_item(item_code, customer_type, free_warehouse):
                         sales_promos_quantity = sales_promos_details*((promos[i]["quantity_of_free_items_thats_given"]))
 
                         try:
-                            if sales_data[0]["pending_qty"] > promos[i]["actual_qty"]:
-                                qty = promos[i]["actual_qty"] - sales_data[0]["pending_qty"]
+                            if sales_data[0].get["pending_qty"] is None: 
+                                qty = promos[i]["actual_qty"]
                             else:
-                                continue
+                                if sales_data[0]["pending_qty"] >= promos[i]["actual_qty"]:
+                                    qty = promos[i]["actual_qty"] - sales_data[0]["pending_qty"]
+                                else:
+                                    continue
                         except:
                             qty = promos[i]["actual_qty"]
 
@@ -323,10 +326,13 @@ def fetch_sales_promos_get_diff_item(item_code, customer_type, free_warehouse):
                         sales_promos_quantity = sales_promos_details*((promos[i]["quantity_of_free_items_thats_given"]))
 
                         try:
-                            if sales_data[0]["pending_qty"] > promos[i]["actual_qty"]:
-                                qty = promos[i]["actual_qty"] - sales_data[0]["pending_qty"]
+                            if sales_data[0].get["pending_qty"] is None: 
+                                qty = promos[i]["actual_qty"]
                             else:
-                                continue
+                                if sales_data[0]["pending_qty"] >= promos[i]["actual_qty"]:
+                                    qty = promos[i]["actual_qty"] - sales_data[0]["pending_qty"]
+                                else:
+                                    continue
                         except:
                             qty = promos[i]["actual_qty"]
 
@@ -389,11 +395,15 @@ def fetch_sales_promos_get_same_item_discout(item_code, customer_type, free_ware
                         sales_promo_discount = j["average_price"] * (100 - promos[i]["discount"])/100
                         sales_promos_details = ((j["quantity_booked"])//(promos[i]["for_every_quantity_that_is_bought"]))
                         sales_promos_quantity = sales_promos_details*((promos[i]["quantity_of_free_items_thats_given"]))
+                        
                         try:
-                            if sales_data[0]["pending_qty"] > promos[i]["actual_qty"]:
-                                qty = promos[i]["actual_qty"] - sales_data[0]["pending_qty"]
+                            if sales_data[0].get["pending_qty"] is None: 
+                                qty = promos[i]["actual_qty"]
                             else:
-                                continue
+                                if sales_data[0]["pending_qty"] >= promos[i]["actual_qty"]:
+                                    qty = promos[i]["actual_qty"] - sales_data[0]["pending_qty"]
+                                else:
+                                    continue
                         except:
                             qty = promos[i]["actual_qty"]
                          
@@ -445,15 +455,20 @@ def fetch_sales_promos_qty_based_discount(item_code, customer_type, free_warehou
                         sales_data = frappe.db.sql(
                         f"""select sum(qty - delivered_qty) as pending_qty from `tabSales Order Item` where item_code = '{promos[i]["bought_item"]}' and warehouse = '{free_warehouse}'""", as_dict=True
                         )
+
                         sales_promo_discount = j["average_price"] * (100 - promos[i]["discount_percentage"])/100
                         sales_promos_details = ((j["quantity_booked"])//(promos[i]["quantity_bought"]))
                         
                         sales_promos_quantity = sales_promos_details*(sales_promo_discount)
+
                         try:
-                            if sales_data[0]["pending_qty"] > promos[i]["actual_qty"]:
-                                qty = promos[i]["actual_qty"] - sales_data[0]["pending_qty"]
+                            if sales_data[0].get["pending_qty"] is None: 
+                                qty = promos[i]["actual_qty"]
                             else:
-                                continue
+                                if sales_data[0]["pending_qty"] >= promos[i]["actual_qty"]:
+                                    qty = promos[i]["actual_qty"] - sales_data[0]["pending_qty"]
+                                else:
+                                    continue
                         except:
                             qty = promos[i]["actual_qty"]
                          
