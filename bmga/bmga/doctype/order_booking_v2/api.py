@@ -592,7 +592,7 @@ def sales_order_container(customer, order_list, company, customer_type, free_pro
             innerJson_so = {
                     "doctype": "Sales Order Item",
                     "item_code": dis["free_item"],
-                    "qty": dis["qty"],
+                    "qty": dis["quantity"],
                     "rate": dis["discount"] ,
                     "warehouse": fulfillment_settings[0]["free_warehouse"]
                 }
