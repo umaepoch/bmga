@@ -43,8 +43,16 @@ frappe.ui.form.on('Order Booking V2', {
 			let customer = frm.doc.customer;
 			let company = frm.doc.company;
 			let customer_type = frm.doc.customer_type;
-			let free_promos = frm.doc.promos;
-			let promo_dis = frm.doc.promos_discount;
+			var free_promos = frm.doc.promos;
+			var promo_dis = frm.doc.promos_discount;
+			
+			if(free_promos == undefined || free_promos == null) {
+				free_promos = []
+			}
+			if(promo_dis == undefined || promo_dis == null) {
+				promo_dis = []
+			}
+			
 			console.log("dis...", promo_dis)
 			console.log("free_items", free_promos)
 			console.log(customer_type, company)

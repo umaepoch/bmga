@@ -11,6 +11,15 @@ frappe.ui.form.on('Pick Put List', {
 				]
 			};
 		});
+
+		frm.add_child_pos = function(data, table_name) {
+			var child = frm.add_child(table_name);
+			child.item = data.item;
+			child.uom = data.stock_uom;
+			child.wbs_storage_location = data.wbs_storage_location;
+			child.warehouse = data.warehouse;
+			child.correction = 1;
+		};
 	},
 
 	refresh: function(frm) {
@@ -35,6 +44,18 @@ frappe.ui.form.on('Pick Put List', {
 						}
 					}).done((response) => {
 						console.log(response);
+						if(response.message.names) {
+							let names = response.message.names
+
+							if(names.mr_name) {
+								frm.set_value('material_receipt', names.mr_name);
+							}
+
+							if(names.mi_name) {
+								frm.set_value('material_issue', names.mi_name);
+							}
+						}
+
 						frm.set_value('pick_list_stage', response.message.next_stage);
 						refresh_field('pick_list_stage');
 
@@ -81,4 +102,17 @@ frappe.ui.form.on('Pick Put List', {
 			}
 		}
 	}
+});
+
+
+frappe.ui.form.on('Pick Put List Items', {
+	correction: function(frm, cdt, cdn) {
+		let doc = locals[cdt][cdn];
+		console.log(doc);
+
+		if(doc.correction) {
+			frm.add_child_pos(doc, "item_list");
+			cur_frm.refresh_field("item_list");
+		}
+	},
 });

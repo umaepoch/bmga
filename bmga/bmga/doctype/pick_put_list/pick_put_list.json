@@ -13,9 +13,8 @@
   "sales_order",
   "column_break_5",
   "sales_invoice",
-  "customer",
-  "customer_group_type",
-  "warehouse",
+  "material_receipt",
+  "material_issue",
   "section_break_10",
   "item_list"
  ],
@@ -32,25 +31,6 @@
    "fieldtype": "Link",
    "label": "Sales Order",
    "options": "Sales Order",
-   "read_only": 1
-  },
-  {
-   "fieldname": "customer",
-   "fieldtype": "Link",
-   "label": "Customer",
-   "options": "Customer",
-   "read_only": 1
-  },
-  {
-   "fieldname": "customer_group_type",
-   "fieldtype": "Data",
-   "label": "Customer Group Type",
-   "read_only": 1
-  },
-  {
-   "fieldname": "warehouse",
-   "fieldtype": "Data",
-   "label": "Warehouse",
    "read_only": 1
   },
   {
@@ -86,11 +66,27 @@
   {
    "fieldname": "section_break_10",
    "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "material_receipt",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Material Receipt",
+   "options": "Stock Entry",
+   "read_only": 1
+  },
+  {
+   "fieldname": "material_issue",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Material Issue",
+   "options": "Stock Entry",
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2022-05-04 00:26:55.017254",
+ "modified": "2022-05-13 10:54:54.756905",
  "modified_by": "Administrator",
  "module": "Bmga",
  "name": "Pick Put List",
