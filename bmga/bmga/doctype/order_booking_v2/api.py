@@ -501,13 +501,12 @@ def fetch_sales_promos_qty_based_discount(item_code, customer_type, free_warehou
         # print("DOUBLE PROMO ITEM")
         promos = frappe.db.sql(
             f"""select sp.start_date, sp.end_date, 
-            pt.for_every_quantity_that_is_bought, pt.quantity_of_free_items_thats_given, pt.discount_percentage,
+            pt.quantity_bought, pt.discount_percentage,
             pt.bought_item
             from  `tabSales Promos` as sp  
                 inner join `tabPromo Type 1` as pt on pt.parent = sp.name
                 inner join `tabStock Ledger Entry` as sle on pt.bought_item = sle.item_code
             where pt.bought_item in {tuple(i)} and sle.warehouse = '{free_warehouse}'
-            group by sle.item_code
             """, as_dict = True
         )
     else:
@@ -522,40 +521,44 @@ def fetch_sales_promos_qty_based_discount(item_code, customer_type, free_warehou
             where pt.bought_item = '{i[0]}' and sle.warehouse = '{free_warehouse}'
             """, as_dict = True
         )
-    print("promos......", promos[0]["quantity_bought"])
- 
-    print("......", promo_dis)
-    if len(promos) > 0:
-        for i in range (len(promos)):
-            if promos[i].get("start_date") is None: continue
-            if(promos[i]["start_date"] <= today <= promos[i]["end_date"]): 
-                for j in item_code:
-                    if promos[i]["bought_item"] == j["item_code"]:
-                        sales_data = frappe.db.sql(
-                        f"""select sum(qty - delivered_qty) as pending_qty from `tabSales Order Item` where item_code = '{promos[i]["bought_item"]}' and warehouse = '{free_warehouse}'""", as_dict=True
-                        )
-                        
-                        sales_promo_discount = j["average_price"] * (100 - promos[i]["discount_percentage"])/100
-                        sales_promos_details = ((j["quantity_booked"])//(promos[i]["quantity_bought"]))
-                        
-                        sales_promos_quantity = sales_promos_details*(sales_promo_discount)
+    
+    # print("promos......", promos)
+    for i in range (len(promos), 0, -2):
+        for d in promos:
+            # data = d
+            print("....", d["quantity_bought"])
+            for j in item_code:
+                if j["quantity_booked"] > d["quantity_bought"]:
+                    sales_promo_discount = j["amount"] * (100 - d["discount_percentage"])/100
+                    print(sales_promo_discount)
+                    break
 
-                        promo_qty = available_stock_details_for_promos(item_code, customer_type, free_warehouse, expiry_date)
+    # if len(promos) > 0:
+    #     for i in range (len(promos)):
+    #         if promos[i].get("start_date") is None: continue
+    #         if(promos[i]["start_date"] <= today <= promos[i]["end_date"]): 
+    #             for j in item_code:
+    #                 if promos[i]["bought_item"] == j["item_code"]:
+    #                     sales_data = frappe.db.sql(
+    #                     f"""select sum(qty - delivered_qty) as pending_qty from `tabSales Order Item` where item_code = '{promos[i]["bought_item"]}' and warehouse = '{free_warehouse}'""", as_dict=True
+    #                     )
+                        
+    #                     promo_qty = available_stock_details_for_promos(item_code, customer_type, free_warehouse, expiry_date)
 
                         
-                        try:
-                            if sales_data[0].get["pending_qty"] is None: 
-                                qty = promo_qty[promos[i]["bought_item"]]
-                            else:
-                                if sales_data[0]["pending_qty"] >= promo_qty[promos[i]["bought_item"]]:
-                                    qty = promos[i]["actual_qty"] - promo_qty[promos[i]["bought_item"]]
-                                else:
-                                    continue
-                        except:
-                            qty = promo_qty[promos[i]["bought_item"]]
+    #                     try:
+    #                         if sales_data[0].get["pending_qty"] is None: 
+    #                             qty = promo_qty[promos[i]["bought_item"]]
+    #                         else:
+    #                             if sales_data[0]["pending_qty"] >= promo_qty[promos[i]["bought_item"]]:
+    #                                 qty = promos[i]["actual_qty"] - promo_qty[promos[i]["bought_item"]]
+    #                             else:
+    #                                 continue
+    #                     except:
+    #                         qty = promo_qty[promos[i]["bought_item"]]
                          
-                        promos_sale.append({"qty":sales_promos_quantity, "dic":sales_promo_discount,"rate": 0.0 , "bought_item":promos[i]["bought_item"], "promo_item": promos[i]["bought_item"], "w_qty" : qty})
-    return dict({"Promo_sales" : promos_sale, "Promos" : promos, "sales_data" : sales_data})
+    #                     promos_sale.append({"qty":sales_promos_quantity, "rate": 0.0 , "bought_item":promos[i]["bought_item"], "promo_item": promos[i]["bought_item"], "w_qty" : qty})
+    # return dict({"Promo_sales" : promos_sale, "Promos" : promos, "sales_data" : sales_data})
 
 
 @frappe.whitelist()
@@ -579,7 +582,7 @@ def sales_promos(item_code, customer_type, company):
     sales_promo_diff_items = fetch_sales_promos_get_diff_item(item_code, customer_type, settings[0]["free_warehouse"], settings[0]["expiry_date_limit"])
     # print("Sales promo diff items",sales_promo_diff_items)
     sales_promo_discount = fetch_sales_promos_get_same_item_discout(item_code, customer_type, settings[0]["free_warehouse"], settings[0]["expiry_date_limit"])
-    sales_promo_quantity_discount = fetch_sales_promos_qty_based_discount(item_code, customer_type, settings[0]["free_warehouse"], settings[0]["expiry_date_limit"])
+    # sales_promo_quantity_discount = fetch_sales_promos_qty_based_discount(item_code, customer_type, settings[0]["free_warehouse"], settings[0]["expiry_date_limit"])
     # print("discount promo....", sales_promo_discount)
     sales_promos_items = sales_promos_same_item["Promo_sales"] + sales_promo_diff_items["Promo_sales"] + sales_promo_discount["Promo_sales"]
     print("sales promos items", sales_promos_items)

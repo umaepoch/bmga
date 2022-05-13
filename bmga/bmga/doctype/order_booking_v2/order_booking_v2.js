@@ -79,7 +79,7 @@ frappe.ui.form.on('Order Booking V2', {
 		})
 		frm.add_custom_button("Apply Promo", function(){
 			let item_code_list = frm.doc.order_booking_items_v2.map(function(d) {
-				return {item_code: d.item_code, quantity_booked: d.quantity_booked, average_price:d.average_price, }
+				return {item_code: d.item_code, quantity_booked: d.quantity_booked, average_price:d.average_price, amount:d.amount}
 			})
 			
 			frm.doc.promos = [];
