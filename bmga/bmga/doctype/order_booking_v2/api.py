@@ -221,56 +221,26 @@ def available_stock_details_for_promos(item_code, customer_type, settings, expir
     today = datetime.date.today()
     stock_promo = []
     i = [x["item_code"] for x in item_code]
+    i = re.sub(',\)$', ')', str(tuple(i)))
     print("Item",i)
+      
+    stock_data_batch = frappe.db.sql(f"""
+            select batch_id , `tabBatch`.stock_uom, item as item_code, expiry_date, `tabStock Ledger Entry`.warehouse as warehouse, sum(`tabStock Ledger Entry`.actual_qty) as actual_qty
+            from `tabBatch`
+                join `tabStock Ledger Entry` ignore index (item_code, warehouse)
+                    on (`tabBatch`.batch_id = `tabStock Ledger Entry`.batch_no )
+            where `tabStock Ledger Entry`.item_code in {i} AND warehouse = '{settings}'
+                and `tabStock Ledger Entry`.is_cancelled = 0
+            group by batch_id, warehouse
+            order by expiry_date ASC, warehouse DESC
+        """, as_dict=True)
+    stock_data_batchless = frappe.db.sql(
+        f"""select batch_no as batch_id, item_code, warehouse, stock_uom, sum(actual_qty) as actual_qty from `tabStock Ledger Entry`
+        where item_code in {i} and warehouse = '{settings}' and (batch_no is null or batch_no = '')
+        group by item_code, warehouse""",
+        as_dict=True
+    )
 
-    if len(item_code) > 1 :       
-        stock_data_batch = frappe.db.sql(f"""
-                select batch_id , `tabBatch`.stock_uom, item as item_code, expiry_date, `tabStock Ledger Entry`.warehouse as warehouse, sum(`tabStock Ledger Entry`.actual_qty) as actual_qty
-                from `tabBatch`
-                    join `tabStock Ledger Entry` ignore index (item_code, warehouse)
-                        on (`tabBatch`.batch_id = `tabStock Ledger Entry`.batch_no )
-                where `tabStock Ledger Entry`.item_code in {tuple(i)} AND warehouse = '{settings}'
-                    and `tabStock Ledger Entry`.is_cancelled = 0
-                group by batch_id, warehouse
-                order by expiry_date ASC, warehouse DESC
-            """, as_dict=True)
-        stock_data_batchless = frappe.db.sql(
-            f"""select batch_no as batch_id, item_code, warehouse, stock_uom, sum(actual_qty) as actual_qty from `tabStock Ledger Entry`
-            where item_code in {tuple(i)} and warehouse = '{settings}' and (batch_no is null or batch_no = '')
-            group by item_code, warehouse""",
-            as_dict=True
-        )
-        # sales_data = frappe.db.sql(
-        #     f"""select sum(soi.qty - soi.delivered_qty) as pending_qty
-        #     from `tabSales Order Item` as soi
-        #         join `tabSales Order` as so on (soi.parent = so.name)
-        #     where soi.docstatus = 1 and soi.item_code in {tuple(i)} and soi.warehouse = '{settings}' and so.pch_picking_status != ''""", as_dict=True
-        #     )
-    else:
-        stock_data_batch = frappe.db.sql(f"""
-                select batch_id , `tabBatch`.stock_uom, item as item_code, expiry_date, `tabStock Ledger Entry`.warehouse as warehouse, sum(`tabStock Ledger Entry`.actual_qty) as actual_qty
-                from `tabBatch`
-                    join `tabStock Ledger Entry` ignore index (item_code, warehouse)
-                        on (`tabBatch`.batch_id = `tabStock Ledger Entry`.batch_no )
-                where `tabStock Ledger Entry`.item_code = '{i[0]}' AND warehouse = '{settings}'
-                    and `tabStock Ledger Entry`.is_cancelled = 0
-                group by batch_id, warehouse
-                order by expiry_date ASC, warehouse DESC
-            """, as_dict=True)
-        stock_data_batchless = frappe.db.sql(
-            f"""select batch_no as batch_id, item_code, warehouse, stock_uom, sum(actual_qty) as actual_qty from `tabStock Ledger Entry`
-            where item_code = '{i[0]}' and warehouse = '{settings}' and (batch_no is null or batch_no = '')
-            group by item_code, warehouse""",
-            as_dict=True
-        )
-        # sales_data = frappe.db.sql(
-        #     f"""select sum(soi.qty - soi.delivered_qty) as pending_qty
-        #     from `tabSales Order Item` as soi
-        #         join `tabSales Order` as so on (soi.parent = so.name)
-        #     where soi.docstatus = 1 and soi.item_code = '{i[0]}' and soi.warehouse = '{settings}' and so.pch_picking_status != ''""", as_dict=True
-        #     )
-    
-    # print("Stock", stock_data_batch, stock_data_batchless, sales_data)
     stock_promo.extend(stock_data_batch)
     stock_promo.extend(stock_data_batchless)
     # print("Stock_promos")
@@ -296,8 +266,6 @@ def fetch_sales_promos_get_same_item(item_code, customer_type, free_warehouse, e
     print("Item",i)
     
     today = datetime.date.today()
-    # if customer_type == "Retail":
-        # print("DIFFERENT ITEMS")
     promos = frappe.db.sql (f""" select sp.start_date, sp.end_date, 
         pt.for_every_quantity_that_is_bought, pt.quantity_of_free_items_thats_given,
         pt.bought_item
@@ -318,17 +286,20 @@ def fetch_sales_promos_get_same_item(item_code, customer_type, free_warehouse, e
                         sales_data = frappe.db.sql(
                         f"""select sum(qty - delivered_qty) as pending_qty from `tabSales Order Item` where item_code = '{promos[i]["bought_item"]}' and warehouse = '{free_warehouse}'""", as_dict=True
                         )
+
+                        print("sales", sales_data)
                         sales_promos_details = ((j["quantity_booked"])//(promos[i]["for_every_quantity_that_is_bought"]))
                         sales_promos_quantity = sales_promos_details*((promos[i]["quantity_of_free_items_thats_given"]))
 
                         promo_qty = available_stock_details_for_promos(item_code, customer_type, free_warehouse, expiry_date)
+                        print("Promo qty",promo_qty[promos[i]["bought_item"]])
                        
                         try:
-                            if sales_data[0].get["pending_qty"] is None: 
+                            if sales_data[0].get("pending_qty") is None: 
                                 qty = promo_qty[promos[i]["bought_item"]]
                             else:
-                                if sales_data[0]["pending_qty"] >= promo_qty[promos[i]["bought_item"]]:
-                                    qty = promos[i]["actual_qty"] - promo_qty[promos[i]["bought_item"]]
+                                if sales_data[0]["pending_qty"] <= promo_qty[promos[i]["bought_item"]]:
+                                    qty =  promo_qty[promos[i]["bought_item"]] - sales_data[0]["pending_qty"]
                                 else:
                                     continue
                         except:
@@ -374,11 +345,11 @@ def fetch_sales_promos_get_diff_item(item_code, customer_type, free_warehouse, e
                         promo_qty = available_stock_details_for_promos(item_code, customer_type, free_warehouse, expiry_date)
 
                         try:
-                            if sales_data[0].get["pending_qty"] is None: 
+                            if sales_data[0].get("pending_qty") is None: 
                                 qty = promo_qty[promos[i]["bought_item"]]
                             else:
-                                if sales_data[0]["pending_qty"] >= promo_qty[promos[i]["bought_item"]]:
-                                    qty = promos[i]["actual_qty"] - promo_qty[promos[i]["bought_item"]]
+                                if sales_data[0]["pending_qty"] <= promo_qty[promos[i]["bought_item"]]:
+                                    qty =  promo_qty[promos[i]["bought_item"]] - sales_data[0]["pending_qty"]
                                 else:
                                     continue
                         except:
@@ -427,11 +398,11 @@ def fetch_sales_promos_get_same_item_discout(item_code, customer_type, free_ware
                         promo_qty = available_stock_details_for_promos(item_code, customer_type, free_warehouse, expiry_date)
 
                         try:
-                            if sales_data[0].get["pending_qty"] is None: 
+                            if sales_data[0].get("pending_qty") is None: 
                                 qty = promo_qty[promos[i]["bought_item"]]
                             else:
-                                if sales_data[0]["pending_qty"] >= promo_qty[promos[i]["bought_item"]]:
-                                    qty = promos[i]["actual_qty"] - promo_qty[promos[i]["bought_item"]]
+                                if sales_data[0]["pending_qty"] <= promo_qty[promos[i]["bought_item"]]:
+                                    qty =  promo_qty[promos[i]["bought_item"]] - sales_data[0]["pending_qty"]
                                 else:
                                     continue
                         except:
@@ -457,9 +428,7 @@ def fetch_sales_promos_qty_based_discount(item_code, customer_type, free_warehou
                 inner join `tabStock Ledger Entry` as sle on pt.bought_item = sle.item_code
         where pt.bought_item in {i} and sle.warehouse = '{free_warehouse}' group by pt.discount_percentage
         """, as_dict = True)
-    print(".............", promos)
     data.append(promos) 
-    print("..................", type(data))
     seen = []
     if len(promos) > 0:
         for i in range (len(promos)):
@@ -484,11 +453,11 @@ def fetch_sales_promos_qty_based_discount(item_code, customer_type, free_warehou
 
                         
                         try:
-                            if sales_data[0].get["pending_qty"] is None: 
+                            if sales_data[0].get("pending_qty") is None: 
                                 qty = promo_qty[promos[i]["bought_item"]]
                             else:
-                                if sales_data[0]["pending_qty"] >= promo_qty[promos[i]["bought_item"]]:
-                                    qty = promos[i]["actual_qty"] - promo_qty[promos[i]["bought_item"]]
+                                if sales_data[0]["pending_qty"] <= promo_qty[promos[i]["bought_item"]]:
+                                    qty =  promo_qty[promos[i]["bought_item"]] - sales_data[0]["pending_qty"]
                                 else:
                                     continue
                         except:
