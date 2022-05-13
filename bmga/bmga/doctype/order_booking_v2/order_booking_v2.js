@@ -85,6 +85,9 @@ frappe.ui.form.on('Order Booking V2', {
 			frm.doc.promos = [];
 			refresh_field("promos");
 
+			frm.doc.promos_discount = [];
+			refresh_field("promos_discount");
+
 			let company = frm.doc.company;
 			if (item_code_list) {
 				frappe.call({
@@ -105,7 +108,7 @@ frappe.ui.form.on('Order Booking V2', {
 						entry.warehouse_quantity = e.w_qty
 					}),
 					refresh_field("promos"),
-					$.each(respose.message.sales_promo_discount.Promo_sales, function(_i, e){
+					$.each(respose.message.sales_promo_discounted_amount, function(_i, e){
 						let entry = frm.add_child("promos_discount");
 						entry.bought_item = e.bought_item;
 						entry.free_item = e.promo_item;

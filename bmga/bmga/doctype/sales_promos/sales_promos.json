@@ -1,7 +1,7 @@
 {
  "actions": [],
  "allow_rename": 1,
- "autoname": "SAP.#####",
+ "autoname": "SAP-.####",
  "creation": "2022-04-28 14:26:53.951564",
  "doctype": "DocType",
  "editable_grid": 1,
@@ -41,7 +41,7 @@
    "fieldname": "promo_type",
    "fieldtype": "Select",
    "label": "Promo Type",
-   "options": "\nQuantity/Amount Based Discount\nBuy X of Item, get Y of Same Item Free\nBuy X of Item, Get Y of another Item Free\nFree Item for Eligible Quantity, Discount for ineligible Quantity"
+   "options": "\nAmount Based Discount\nBuy X of Item, get Y of Same Item Free\nBuy X of Item, Get Y of another Item Free\nFree Item for Eligible Quantity, Discount for ineligible Quantity"
   },
   {
    "fieldname": "section_break_1",
@@ -77,7 +77,7 @@
    "options": "Promo Type 5"
   },
   {
-   "depends_on": "eval:doc.promo_type == \"Quantity/Amount Based Discount\"",
+   "depends_on": "eval:doc.promo_type == \"Amount Based Discount\"",
    "fieldname": "promo_table_for_quantityamount_based_discount",
    "fieldtype": "Table",
    "label": "Promo Table For Quantity/Amount Based Discount",
@@ -86,7 +86,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2022-05-11 16:23:54.897821",
+ "modified": "2022-05-13 16:01:08.881778",
  "modified_by": "Administrator",
  "module": "Bmga",
  "name": "Sales Promos",
