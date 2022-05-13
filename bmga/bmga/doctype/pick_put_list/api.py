@@ -1,5 +1,4 @@
 import json
-from tkinter.messagebox import NO
 import frappe
 import datetime
 
