@@ -4,7 +4,7 @@ import datetime
 
 def fetch_item_list(so_name):
     item_list = frappe.db.sql(
-        f"""SELECT item_code, qty, warehouse FROM `tabSales Order Item` WHERE parent = '{so_name}'""",
+        f"""SELECT item_code, qty, warehouse, name as so_detail FROM `tabSales Order Item` WHERE parent = '{so_name}'""",
         as_dict=True
     )
     return item_list
@@ -348,7 +348,7 @@ def sales_order_handle(sales_list, stock_data, free_data, wbs_details, expiry_da
 
     for sales in sales_list:
         to_pickup = sales["qty"]
-        print(sales)
+        print("SALES LIST", sales)
         if sales["warehouse"] != free_warehouse:
             print("Normal Data")
             if stock_data.get(sales["item_code"]) is None: continue
@@ -661,52 +661,53 @@ def ppli_qty_and_batch(item):
     
     return qty, batch
 
-def fetch_free_type(i, qty):
+def discount_item_price(i, qty):
     today = datetime.date.today()
 
     d = frappe.db.sql(
         f"""select pt1.bought_item, pt1.discount_percentage, pt1.quantity_bought
         from `tabPromo Type 1` as pt1
             join `tabSales Promos` as sp on (sp.name = pt1.parent)
-        where sp.start_date <= '{today}' and sp.end_date >= '{today}'""",
+        where pt1.bought_item = '{i["item"]}' and sp.start_date <= '{today}' and sp.end_date >= '{today}'""",
         as_dict=1
     )
 
     print("*"*150)
     if len(d) > 0:
+        print("Sales Type 1")
+        print(d)
         d = sorted(d, key = lambda x : x["discount_percentage"], reverse=1)
-        for i in d:
-            if i["quantity_bought"] > qty: continue
-            print(i)
+        for x in d:
+            if x["quantity_bought"] > qty: continue
+            print(x)
             break
+    else:
+        print("Sales Type 5")
+    
+    print("*"*150)
     return d
 
 def update_average_price(item_list, free_warehouse):
     new_average_price = {}
-    free_average_price = {}
 
     for item in item_list:
-        if item["warehouse"] == free_warehouse: 
-            free_qty, free_batch = ppli_qty_and_batch(item)
-            print(free_qty, free_batch)
-            free_type = fetch_free_type(item, free_qty)
+        if item["warehouse"] == free_warehouse: continue
+        qty, batch = ppli_qty_and_batch(item)
+        promo_detail = discount_item_price(item, qty)
+        if batch:
+            rate = fetch_batch_price(batch, item["item"])
         else:
-            qty, batch = ppli_qty_and_batch(item)
-            if batch:
-                rate = fetch_batch_price(batch, item["item"])
-            else:
-                rate = fetch_batchless_price(item["item"])
-
-            if item["item"] not in new_average_price:
-                new_average_price[item["item"]] = {
-                    "qty": [qty],
-                    "price": [rate["price"]]
-                }
-            else:
-                if qty is None: continue  
-                new_average_price[item["item"]]["qty"].append(qty)
-                new_average_price[item["item"]]["price"].append(rate["price"])
-            new_average_price[item["item"]]["average"] = sum([new_average_price[item["item"]]["qty"][i] * new_average_price[item["item"]]["price"][i] for i in range(len(new_average_price[item["item"]]["qty"]))]) / sum(new_average_price[item["item"]]["qty"])
+            rate = fetch_batchless_price(item["item"])
+        if item["item"] not in new_average_price:
+            new_average_price[item["item"]] = {
+                "qty": [qty],
+                "price": [rate["price"]]
+            }
+        else:
+            if qty is None: continue  
+            new_average_price[item["item"]]["qty"].append(qty)
+            new_average_price[item["item"]]["price"].append(rate["price"])
+        new_average_price[item["item"]]["average"] = sum([new_average_price[item["item"]]["qty"][i] * new_average_price[item["item"]]["price"][i] for i in range(len(new_average_price[item["item"]]["qty"]))]) / sum(new_average_price[item["item"]]["qty"])
     
     return new_average_price 
 

@@ -550,7 +550,7 @@ def sales_order_container(customer, order_list, company, customer_type, free_pro
     }
 
     for data in order_list:
-        if data["quantity_booked"] == 0: continue
+        if data.get("quantity_booked") is None or data.get("quantity_booked") == 0: continue
         if data["quantity_booked"] > data["quantity_available"]:
             if data["quantity_available"] > 0:
                 innerJson_so = {
