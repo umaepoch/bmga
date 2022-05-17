@@ -102,7 +102,7 @@ def available_stock_details(item_code, customer_type, settings):
             f"""select sum(soi.qty - soi.delivered_qty) as pending_qty
             from `tabSales Order Item` as soi
                 join `tabSales Order` as so on (soi.parent = so.name)
-            where soi.docstatus = 1 and soi.item_code = '{item_code}' and soi.warehouse in {tuple(warehouse)} and so.pch_picking_status != ''""", as_dict=True
+            where soi.docstatus < 2 and soi.item_code = '{item_code}' and soi.warehouse in {tuple(warehouse)} and so.pch_picking_status != ''""", as_dict=True
         )
     else:
         stock_data_batch = frappe.db.sql(f"""
@@ -127,7 +127,7 @@ def available_stock_details(item_code, customer_type, settings):
             f"""select sum(soi.qty - soi.delivered_qty) as pending_qty
             from `tabSales Order Item` as soi
                 join `tabSales Order` as so on (soi.parent = so.name)
-            where soi.docstatus = 1 and soi.item_code = '{item_code}' and soi.warehouse = '{warehouse[0]} and so.pch_picking_status != ''""", as_dict=True
+            where soi.docstatus < 2 and soi.item_code = '{item_code}' and soi.warehouse = '{warehouse[0]} and so.pch_picking_status != ''""", as_dict=True
         )
     
     print("expiry limit", settings["expiry_date_limit"])
@@ -470,6 +470,8 @@ def fetch_sales_promos_qty_based_discount(item_code, customer_type, free_warehou
         print(".....", qty_booked, amt)
 
     seen = []
+    sales_promo_discount = None
+
     if len(promos) > 0:
         for i in range ((len(promos) -1), -1, -1):
             print()
