@@ -10,7 +10,8 @@
   "free_item",
   "quantity",
   "discount",
-  "amount"
+  "amount",
+  "amount_of_discount"
  ],
  "fields": [
   {
@@ -37,12 +38,17 @@
    "fieldname": "amount",
    "fieldtype": "Currency",
    "label": "Amount"
+  },
+  {
+   "fieldname": "amount_of_discount",
+   "fieldtype": "Data",
+   "label": "Amount of Discount"
   }
  ],
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2022-05-12 14:21:57.001871",
+ "modified": "2022-05-16 11:14:28.554398",
  "modified_by": "Administrator",
  "module": "Bmga",
  "name": "Order Booking V2 Sales Discount",
