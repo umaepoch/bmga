@@ -11,44 +11,57 @@
   "quantity",
   "discount",
   "amount",
-  "amount_of_discount"
+  "amount_of_discount",
+  "promo_type"
  ],
  "fields": [
   {
    "fieldname": "bought_item",
    "fieldtype": "Data",
+   "in_list_view": 1,
    "label": "Bought Item"
   },
   {
    "fieldname": "free_item",
    "fieldtype": "Data",
+   "in_list_view": 1,
    "label": "Free Item"
   },
   {
    "fieldname": "discount",
    "fieldtype": "Currency",
+   "in_list_view": 1,
    "label": "Discounted Price"
   },
   {
    "fieldname": "quantity",
    "fieldtype": "Data",
+   "in_list_view": 1,
    "label": "Quantity"
   },
   {
    "fieldname": "amount",
    "fieldtype": "Currency",
+   "in_list_view": 1,
    "label": "Amount"
   },
   {
    "fieldname": "amount_of_discount",
    "fieldtype": "Data",
+   "in_list_view": 1,
    "label": "Amount of Discount"
+  },
+  {
+   "fieldname": "promo_type",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Promo Type"
   }
  ],
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2022-05-16 11:14:28.554398",
+ "modified": "2022-05-17 15:59:21.269132",
  "modified_by": "Administrator",
  "module": "Bmga",
  "name": "Order Booking V2 Sales Discount",

@@ -113,7 +113,8 @@ frappe.ui.form.on('Order Booking V2', {
 						entry.free_items = e.promo_item;
 						entry.price = e.rate;
 						entry.quantity = e.qty;
-						entry.warehouse_quantity = e.w_qty
+						entry.warehouse_quantity = e.w_qty;
+						entry.promo_type = e.promo_type;
 					}),
 					refresh_field("promos"),
 					$.each(respose.message.sales_promo_discounted_amount, function(_i, e){
@@ -122,7 +123,8 @@ frappe.ui.form.on('Order Booking V2', {
 						entry.free_item = e.promo_item;
 						entry.quantity = e.dic_qty;
 						entry.discount = e.dic;
-						entry.amount= e.amount
+						entry.promo_type = e.promo_type;
+						entry.amount= e.amount;
 					})
 					refresh_field("promos_discount")
 					frappe.msgprint("Promos Applied")
