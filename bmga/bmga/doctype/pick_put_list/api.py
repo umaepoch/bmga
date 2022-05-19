@@ -5,9 +5,16 @@ import re
 
 def fetch_item_list(so_name):
     item_list = frappe.db.sql(
-        f"""SELECT item_code, qty, warehouse, name as so_detail FROM `tabSales Order Item` WHERE parent = '{so_name}'""",
+        f"""SELECT item_code, qty, warehouse, name as so_detail, promo_type  FROM `tabSales Order Item` WHERE parent = '{so_name}'""",
         as_dict=True
     )
+
+    print("*-+"*50)
+    print("ITEM LIST")
+    for i in item_list:
+        print(i)
+    print("*-+"*50)
+
     return item_list
 
 def fetch_customer_type(so_name):
@@ -42,47 +49,25 @@ def fetch_fulfillment_settings(company):
 
 def fetch_pick_put_list_data(customer_type, sales_list, settings):
     items = [data["item_code"] for data in sales_list]
+    items = re.sub(r',\)$', ')', str(tuple(items)))
+
     if customer_type == "Retail":
         warehouse = [settings["retail_primary_warehouse"], settings["retail_bulk_warehouse"], settings["free_warehouse"]]
     elif customer_type == "Hospital":
         warehouse = [settings["hospital_warehouse"], settings["free_warehouse"]]
     elif customer_type == "Institutional":
         warehouse = [settings["institutional_warehouse"], settings["free_warehouse"]]
+    
+    warehouse = re.sub(r',\)$', ')', str(tuple(warehouse)))
 
-    if len(items) > 1:
-        if len(warehouse) > 1:
-            pick_put_list_stock = frappe.db.sql(
-                f"""select ppli.item as item_code, ppli.batch, ppli.batch_picked, ppli.warehouse, ppli.quantity_to_be_picked, ppli.quantity_picked, ppli.warehouse
-                from `tabPick Put List Items` as ppli
-                    join `tabPick Put List` as ppl on (ppli.parent = ppl.name)
-                where ppli.item in {tuple(items)} and ppl.pick_list_stage != 'Invoiced' and ppl.pick_list_stage != 'Ready for Picking' and ppl.docstatus < 2 and ppli.warehouse in {tuple(warehouse)}""",
-                as_dict=1
-            )
-        else:
-            pick_put_list_stock = frappe.db.sql(
-                f"""select ppli.item as item_code, ppli.batch, ppli.batch_picked, ppli.warehouse, ppli.quantity_to_be_picked, ppli.quantity_picked, ppli.warehouse
-                from `tabPick Put List Items` as ppli
-                    join `tabPick Put List` as ppl on (ppli.parent = ppl.name)
-                where ppli.item in {tuple(items)} and ppl.pick_list_stage != 'Invoiced' and ppl.pick_list_stage != 'Ready for Picking' and ppl.docstatus < 2 and ppli.warehouse in '{warehouse[0]}'""",
-                as_dict=1
-            )
-    else:
-        if len(warehouse) > 1:
-            pick_put_list_stock = frappe.db.sql(
-                f"""select ppli.item as item_code, ppli.batch, ppli.batch_picked, ppli.warehouse, ppli.quantity_to_be_picked, ppli.quantity_picked, ppli.warehouse
-                from `tabPick Put List Items` as ppli
-                    join `tabPick Put List` as ppl on (ppli.parent = ppl.name)
-                where ppli.item = '{items[0]}' and ppl.pick_list_stage != 'Invoiced' and ppl.pick_list_stage != 'Ready for Picking' and ppl.docstatus < 2 and ppli.warehouse in {tuple(warehouse)}""",
-                as_dict=1
-            )
-        else:
-            pick_put_list_stock = frappe.db.sql(
-                f"""select ppli.item as item_code, ppli.batch, ppli.batch_picked, ppli.warehouse, ppli.quantity_to_be_picked, ppli.quantity_picked, ppli.warehouse
-                from `tabPick Put List Items` as ppli
-                    join `tabPick Put List` as ppl on (ppli.parent = ppl.name)
-                where ppli.item = '{items[0]}' and ppl.pick_list_stage != 'Invoiced' and ppl.pick_list_stage != 'Ready for Picking' and ppl.docstatus < 2 and ppli.warehouse in '{warehouse[0]}'""",
-                as_dict=1
-            )
+    pick_put_list_stock = frappe.db.sql(
+        f"""select ppli.item as item_code, ppli.batch, ppli.batch_picked, ppli.warehouse, ppli.quantity_to_be_picked, ppli.quantity_picked, ppli.warehouse
+        from `tabPick Put List Items` as ppli
+            join `tabPick Put List` as ppl on (ppli.parent = ppl.name)
+        where ppli.item in {items} and ppl.pick_list_stage != 'Invoiced' and ppl.pick_list_stage != 'Ready for Picking' and ppl.docstatus < 2 and ppli.warehouse in {warehouse}""",
+        as_dict=1
+    )
+
     return pick_put_list_stock
 
 def update_stock_detail_with_picked_stock(stock_data, free_data, picked_data):
@@ -157,7 +142,7 @@ def update_stock_detail_with_picked_stock(stock_data, free_data, picked_data):
 
 def fetch_stock_details(customer_type, sales_list, settings):
     items = [data["item_code"] for data in sales_list]
-    items = re.sub(',\)$', ')', str(tuple(items)))
+    items = re.sub(r',\)$', ')', str(tuple(items)))
 
     if customer_type == "Retail":
         warehouse = [settings["retail_primary_warehouse"], settings["retail_bulk_warehouse"]]
@@ -166,7 +151,7 @@ def fetch_stock_details(customer_type, sales_list, settings):
     elif customer_type == "Institutional":
         warehouse = [settings["institutional_warehouse"]]
 
-    warehouse = re.sub(',\)$', ')', str(tuple(warehouse)))
+    warehouse = re.sub(r',\)$', ')', str(tuple(warehouse)))
     
     if settings["retail_primary_warehouse"] >= settings["retail_bulk_warehouse"] :
         warehouse_order = "DESC"
@@ -308,6 +293,8 @@ def sales_order_handle(sales_list, stock_data, free_data, wbs_details, expiry_da
                 pick_up["item_code"] = sales["item_code"]
                 pick_up["stock_uom"] = stock["stock_uom"]
                 pick_up["warehouse"] = stock["warehouse"]
+                pick_up["promo_type"] = sales["promo_type"]
+                pick_up["so_detail"] = sales["so_detail"]
                 try:
                     pick_up["wbs_storage_location_id"] = wbs_details[stock["warehouse"]][sales["item_code"]]["wbs_storage_location_id"]
                     pick_up["wbs_storage_location"] = wbs_details[stock["warehouse"]][sales["item_code"]]["wbs_storage_location"]
@@ -317,11 +304,13 @@ def sales_order_handle(sales_list, stock_data, free_data, wbs_details, expiry_da
                 if stock["actual_qty"] >= to_pickup:
                     pick_up["batch_no"] = stock["batch_no"]
                     pick_up["qty"] = to_pickup
+                    stock["actual_qty"] -= to_pickup
                     to_pickup = 0
                 else:
                     pick_up["batch_no"] = stock["batch_no"]
                     pick_up["qty"] = stock["actual_qty"]
                     to_pickup -= stock["actual_qty"]
+                    stock["actual_qty"] = 0
                 pick_up_list.append(pick_up)
                 if to_pickup == 0: break
         else:
@@ -338,6 +327,8 @@ def sales_order_handle(sales_list, stock_data, free_data, wbs_details, expiry_da
                 pick_up["item_code"] = sales["item_code"]
                 pick_up["stock_uom"] = stock["stock_uom"]
                 pick_up["warehouse"] = stock["warehouse"]
+                pick_up["promo_type"] = sales["promo_type"]
+                pick_up["so_detail"] = sales["so_detail"]
                 try:
                     pick_up["wbs_storage_location_id"] = wbs_details[stock["warehouse"]][sales["item_code"]]["wbs_storage_location_id"]
                     pick_up["wbs_storage_location"] = wbs_details[stock["warehouse"]][sales["item_code"]]["wbs_storage_location"]
@@ -347,11 +338,13 @@ def sales_order_handle(sales_list, stock_data, free_data, wbs_details, expiry_da
                 if stock["actual_qty"] >= to_pickup:
                     pick_up["batch_no"] = stock["batch_no"]
                     pick_up["qty"] = to_pickup
+                    stock["actual_qty"] -= to_pickup
                     to_pickup = 0
                 else:
                     pick_up["batch_no"] = stock["batch_no"]
                     pick_up["qty"] = stock["actual_qty"]
                     to_pickup -= stock["actual_qty"]
+                    stock["actual_qty"] = 0
                 free_pick_list.append(pick_up)
                 if to_pickup == 0: break
         
@@ -360,7 +353,11 @@ def sales_order_handle(sales_list, stock_data, free_data, wbs_details, expiry_da
 def fetch_free_stock_detail(free_list, free_warehouse):
     print("Free warehouse fetch!")
     items = [data["item_code"] for data in free_list]
-    items = re.sub(',\)$', ')', str(tuple(items)))
+
+    if not (len(items) > 0): return []
+
+    items = re.sub(r',\)$', ')', str(tuple(items)))
+
     stock_data_batch = frappe.db.sql(f"""
         select batch_id, `tabBatch`.stock_uom, item as item_code, expiry_date, `tabStock Ledger Entry`.warehouse as warehouse, sum(`tabStock Ledger Entry`.actual_qty) as actual_qty
         from `tabBatch`
@@ -470,15 +467,9 @@ def get_so_detail(so_name, item_code, warehouse):
     
     return so_detail[0]
 
-def generate_sales_invoice_json(customer, customer_type, so_name, company, item_list, settings):
+def generate_sales_invoice_json(customer, customer_type, so_name, sales_order, company, item_list, settings):
     due_date = datetime.datetime.today()
     # due_date = due_date + datetime.timedelta(2)
-    if customer_type == "Retail":
-        warehouse = settings["retail_primary_warehouse"]
-    elif customer_type == "Hospital":
-        warehouse = settings["hospital_warehouse"]
-    elif customer_type == "Institutional":
-        warehouse = settings["institutional_warehouse"]
 
     outerJson = {
         "doctype": "Sales Invoice",
@@ -489,91 +480,81 @@ def generate_sales_invoice_json(customer, customer_type, so_name, company, item_
         "update_stock": 1,
         "items": []
     }
-
+    print("*"*150)
+    print("SALES INVOICE")
     for item in item_list:
-        if item.get("quantity_picked") is None:
-            if item.get("quantity_to_be_picked") is None: continue
-            qty = item.get("quantity_to_be_picked")
-        else:
-            try:
-                qty = int(item["quantity_picked"])
-            except:
-                qty = item.get("quantity_to_be_picked") 
-        if item.get("batch_picked") is None:
-            batch = item.get("batch")
-        else:
-            batch = item.get("batch_picked")
+        print(item)
         
-        if batch:
-            rate = fetch_batch_price(batch, item["item"])
+        qty, batch = ppli_qty_and_batch(item)
+        if qty == 0: continue
+        
+        if item.get("promo_type") == "Buy x get same and discount for ineligible qty":
+            discount = fetch_promo_type_5(item, sales_order, customer_type, settings)
+        elif item.get("promo_type") == "Amount based discount":
+            discount = fetch_promo_type_1(item, sales_order, customer_type, settings)
         else:
-            rate = fetch_batchless_price(item["item"])
+            discount = 1
+
+        if item["warehouse"] == settings["free_warehouse"]:
+            rate = {"price": 0}
+        else:
+            if batch:
+                rate = fetch_batch_price(batch, item["item"])
+            else:
+                rate = fetch_batchless_price(item["item"])
+        
+        rate["price"] = rate["price"] * discount
         
         print("qty", qty)
         print(type(qty))
         print("batch", batch)
         print("rate", rate)
         print("*"*100)
-        if qty <= 0: continue
-        if item["warehouse"] != settings["free_warehouse"]:
-            so_detail = get_so_detail(so_name, item["item"], warehouse)
-            print("so_detail", so_detail)
-            if item.get("wbs_storage_location") != '':
-                storage_id = item["wbs_storage_location"]
-                storage_location = fetch_storage_location_from_id(storage_id)
-                print("*" * 50)
-                print("location", storage_location["name"], storage_id)
-                innerJson = {
-                    "doctype": "Sales Invoice Item",
-                    "item_code": item["item"],
-                    "qty": qty,
-                    "price_list_rate": rate["price"],
-                    "rate": rate["price"],
-                    "warehouse": item["warehouse"],
-                    "warehouse_storage_location": storage_location["name"],
-                    "storage_location_id": storage_id,
-                    "batch_no": batch,
-                    "sales_order": so_name,
-                    "so_detail": so_detail["name"],
-                    "delivered_qty": qty
-                }
-            else:
-                innerJson = {
-                    "doctype": "Sales Invoice Item",
-                    "item_code": item["item"],
-                    "qty": qty,
-                    "price_list_rate": rate["price"],
-                    "rate": rate["price"],
-                    "warehouse": item["warehouse"],
-                    "batch_no": batch,
-                    "sales_order": so_name,
-                    "so_detail": so_detail["name"],
-                    "delivered_qty": qty,
-                }
-        else:
-            so_detail = get_so_detail(so_name, item["item"], settings["free_warehouse"])
-            print("so_detail", so_detail)
 
+        if qty <= 0: continue
+        if item.get("wbs_storage_location") != '':
+            storage_id = item["wbs_storage_location"]
+            storage_location = fetch_storage_location_from_id(storage_id)
+            print("*" * 50)
+            print("location", storage_location["name"], storage_id)
             innerJson = {
-                    "doctype": "Sales Invoice Item",
-                    "item_code": item["item"],
-                    "qty": qty,
-                    "price_list_rate": 0,
-                    "rate": 0,
-                    "warehouse": item["warehouse"],
-                    "batch_no": batch,
-                    "sales_order": so_name,
-                    "so_detail": so_detail["name"],
-                    "delivered_qty": qty,
-                }
+                "doctype": "Sales Invoice Item",
+                "item_code": item["item"],
+                "qty": qty,
+                "price_list_rate": rate["price"],
+                "rate": rate["price"],
+                "warehouse": item["warehouse"],
+                "warehouse_storage_location": storage_location["name"],
+                "storage_location_id": storage_id,
+                "batch_no": batch,
+                "sales_order": so_name,
+                "so_detail": item["so_detail"],
+                "delivered_qty": qty
+            }
+        else:
+            innerJson = {
+                "doctype": "Sales Invoice Item",
+                "item_code": item["item"],
+                "qty": qty,
+                "price_list_rate": rate["price"],
+                "rate": rate["price"],
+                "warehouse": item["warehouse"],
+                "batch_no": batch,
+                "sales_order": so_name,
+                "so_detail": item["so_detail"],
+                "delivered_qty": qty,
+            }
+
         outerJson["items"].append(innerJson)
+
     for d in outerJson["items"]:
         print(d["item_code"], d["sales_order"], d["warehouse"], d["so_detail"], d["delivered_qty"], d["rate"])
     return outerJson
 
 def ppli_qty_and_batch(item):
     if item.get("quantity_picked") is None:
-        qty = item.get("quantity_to_be_picked")
+        if item.get("quantity_to_be_picked") is None: qty = 0
+        else: qty = item.get("quantity_to_be_picked")
     else:
         try:
             qty = int(item["quantity_picked"])
@@ -612,39 +593,144 @@ def discount_item_price(i, qty):
     print("*"*150)
     return d
 
-def update_average_price(item_list, free_warehouse):
-    new_average_price = {}
+def fetch_promo_type_5(i, sales_order, customer_type, settings):
+    today = datetime.date.today()
+    discount = 1
 
+    if customer_type == "Retail":
+        warehouse = [settings["retail_primary_warehouse"], settings["retail_bulk_warehouse"]]
+    elif customer_type == "Hospital":
+        warehouse = [settings["hospital_warehouse"]]
+    elif customer_type == "Institutional":
+        warehouse = [settings["institutional_warehouse"]]
+    
+    so_filter = list(filter(lambda x: x["warehouse"] in warehouse and x["promo_type"] is None and x["item_code"] == i["item"], sales_order))
+    qty = int(so_filter[0]["qty"])
+    
+    d = frappe.db.sql(
+        f"""select pt.for_every_quantity_that_is_bought as b_qty, pt.discount as discount
+        from `tabPromo Type 5` as pt
+            join `tabSales Promos` as sp on (sp.name = pt.parent)
+        where pt.bought_item = '{i["item"]}' and sp.start_date <= '{today}' and sp.end_date >= '{today}'
+        order by pt.for_every_quantity_that_is_bought DESC""",
+        as_dict=1
+    )
+
+    for x in d:
+        if qty >= x["b_qty"]:
+            discount = (100 - int(x["discount"])) / 100
+            break
+
+
+    return discount
+
+def fetch_promo_type_1(i, sales_order, customer_type, settings):
+    today = datetime.date.today()
+    discount = 1
+
+    if customer_type == "Retail":
+        warehouse = [settings["retail_primary_warehouse"], settings["retail_bulk_warehouse"]]
+    elif customer_type == "Hospital":
+        warehouse = [settings["hospital_warehouse"]]
+    elif customer_type == "Institutional":
+        warehouse = [settings["institutional_warehouse"]]
+    
+    so_filter = list(filter(lambda x: x["warehouse"] in warehouse and x["promo_type"] == "Amount based discount" and x["item_code"] == i["item"], sales_order))
+    qty = int(so_filter[0]["qty"])
+
+    d = frappe.db.sql(
+        f"""select pt.quantity_bought as b_qty, pt.discount_percentage as discount
+        from `tabPromo Type 1` as pt
+            join `tabSales Promos` as sp on (pt.parent = sp.name)
+        where pt.bought_item = '{i["item"]}' and sp.start_date <= '{today}' and sp.end_date >= '{today}'
+        order by pt.quantity_bought DESC""",
+        as_dict=1
+    )   
+
+    for x in d:
+        if qty >= x["b_qty"]:
+            discount = (100 - int(x["discount"])) / 100
+            break
+
+    return discount
+
+
+
+def update_average_price(item_list, sales_order, customer_type, settings):
+    new_average_price = {}
     for item in item_list:
-        if item["warehouse"] == free_warehouse: continue
+        if item["warehouse"] == settings["free_warehouse"]: continue
         qty, batch = ppli_qty_and_batch(item)
-        promo_detail = discount_item_price(item, qty)
+        if qty == 0: continue
+
+        if item.get("promo_type") == "Buy x get same and discount for ineligible qty":
+            discount = fetch_promo_type_5(item, sales_order, customer_type, settings)
+        elif item.get("promo_type") == "Amount based discount":
+            discount = fetch_promo_type_1(item, sales_order, customer_type, settings)
+        else:
+            discount = 1
+
         if batch:
             rate = fetch_batch_price(batch, item["item"])
         else:
             rate = fetch_batchless_price(item["item"])
+
+        rate["price"] = rate["price"] * discount
+
         if item["item"] not in new_average_price:
             new_average_price[item["item"]] = {
                 "qty": [qty],
                 "price": [rate["price"]]
             }
+            new_average_price[item["item"]] = {
+                "normal": {
+                    "qty": [],
+                    "price": []
+                },
+                "promo": {
+                    "qty": [],
+                    "price": []
+                }
+            }
+            if 0 < discount < 1:
+                new_average_price[item["item"]]["promo"]["qty"].append(qty)
+                new_average_price[item["item"]]["promo"]["price"].append(rate["price"])
+            else:
+                new_average_price[item["item"]]["normal"]["qty"].append(qty)
+                new_average_price[item["item"]]["normal"]["price"].append(rate["price"])
         else:
-            if qty is None: continue  
-            new_average_price[item["item"]]["qty"].append(qty)
-            new_average_price[item["item"]]["price"].append(rate["price"])
-        new_average_price[item["item"]]["average"] = sum([new_average_price[item["item"]]["qty"][i] * new_average_price[item["item"]]["price"][i] for i in range(len(new_average_price[item["item"]]["qty"]))]) / sum(new_average_price[item["item"]]["qty"])
-    
+            if qty is None: continue
+            if 0 < discount < 1:
+                new_average_price[item["item"]]["promo"]["qty"].append(qty)
+                new_average_price[item["item"]]["promo"]["price"].append(rate["price"])
+            else:
+                new_average_price[item["item"]]["normal"]["qty"].append(qty)
+                new_average_price[item["item"]]["normal"]["price"].append(rate["price"])
+        
+        try:
+            new_average_price[item["item"]]["promo"]["average"] = sum([new_average_price[item["item"]]["promo"]["qty"][i] * new_average_price[item["item"]]["promo"]["price"][i] for i in range(len(new_average_price[item["item"]]["promo"]["qty"]))]) / sum(new_average_price[item["item"]]["promo"]["qty"])
+        except:
+            pass
+        
+        try:
+            new_average_price[item["item"]]["normal"]["average"] = sum([new_average_price[item["item"]]["normal"]["qty"][i] * new_average_price[item["item"]]["normal"]["price"][i] for i in range(len(new_average_price[item["item"]]["normal"]["qty"]))]) / sum(new_average_price[item["item"]]["normal"]["qty"])
+        except:
+            pass
+
     return new_average_price 
 
-def update_sales_order_json(sales_doc, average_price, free_warehouse):
+def update_sales_order(sales_doc, average_price, free_warehouse):
+    print("update sales order", average_price)
     for child in sales_doc.get_all_children():
             if child.doctype != "Sales Order Item": continue
             sales_item_doc = frappe.get_doc(child.doctype, child.name)
             if sales_item_doc.warehouse == free_warehouse:
                 print(sales_item_doc.rate)
                 sales_item_doc.rate = 0
+            elif sales_item_doc.promo_type is None:
+                sales_item_doc.rate = average_price[sales_item_doc.item_code]["normal"]["average"]
             else:
-                sales_item_doc.rate = average_price[sales_item_doc.item_code]["average"]
+                sales_item_doc.rate = average_price[sales_item_doc.item_code]["promo"]["average"]
             sales_item_doc.save()
 
 def get_stock_balance(item_code, batch, warehouse):
@@ -791,11 +877,12 @@ def stock_correction(customer, so_name, company, item_list, settings):
         if i.get("batch") == '':
             stock_balance = get_stock_balance_batchless(i["item"], i["warehouse"])
             ppli_balance = get_ppli_balance(i["item"], '', i["warehouse"], so_name)
+
             if ppli_balance:
                 stock_balance["actual_qty"] -= ppli_balance["pick_quantity"] 
-            if ppli_balance:
-                stock_balance["actual_qty"] -= ppli_balance["pick_quantity"] 
+
             print("stock balance", stock_balance)
+
             try:
                 i["quantity_picked"] = int(i["quantity_picked"])
             except:
@@ -807,7 +894,7 @@ def stock_correction(customer, so_name, company, item_list, settings):
             try:
                 if int(i["quantity_picked"]) < i["quantity_to_be_picked"]:
                     print("material issue needed for:", i)
-                    m_issue.append(dict(item_code = i["item"], warehouse = i["warehouse"], wbs_storage_location = i["wbs_storage_location"], batch = '', qty = stock_balance["actual_qty"] - int(i["quantity_picked"])))
+                    m_issue.append(dict(item_code = i["item"], warehouse = i["warehouse"], wbs_storage_location = i["wbs_storage_location"], batch = '', qty = i["quantity_to_be_picked"] - int(i["quantity_picked"])))
             except:
                 pass
         else:
@@ -827,7 +914,7 @@ def stock_correction(customer, so_name, company, item_list, settings):
             try:
                 if int(i["quantity_picked"]) < i["quantity_to_be_picked"]:
                     print("material issue needed for:", i)
-                    m_issue.append(dict(item_code = i["item"], warehouse = i["warehouse"], wbs_storage_location = i["wbs_storage_location"], batch = i["batch_picked"], qty = stock_balance["actual_qty"] - int(i["quantity_picked"])))
+                    m_issue.append(dict(item_code = i["item"], warehouse = i["warehouse"], wbs_storage_location = i["wbs_storage_location"], batch = i["batch_picked"], qty = i["quantity_to_be_picked"] - int(i["quantity_picked"])))
             except:
                 pass
             
@@ -845,12 +932,13 @@ def pick_status(item_list, so_name, company, stage_index, stage_list):
     stage_index = json.loads(stage_index)
     next_stage = stage_list[stage_index + 1]
     settings = fetch_fulfillment_settings(company)
-
-    average_price = update_average_price(item_list, settings["free_warehouse"])
-    print("average price", average_price)
+    sales_order = fetch_item_list(so_name)
 
     customer = get_customer(so_name)
     customer_type = fetch_customer_type(so_name)
+
+    average_price = update_average_price(item_list, sales_order, customer_type, settings)
+    print("average price", average_price)
 
     if next_stage == "QC Area":
         names = stock_correction(customer, so_name, company, item_list, settings)
@@ -862,7 +950,7 @@ def pick_status(item_list, so_name, company, stage_index, stage_list):
         sales_doc.reload()
         sales_doc.submit()
 
-        outerJson_salesinvoice = generate_sales_invoice_json(customer, customer_type, so_name, company, item_list, settings)
+        outerJson_salesinvoice = generate_sales_invoice_json(customer, customer_type, so_name, sales_order, company, item_list, settings)
         sales_invoice_doc = frappe.new_doc("Sales Invoice")
         sales_invoice_doc.update(outerJson_salesinvoice)
         sales_invoice_doc.save()
@@ -875,7 +963,7 @@ def pick_status(item_list, so_name, company, stage_index, stage_list):
         sales_doc.pch_picking_status = next_stage
         sales_doc.save()
         print(sales_doc.pch_picking_status)
-        update_sales_order_json(sales_doc, average_price, settings["free_warehouse"])
+        update_sales_order(sales_doc, average_price, settings["free_warehouse"])
         sales_doc.reload()
         sales_doc.save()
 

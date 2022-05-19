@@ -22,7 +22,7 @@ def fetch_stock_details(item_code, customer_type, settings):
     elif customer_type == "Institutional":
         warehouse = [settings["institutional_warehouse"]]
     
-    warehouse = re.sub(',\)$', ')', str(tuple(warehouse)))
+    warehouse = re.sub(r',\)$', ')', str(tuple(warehouse)))
 
     stock_data_batch = frappe.db.sql(f"""
 		select batch_id, sum(`tabStock Ledger Entry`.actual_qty) as actual_qty
@@ -62,7 +62,7 @@ def available_stock_details(item_code, customer_type, settings):
     elif customer_type == "Institutional":
         warehouse = [settings["institutional_warehouse"]]
 
-    warehouse = re.sub(',\)$', ')', str(tuple(warehouse)))
+    warehouse = re.sub(r',\)$', ')', str(tuple(warehouse)))
        
     stock_data_batch = frappe.db.sql(f"""
             select batch_id , `tabBatch`.stock_uom, item as item_code, expiry_date, `tabStock Ledger Entry`.warehouse as warehouse, sum(`tabStock Ledger Entry`.actual_qty) as actual_qty
@@ -183,7 +183,7 @@ def available_stock_details_for_promos(item_code, customer_type, settings, expir
     today = datetime.date.today()
     stock_promo = []
     i = [x["item_code"] for x in item_code]
-    i = re.sub(',\)$', ')', str(tuple(i)))
+    i = re.sub(r',\)$', ')', str(tuple(i)))
     print("Item",i)
       
     stock_data_batch = frappe.db.sql(f"""
@@ -225,7 +225,7 @@ def fetch_sales_promos_get_same_item(item_code, customer_type, free_warehouse, e
     promos_sale = []
     sales_data = None
     i = [x["item_code"] for x in item_code]
-    i = re.sub(',\)$', ')', str(tuple(i)))
+    i = re.sub(r',\)$', ')', str(tuple(i)))
     print("Item",i)
     
     today = datetime.date.today()
@@ -294,7 +294,7 @@ def fetch_sales_promos_get_diff_item(item_code, customer_type, free_warehouse, e
     free_items = []
     sales_data = None
     i = [x["item_code"] for x in item_code]
-    i = re.sub(',\)$', ')', str(tuple(i)))
+    i = re.sub(r',\)$', ')', str(tuple(i)))
     today = datetime.date.today()
     # if customer_type == "Retail":
     promos = frappe.db.sql (f""" select sp.start_date, sp.end_date, 
@@ -354,7 +354,7 @@ def fetch_sales_promos_get_same_item_discout(item_code, customer_type, free_ware
     sales_data = None
     # sales_promo_discount = []
     i = [x["item_code"] for x in item_code]
-    i = re.sub(',\)$', ')', str(tuple(i)))
+    i = re.sub(r',\)$', ')', str(tuple(i)))
     today = datetime.date.today()
     # if customer_type == "Retail":
     promos = frappe.db.sql (f""" select sp.start_date, sp.end_date, 
@@ -410,12 +410,12 @@ def fetch_sales_promos_get_same_item_discout(item_code, customer_type, free_ware
 
 # Qty based discount
 def fetch_sales_promos_qty_based_discount(item_code, customer_type, free_warehouse, expiry_date):
-    promo_type = "Qty based discount"
+    promo_type = "Amount based discount"
     promos_sale = []
     sales_data = None
     data = []
     i = [x["item_code"] for x in item_code]
-    i = re.sub(',\)$', ')', str(tuple(i)))
+    i = re.sub(r',\)$', ')', str(tuple(i)))
     today = datetime.date.today()
     # if customer_type == "Retail":
     promos = frappe.db.sql (f""" select sp.start_date, sp.end_date, 

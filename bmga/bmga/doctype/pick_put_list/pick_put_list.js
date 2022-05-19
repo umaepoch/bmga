@@ -19,6 +19,8 @@ frappe.ui.form.on('Pick Put List', {
 			child.wbs_storage_location = data.wbs_storage_location;
 			child.warehouse = data.warehouse;
 			child.correction = 1;
+			child.promo_type = data.promo_type;
+			child.so_detail = data.so_detail;
 		};
 	},
 
@@ -96,6 +98,8 @@ frappe.ui.form.on('Pick Put List', {
 						entry.wbs_storage_location = e.wbs_storage_location_id;
 						entry.warehouse = e.warehouse;
 						entry.quantity_to_be_picked = e.qty;
+						entry.promo_type = e.promo_type;
+						entry.so_detail = e.so_detail;
 					})
 					refresh_field("item_list")
 				})
