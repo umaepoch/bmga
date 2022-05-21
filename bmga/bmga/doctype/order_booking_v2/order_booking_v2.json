@@ -15,6 +15,7 @@
   "customer_name",
   "section_break_4",
   "order_booking_items_v2",
+  "sales_order_preview",
   "promos",
   "promos_discount",
   "order_booking_so",
@@ -100,11 +101,18 @@
    "label": "Promos Discount",
    "options": "Order Booking V2 Sales Discount",
    "read_only": 1
+  },
+  {
+   "fieldname": "sales_order_preview",
+   "fieldtype": "Table",
+   "label": "Sales Order Preview ",
+   "options": "Order booking V2 Sales Order Preview",
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2022-05-18 09:10:01.252847",
+ "modified": "2022-05-20 16:12:58.453278",
  "modified_by": "Administrator",
  "module": "Bmga",
  "name": "Order Booking V2",

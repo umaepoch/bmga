@@ -1,0 +1,59 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2022-05-20 16:11:34.866362",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "item_code",
+  "quantity_available",
+  "quantity",
+  "average",
+  "warehouse",
+  "promo_type"
+ ],
+ "fields": [
+  {
+   "fieldname": "item_code",
+   "fieldtype": "Data",
+   "label": "Item Code"
+  },
+  {
+   "fieldname": "quantity",
+   "fieldtype": "Data",
+   "label": "Quantity"
+  },
+  {
+   "fieldname": "average",
+   "fieldtype": "Currency",
+   "label": "Average"
+  },
+  {
+   "fieldname": "warehouse",
+   "fieldtype": "Data",
+   "label": "Warehouse"
+  },
+  {
+   "fieldname": "promo_type",
+   "fieldtype": "Data",
+   "label": "Promo Type"
+  },
+  {
+   "fieldname": "quantity_available",
+   "fieldtype": "Data",
+   "label": "Quantity Available"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2022-05-20 17:08:03.254483",
+ "modified_by": "Administrator",
+ "module": "Bmga",
+ "name": "Order booking V2 Sales Order Preview",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC"
+}
