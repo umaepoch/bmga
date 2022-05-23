@@ -654,8 +654,6 @@ def fetch_promo_type_1(i, sales_order, customer_type, settings):
 
     return discount
 
-
-
 def update_average_price(item_list, sales_order, customer_type, settings):
     new_average_price = {}
     for item in item_list:
@@ -822,6 +820,7 @@ def generate_material_receipt(item_list):
         doc = frappe.new_doc("Stock Entry")
         doc.update(outerJson)
         doc.save()
+        doc.submit()
         name = doc.name
 
         return name
@@ -864,6 +863,7 @@ def generate_material_issue(item_list):
         doc = frappe.new_doc("Stock Entry")
         doc.update(outerJson)
         doc.save()
+        doc.submit()
         name = doc.name
 
         return name
@@ -940,9 +940,6 @@ def pick_status(item_list, so_name, company, stage_index, stage_list):
     average_price = update_average_price(item_list, sales_order, customer_type, settings)
     print("average price", average_price)
 
-    if next_stage == "QC Area":
-        names = stock_correction(customer, so_name, company, item_list, settings)
-
     if next_stage == "Invoiced":
         sales_doc = frappe.get_doc("Sales Order", so_name)
         sales_doc.pch_picking_status = next_stage
@@ -950,11 +947,13 @@ def pick_status(item_list, so_name, company, stage_index, stage_list):
         sales_doc.reload()
         sales_doc.submit()
 
+        names = stock_correction(customer, so_name, company, item_list, settings)
+
         outerJson_salesinvoice = generate_sales_invoice_json(customer, customer_type, so_name, sales_order, company, item_list, settings)
         sales_invoice_doc = frappe.new_doc("Sales Invoice")
         sales_invoice_doc.update(outerJson_salesinvoice)
         sales_invoice_doc.save()
-        return dict(next_stage = next_stage, sales_invoice_name = sales_invoice_doc.name)
+        return dict(next_stage = next_stage, sales_invoice_name = sales_invoice_doc.name, names = names)
 
     else:
         sales_doc = frappe.get_doc("Sales Order", so_name)
@@ -966,5 +965,4 @@ def pick_status(item_list, so_name, company, stage_index, stage_list):
         update_sales_order(sales_doc, average_price, settings["free_warehouse"])
         sales_doc.reload()
         sales_doc.save()
-
-    return dict(next_stage = next_stage, average_price = average_price, names = names)
+        return dict(next_stage = next_stage, average_price = average_price)
