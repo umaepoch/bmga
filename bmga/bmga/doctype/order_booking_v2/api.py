@@ -505,8 +505,8 @@ def sales_order_calculation(sales_promo_discounted_amount, sales_promos_items, o
 
                 print("sales...11",sales_promo_discounted_amount[j]["dic_qty"], order_list[i]["quantity_booked"])
                 print(order_list[i]["item_code"], sales_promo_discounted_amount[j]["promo_item"])
-                if order_list[i]["item_code"] == sales_promo_discounted_amount[j]["promo_item"]:
-                    if order_list[i]["quantity_booked"] != sales_promo_discounted_amount[j]["dic_qty"]:
+                if order_list[i]["quantity_booked"] != sales_promo_discounted_amount[j]["dic_qty"]:
+                    if order_list[i]["item_code"] == sales_promo_discounted_amount[j]["promo_item"]:
                         order_list[i]["quantity_booked"] = order_list[i]["quantity_booked"] - sales_promo_discounted_amount[j]["dic_qty"]
                         promo_sales_order.append({"item_code":order_list[i]["item_code"], "qty": order_list[i]["quantity_booked"], "average_price": order_list[i]["average_price"], "warehouse" : warehouse, "qty_available":order_list[i]["quantity_available"], "promo_type" : "None"})
                     # else:
@@ -529,7 +529,7 @@ def sales_order_calculation(sales_promo_discounted_amount, sales_promos_items, o
     for s in range (len(sales_promo_discounted_amount)):
         for i in range(len(order_list)):
             if order_list[i]["item_code"] == sales_promo_discounted_amount[j]["promo_item"]:
-                promo_sales_order.append({"item_code":sales_promo_discounted_amount[s]["promo_item"], "qty": sales_promo_discounted_amount[s]["dic_qty"], "average_price": sales_promo_discounted_amount[s]["dic"], "warehouse" : warehouse , "promo_type": sales_promo_discounted_amount[s]["promo_type"], "qty_available": order_list[i]["quantity_available"]})
+                promo_sales_order.append({"item_code":sales_promo_discounted_amount[s]["promo_item"], "qty": sales_promo_discounted_amount[s]["dic_qty"], "average_price": sales_promo_discounted_amount[s]["dic"], "warehouse" : warehouse , "promo_type": sales_promo_discounted_amount[s]["promo_type"], "qty_available": sales_promo_discounted_amount[s]["w_qty"]})
                 print(".......promodis", promo_sales_order)
     
     for l in range (len(sales_promos_items)):
