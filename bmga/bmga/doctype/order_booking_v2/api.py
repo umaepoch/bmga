@@ -110,11 +110,27 @@ def available_stock_details(item_code, customer_type, settings):
 
     return dict(available_qty = available_qty, sales_qty = sales_data[0]["pending_qty"])
 
-def fetch_average_price(stock_data, item_code):
+def fetch_contract_rate(customer, item_code):
+    c = frappe.db.sql(
+        f""" select rti.item, rti.selling_price_for_customer, rti.discount_percentage_for_customer_from_mrp, rt.customer
+    from `tabRate Contract Item` as rti
+        inner join `tabRate Contract` as rt on rt.name = rti.parent
+    where rti.item = '{item_code}' and rt.customer = '{customer}'
+    group by rti.item
+        """, as_dict = True
+    )
+
+    return c
+
+def fetch_average_price(stock_data, customer, item_code):
     average_price_list = []
     average_qty_list = []
     average_price = 0
     stock_count = 0
+
+    ct = fetch_contract_rate(customer, item_code)
+    if len(ct)>0:
+        return dict(average_price = ct[0]["selling_price_for_customer"], price_list = [], qty_list = [])
     for data in stock_data:
         print("*"*20)
         print(item_code)
@@ -222,25 +238,25 @@ def available_stock_details_for_promos(item_code, customer_type, settings, expir
     return available_qty
 
 #Rate Contract
-def fetch_rate_contract(customer, item_code):
-    i = [x["item_code"] for x in item_code]
-    i = re.sub(r',\)$', ')', str(tuple(i)))
-    rate_data = []
-    print("item_code....",item_code)
-    rate = frappe.db.sql (f""" select rti.item, rti.selling_price_for_customer, rti.discount_percentage_for_customer_from_mrp, rt.customer
-    from `tabRate Contract Item` as rti
-        inner join `tabRate Contract` as rt on rt.name = rti.parent
-    where rti.item in {i} and rt.customer = '{customer}'
-    group by rti.item
-        """, as_dict = True)
+# def fetch_rate_contract(customer, item_code):
+#     i = [x["item_code"] for x in item_code]
+#     i = re.sub(r',\)$', ')', str(tuple(i)))
+#     rate_data = []
+#     print("item_code....",item_code)
+#     rate = frappe.db.sql (f""" select rti.item, rti.selling_price_for_customer, rti.discount_percentage_for_customer_from_mrp, rt.customer
+#     from `tabRate Contract Item` as rti
+#         inner join `tabRate Contract` as rt on rt.name = rti.parent
+#     where rti.item = {i} and rt.customer = '{customer}'
+#     group by rti.item
+#         """, as_dict = True)
 
-    for i in range (len(rate)):
-        for j in range (len(item_code)):
-            if rate[i]["item"] == item_code[j]["item_code"]:
-                rate_data.append({ "promo_type": "Rate Contract", "qty":item_code[j]["quantity_booked"], "bought_item": rate[i]["item"], "rate": rate[i]["selling_price_for_customer"], "dic" : rate[i]["discount_percentage_for_customer_from_mrp"], "w_qty" : item_code[j]["quantity_available"]})
+#     for i in range (len(rate)):
+#         for j in range (len(item_code)):
+#             if rate[i]["item"] == item_code[j]["item_code"]:
+#                 rate_data.append({ "promo_type": "Rate Contract", "qty":item_code[j]["quantity_booked"], "bought_item": rate[i]["item"], "rate": rate[i]["selling_price_for_customer"], "dic" : rate[i]["discount_percentage_for_customer_from_mrp"], "w_qty" : item_code[j]["quantity_available"]})
 
-    print("return vale....",rate_data)
-    return rate_data      
+#     print("return vale....",rate_data)
+#     return rate_data      
     
 # Buy x get same x
 def fetch_sales_promos_get_same_item(item_code, customer_type, free_warehouse, expiry_date):
@@ -511,7 +527,7 @@ def fetch_sales_promos_qty_based_discount(item_code, customer_type, free_warehou
                         promos_sale.append({"promo_type": promo_type, "qty": 0 , "dic":sales_promo_discount, "dic_qty": j["quantity_booked"], "rate": 0.0 , "bought_item":promos[i]["bought_item"], "promo_item": promos[i]["bought_item"] , "w_qty" : qty})
     return dict({"Promo_sales" : promos_sale, "Promos" : promos, "sales_data" : sales_data})
 
-def sales_order_calculation(sales_promo_discounted_amount, sales_promos_items, order_list, warehouse, free_warehouse, rate_contract):
+def sales_order_calculation(sales_promo_discounted_amount, sales_promos_items, order_list, warehouse, free_warehouse):
     promo_sales_order= []
     
     flag = True
@@ -551,10 +567,10 @@ def sales_order_calculation(sales_promo_discounted_amount, sales_promos_items, o
                 promo_sales_order.append({"item_code":sales_promo_discounted_amount[s]["promo_item"], "qty": sales_promo_discounted_amount[s]["dic_qty"], "average_price": sales_promo_discounted_amount[s]["dic"], "warehouse" : warehouse , "promo_type": sales_promo_discounted_amount[s]["promo_type"], "qty_available": sales_promo_discounted_amount[s]["w_qty"]})
                 print(".......promodis", promo_sales_order)
     
-    for j in range (len(rate_contract)):
-        for i in range (len(order_list)):
-            if order_list[i]["item_code"] == rate_contract[j]["bought_item"]:
-                promo_sales_order.append({"item_code": rate_contract[j]["bought_item"], "qty":rate_contract[j]["qty"], "average_price": rate_contract[j]["rate"], "warehouse" : warehouse, "promo_type": "Rate Contract", "qty_available": rate_contract[j]["w_qty"]})
+    # for j in range (len(rate_contract)):
+    #     for i in range (len(order_list)):
+    #         if order_list[i]["item_code"] == rate_contract[j]["bought_item"]:
+    #             promo_sales_order.append({"item_code": rate_contract[j]["bought_item"], "qty":rate_contract[j]["qty"], "average_price": rate_contract[j]["rate"], "warehouse" : warehouse, "promo_type": "Rate Contract", "qty_available": rate_contract[j]["w_qty"]})
     
     for l in range (len(sales_promos_items)):
         promo_sales_order.append({"item_code":sales_promos_items[l]["promo_item"], "qty": sales_promos_items[l]["qty"], "average_price": sales_promos_items[l]["rate"], "warehouse" : free_warehouse, "promo_type": sales_promos_items[l]["promo_type"], "qty_available": sales_promos_items[l]["w_qty"]})
@@ -575,10 +591,10 @@ def customer_type_container(customer):
     return customer_type
 
 @frappe.whitelist()
-def sales_promos(item_code, customer_type, company, order_list, customer):
+def sales_promos(item_code, customer_type, company, order_list):
     item_code = json.loads(item_code)
     order_list= json.loads(order_list)
-    rate_contract = fetch_rate_contract(customer, item_code)
+    # rate_contract = fetch_rate_contract(customer, item_code)
     settings = fetch_fulfillment_settings(company)
     promos_qty = available_stock_details_for_promos(item_code, customer_type, settings[0]["free_warehouse"], settings[0]["expiry_date_limit"])
     sales_promos_same_item = fetch_sales_promos_get_same_item(item_code, customer_type, settings[0]["free_warehouse"], settings[0]["expiry_date_limit"])
@@ -587,20 +603,20 @@ def sales_promos(item_code, customer_type, company, order_list, customer):
     sales_promo_quantity_discount = fetch_sales_promos_qty_based_discount(item_code, customer_type, settings[0]["free_warehouse"],  settings[0]["expiry_date_limit"])
     sales_promo_discounted_amount = sales_promo_discount["Promo_sales"] + sales_promo_quantity_discount["Promo_sales"]
     sales_promos_items = sales_promos_same_item["Promo_sales"] + sales_promo_diff_items["Promo_sales"] + sales_promo_discount["Promo_sales"]
-    sales_order = sales_order_calculation(sales_promo_discounted_amount, sales_promos_items, order_list, settings[0]["retail_primary_warehouse"], settings[0]["free_warehouse"], rate_contract)
+    sales_order = sales_order_calculation(sales_promo_discounted_amount, sales_promos_items, order_list, settings[0]["retail_primary_warehouse"], settings[0]["free_warehouse"])
   
     
 
-    return dict( rate_contract=rate_contract, sales_order = sales_order,sales_promos_items= sales_promos_items, bought_item = item_code, sales_promos_same_item = sales_promos_same_item, sales_promo_diff_items = sales_promo_diff_items, sales_promo_discount= sales_promo_discount, promos_qty = promos_qty, sales_promo_discounted_amount = sales_promo_discounted_amount )
+    return dict(sales_order = sales_order,sales_promos_items= sales_promos_items, bought_item = item_code, sales_promos_same_item = sales_promos_same_item, sales_promo_diff_items = sales_promo_diff_items, sales_promo_discount= sales_promo_discount, promos_qty = promos_qty, sales_promo_discounted_amount = sales_promo_discounted_amount )
 
 
 
 @frappe.whitelist()
-def item_qty_container(company, item_code, customer_type):
+def item_qty_container(company, item_code, customer_type, customer):
     fulfillment_settings = fetch_fulfillment_settings(company)
     stock_detail = fetch_item_details(item_code, customer_type, fulfillment_settings[0])
     handled_stock = available_stock_details(item_code, customer_type, fulfillment_settings[0])
-    price_details = fetch_average_price(stock_detail, item_code)
+    price_details = fetch_average_price(stock_detail, customer, item_code)
     # sales_promo = fetch_sales_promos(item_code)
     return dict(available_qty = handled_stock["available_qty"], average_price = price_details["average_price"], price_details = price_details, stock_detail = stock_detail, qty_detail = handled_stock) 
 

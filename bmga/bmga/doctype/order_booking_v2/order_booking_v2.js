@@ -89,7 +89,6 @@ frappe.ui.form.on('Order Booking V2', {
 		})
 		frm.add_custom_button("Apply Promo", function(){
 			var order_list = frm.doc.order_booking_items_v2
-			var customer = frm.doc.customer
 			let item_code_list = frm.doc.order_booking_items_v2.map(function(d) {
 				return {item_code: d.item_code, quantity_booked: d.quantity_booked, average_price:d.average_price, amount:d.amount, quantity_available:d.quantity_available}
 			})
@@ -112,7 +111,6 @@ frappe.ui.form.on('Order Booking V2', {
 						customer_type: customer_type,
 						company : company,
 						order_list: order_list,
-						customer : customer,
 					}
 				}).done((respose) =>{
 					console.log(respose)
@@ -160,6 +158,7 @@ frappe.ui.form.on('Order Booking Items V2', {
 	item_code: function(frm, cdt, cdn) {
 		let item_code = frappe.get_doc(cdt, cdn).item_code;
 		let company = frm.doc.company
+		let customer = frm.doc.customer
 		if(item_code) {
 			if(frm.check_duplicate(frm)) {
 				frappe.msgprint("Can not re-select chosen item!");
@@ -177,6 +176,7 @@ frappe.ui.form.on('Order Booking Items V2', {
 						company: company,
 						item_code: item_code,
 						customer_type: customer_type,
+						customer: customer
 					}
 				}).done((response) => {
 					console.log(response)
