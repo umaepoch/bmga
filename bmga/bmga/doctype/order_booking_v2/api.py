@@ -5,6 +5,8 @@ import frappe
 import datetime
 import re
 
+from pymysql import NULL
+
 def fetch_customer_type(customer):
     customer_group = frappe.db.sql(
         f"""SELECT customer_group FROM `tabCustomer` WHERE name = '{customer}'""",
@@ -111,16 +113,36 @@ def available_stock_details(item_code, customer_type, settings):
     return dict(available_qty = available_qty, sales_qty = sales_data[0]["pending_qty"])
 
 def fetch_contract_rate(customer, item_code):
+    cl = []
     c = frappe.db.sql(
-        f""" select rti.item, rti.selling_price_for_customer, rti.discount_percentage_for_customer_from_mrp, rt.customer
+        f""" select rti.item, rti.selling_price_for_customer, rti.discount_percentage_for_customer_from_mrp, rt.customer, rt.selling_price
     from `tabRate Contract Item` as rti
         inner join `tabRate Contract` as rt on rt.name = rti.parent
-    where rti.item = '{item_code}' and rt.customer = '{customer}'
+        inner join `tabItem` as i on i.item_code = '{item_code}'
+    where rti.item = '{item_code}' and i.has_batch_no = 0 and rt.selling_price = 1
     group by rti.item
         """, as_dict = True
     )
-
-    return c
+    print(".....", c)
+    # cl.append({"Item": c[0]["item"], "price":c[0]["selling_price_for_customer"]})
+    ct = frappe.db.sql(f""" select b.item, b.pch_mrp, b.expiry_date
+    from `tabBatch` as b
+    where b.item = '{item_code}'
+    order by b.expiry_date DESC
+    """, as_dict = True
+    )
+    # print("..........1", ct[0]["item"])
+    
+    if len(ct)>0:
+        cl.append({"Item": ct[0]["item"], "price":ct[0]["pch_mrp"]})
+        print("cl.........", cl)
+        return cl
+    # return dict( c = c, ct = ct )
+    # else:
+    if len(c)>0:
+        cl.append({"Item": c[0]["item"], "price":c[0]["selling_price_for_customer"]})
+        print("cl......", c[0]["item"])
+        return cl
 
 def fetch_average_price(stock_data, customer, item_code):
     average_price_list = []
@@ -128,9 +150,9 @@ def fetch_average_price(stock_data, customer, item_code):
     average_price = 0
     stock_count = 0
 
-    ct = fetch_contract_rate(customer, item_code)
-    if len(ct)>0:
-        return dict(average_price = ct[0]["selling_price_for_customer"], price_list = [], qty_list = [])
+    cd = fetch_contract_rate(customer, item_code)
+    if len(cd)>0:
+        return dict(average_price = cd[0]["price"], price_list = [], qty_list = [])
     for data in stock_data:
         print("*"*20)
         print(item_code)
@@ -579,7 +601,20 @@ def sales_order_calculation(sales_promo_discounted_amount, sales_promos_items, o
 
     return dict({"sales_order" : promo_sales_order})
 
-    
+@frappe.whitelist()
+def sales_promo_checked(customer):
+    print(".......customer", customer)
+    sp = frappe.db.sql(f"""
+        select c.pch_sales_promo
+        from `tabCustomer` as c
+        where c.name = {customer} and c.pch_sales_promo = 1
+    """, as_dict = True)
+    if len(sp)>0:
+        return True
+    else:
+        return False
+
+
 @frappe.whitelist()
 def fulfillment_settings_container(company):
     fulfillment_settings = fetch_fulfillment_settings(company)

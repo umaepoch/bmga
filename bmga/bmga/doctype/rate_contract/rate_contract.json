@@ -7,6 +7,7 @@
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
+  "selling_price",
   "customer",
   "item"
  ],
@@ -22,11 +23,17 @@
    "fieldtype": "Table",
    "label": "Item",
    "options": "Rate Contract Item"
+  },
+  {
+   "default": "0",
+   "fieldname": "selling_price",
+   "fieldtype": "Check",
+   "label": "Selling Price"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2022-05-25 11:44:07.243802",
+ "modified": "2022-05-26 14:45:33.876071",
  "modified_by": "Administrator",
  "module": "Bmga",
  "name": "Rate Contract",
