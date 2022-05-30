@@ -443,6 +443,50 @@ def fetch_batch_price(batch, item_code):
     if len(price) > 0 and price[0].get("price") is not None: return price[0]
     else: return fetch_batchless_price(item_code)
 
+def fetch_batch_price_v2(batch, item_code, rate_contract_name):
+    print("RATE CONTRACT NAME", rate_contract_name)
+    if rate_contract_name is None:
+        p = frappe.db.sql(
+            f"""select pch_mrp as price from `tabBatch` where batch_id = '{batch}' and item = '{item_code}'""",
+            as_dict=1
+        )
+
+        print("IN SIDE BATCH", p)
+
+        if len(p) > 0 and p[0].get('price') is not None: return p[0]
+        else : return dict(price = 0)
+    else:
+        p = frappe.db.sql(
+            f"""select selling_price_for_customer as price from `tabRate Contract Item` where item = '{item_code}'""",
+            as_dict=1
+        )
+
+        print("IN SIDE BATCH", p)
+
+        if len(p) > 0 and p[0].get('price') is not None: return p[0]
+        else : return dict(price = 0)
+
+def fetch_batchless_price_v2(item_code, rate_contract_name):
+    if rate_contract_name is None:
+        p = frappe.db.sql(
+            f"""select rci.selling_price_for_customer as price
+            from `tabRate Contract Item` as rci
+                join `tabRate Contract` as rc on (rc.name = rci.parent)
+            where rc.selling_price = 1 and rci.item = '{item_code}'""",
+            as_dict=1
+        )
+
+        if len(p) > 0 and p[0].get('price') is not None: return p[0]
+        else : return dict(price = 0)
+    else:
+        p = frappe.db.sql(
+            f"""select selling_price_for_customer as price from `tabRate Contract Item` where item = '{item_code}'""",
+            as_dict=1
+        )
+
+        if len(p) > 0 and p[0].get('price') is not None: return p[0]
+        else : return dict(price = 0)
+
 def fetch_batchless_price(item_code):
     price = frappe.db.sql(
         f"""select price_list_rate as price from `tabItem Price` where (batch_no is null or batch_no = '') and item_code = '{item_code}'""",
@@ -469,6 +513,7 @@ def get_so_detail(so_name, item_code, warehouse):
 
 def generate_sales_invoice_json(customer, customer_type, so_name, sales_order, company, item_list, settings):
     due_date = datetime.datetime.today()
+    discount = 1
     # due_date = due_date + datetime.timedelta(2)
 
     outerJson = {
@@ -487,21 +532,23 @@ def generate_sales_invoice_json(customer, customer_type, so_name, sales_order, c
         
         qty, batch = ppli_qty_and_batch(item)
         if qty == 0: continue
-        
-        if item.get("promo_type") == "Buy x get same and discount for ineligible qty":
-            discount = fetch_promo_type_5(item, sales_order, customer_type, settings)
-        elif item.get("promo_type") == "Amount based discount":
-            discount = fetch_promo_type_1(item, sales_order, customer_type, settings)
-        else:
-            discount = 1
+
+        rate_contract = customer_rate_contract(customer) 
+        if not rate_contract["valid"]:
+            if item.get("promo_type") == "Buy x get same and discount for ineligible qty":
+                discount = fetch_promo_type_5(item, sales_order, customer_type, settings)
+            elif item.get("promo_type") == "Amount based discount":
+                discount = fetch_promo_type_1(item, sales_order, customer_type, settings)
+            else:
+                discount = 1
 
         if item["warehouse"] == settings["free_warehouse"]:
             rate = {"price": 0}
         else:
             if batch:
-                rate = fetch_batch_price(batch, item["item"])
+                rate = fetch_batch_price_v2(batch, item["item"], rate_contract["name"])
             else:
-                rate = fetch_batchless_price(item["item"])
+                rate = fetch_batchless_price_v2(item["item"], rate_contract["name"])
         
         rate["price"] = rate["price"] * discount
         
@@ -654,24 +701,40 @@ def fetch_promo_type_1(i, sales_order, customer_type, settings):
 
     return discount
 
-def update_average_price(item_list, sales_order, customer_type, settings):
+def customer_rate_contract(customer):
+    rc = frappe.db.sql(
+        f"""select name from `tabRate Contract` where customer = '{customer}'""",
+        as_dict=1
+    )
+
+    if len(rc) > 0: return dict(valid = True, name = rc[0]["name"])
+    else : return dict(valid = False, name = None)
+
+def update_average_price(item_list, sales_order, customer_type, settings, customer):
     new_average_price = {}
+    discount = 1
+
     for item in item_list:
         if item["warehouse"] == settings["free_warehouse"]: continue
         qty, batch = ppli_qty_and_batch(item)
         if qty == 0: continue
 
-        if item.get("promo_type") == "Buy x get same and discount for ineligible qty":
-            discount = fetch_promo_type_5(item, sales_order, customer_type, settings)
-        elif item.get("promo_type") == "Amount based discount":
-            discount = fetch_promo_type_1(item, sales_order, customer_type, settings)
-        else:
-            discount = 1
+        rate_contract = customer_rate_contract(customer)
+        if not rate_contract["valid"]:
+            if item.get("promo_type") == "Buy x get same and discount for ineligible qty":
+                discount = fetch_promo_type_5(item, sales_order, customer_type, settings)
+            elif item.get("promo_type") == "Amount based discount":
+                discount = fetch_promo_type_1(item, sales_order, customer_type, settings)
+            else:
+                discount = 1
 
         if batch:
-            rate = fetch_batch_price(batch, item["item"])
+            rate = fetch_batch_price_v2(batch, item["item"], rate_contract["name"])
+            print("NEW PRICE", fetch_batch_price_v2(batch, item["item"], rate_contract["name"]))
         else:
-            rate = fetch_batchless_price(item["item"])
+            rate = fetch_batchless_price_v2(item["item"], rate_contract["name"])
+            # fetch_batchless_price
+            print("NEW PRICE Batchless", fetch_batchless_price_v2(item["item"], rate_contract["name"]))
 
         rate["price"] = rate["price"] * discount
 
@@ -937,7 +1000,7 @@ def pick_status(item_list, so_name, company, stage_index, stage_list):
     customer = get_customer(so_name)
     customer_type = fetch_customer_type(so_name)
 
-    average_price = update_average_price(item_list, sales_order, customer_type, settings)
+    average_price = update_average_price(item_list, sales_order, customer_type, settings, customer)
     print("average price", average_price)
 
     if next_stage == "Invoiced":
