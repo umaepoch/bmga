@@ -435,65 +435,58 @@ def get_customer(so_name):
     )
     return customer[0].customer
 
-def fetch_batch_price(batch, item_code):
-    price = frappe.db.sql(
-        f"""select price_list_rate as price from `tabItem Price` where batch_no = '{batch}' and  item_code = '{item_code}'""",
+def fetch_batch_detail(batch, item_code):
+    p = frappe.db.sql(
+        f"""select pch_mrp as price from `tabBatch` where batch_id = '{batch}' and item = '{item_code}'""",
         as_dict=1
     )
-    if len(price) > 0 and price[0].get("price") is not None: return price[0]
-    else: return fetch_batchless_price(item_code)
+    if len(p) > 0 and p[0].get('price') is not None: return dict(price = p[0].get('price'))
+    else : return dict(price = 0)
 
-def fetch_batch_price_v2(batch, item_code, rate_contract_name):
+def fetch_batchless_detail(item_code):
+    p = frappe.db.sql(
+        f"""select rci.selling_price_for_customer as price
+        from `tabRate Contract Item` as rci
+            join `tabRate Contract` as rc on (rc.name = rci.parent)
+        where rc.selling_price = 1 and rci.item = '{item_code}'""",
+        as_dict=1
+    )
+    if len(p) > 0 and p[0].get('price') is not None: return dict(price = p[0].get('price'))
+    else : return dict(price = 0)
+
+def fetch_rate_contract_detail(batch, item_code, rate_contract_name):
+    p = frappe.db.sql(
+        f"""select selling_price_for_customer as price, discount_percentage_for_customer_from_mrp as discount, batched_item
+        from `tabRate Contract Item`
+        where item = '{item_code}' and parent = '{rate_contract_name}'""",
+        as_dict=1
+    )
+
+    if len(p) > 0:
+        if p[0].get('price') > 0: return dict(price = p[0].get('price'))
+        elif p[0].get('discount') > 0:
+            discount = (100 - p[0].get('discount')) / 100
+            print("/*-"*25)
+            print(p[0].get('batched_item'), discount)
+            if p[0].get('batched_item') == "Yes":
+                b = fetch_batch_detail(batch, item_code)
+                print(b)
+                return dict(price = b['price'] * discount)
+            else:
+                b = fetch_batchless_detail(item_code)
+                return dict(price = b['price'] * discount)
+        else: return dict(price = 0)
+    elif batch != "" : return fetch_batch_detail(batch, item_code)
+    else: return fetch_batchless_detail(item_code)
+
+def fetch_batch_price(batch, item_code, rate_contract_name):
     print("RATE CONTRACT NAME", rate_contract_name)
-    if rate_contract_name is None:
-        p = frappe.db.sql(
-            f"""select pch_mrp as price from `tabBatch` where batch_id = '{batch}' and item = '{item_code}'""",
-            as_dict=1
-        )
+    if rate_contract_name is None: return fetch_batch_detail(batch, item_code)
+    else: return fetch_rate_contract_detail(batch, item_code, rate_contract_name)
 
-        print("IN SIDE BATCH", p)
-
-        if len(p) > 0 and p[0].get('price') is not None: return p[0]
-        else : return dict(price = 0)
-    else:
-        p = frappe.db.sql(
-            f"""select selling_price_for_customer as price from `tabRate Contract Item` where item = '{item_code}'""",
-            as_dict=1
-        )
-
-        print("IN SIDE BATCH", p)
-
-        if len(p) > 0 and p[0].get('price') is not None: return p[0]
-        else : return dict(price = 0)
-
-def fetch_batchless_price_v2(item_code, rate_contract_name):
-    if rate_contract_name is None:
-        p = frappe.db.sql(
-            f"""select rci.selling_price_for_customer as price
-            from `tabRate Contract Item` as rci
-                join `tabRate Contract` as rc on (rc.name = rci.parent)
-            where rc.selling_price = 1 and rci.item = '{item_code}'""",
-            as_dict=1
-        )
-
-        if len(p) > 0 and p[0].get('price') is not None: return p[0]
-        else : return dict(price = 0)
-    else:
-        p = frappe.db.sql(
-            f"""select selling_price_for_customer as price from `tabRate Contract Item` where item = '{item_code}'""",
-            as_dict=1
-        )
-
-        if len(p) > 0 and p[0].get('price') is not None: return p[0]
-        else : return dict(price = 0)
-
-def fetch_batchless_price(item_code):
-    price = frappe.db.sql(
-        f"""select price_list_rate as price from `tabItem Price` where (batch_no is null or batch_no = '') and item_code = '{item_code}'""",
-        as_dict=1
-    )
-    if len(price) > 0 and price[0].get("price") is not None: return price[0]
-    else: return dict(price = 0)
+def fetch_batchless_price(item_code, rate_contract_name):
+    if rate_contract_name is None: return fetch_batchless_detail(item_code)
+    else: return fetch_rate_contract_detail("", item_code, rate_contract_name)
 
 def fetch_storage_location_from_id(id):
     location = frappe.db.sql(
@@ -546,9 +539,9 @@ def generate_sales_invoice_json(customer, customer_type, so_name, sales_order, c
             rate = {"price": 0}
         else:
             if batch:
-                rate = fetch_batch_price_v2(batch, item["item"], rate_contract["name"])
+                rate = fetch_batch_price(batch, item["item"], rate_contract["name"])
             else:
-                rate = fetch_batchless_price_v2(item["item"], rate_contract["name"])
+                rate = fetch_batchless_price(item["item"], rate_contract["name"])
         
         rate["price"] = rate["price"] * discount
         
@@ -729,12 +722,12 @@ def update_average_price(item_list, sales_order, customer_type, settings, custom
                 discount = 1
 
         if batch:
-            rate = fetch_batch_price_v2(batch, item["item"], rate_contract["name"])
-            print("NEW PRICE", fetch_batch_price_v2(batch, item["item"], rate_contract["name"]))
+            rate = fetch_batch_price(batch, item["item"], rate_contract["name"])
+            print("NEW PRICE", fetch_batch_price(batch, item["item"], rate_contract["name"]))
         else:
-            rate = fetch_batchless_price_v2(item["item"], rate_contract["name"])
+            rate = fetch_batchless_price(item["item"], rate_contract["name"])
             # fetch_batchless_price
-            print("NEW PRICE Batchless", fetch_batchless_price_v2(item["item"], rate_contract["name"]))
+            print("NEW PRICE Batchless", fetch_batchless_price(item["item"], rate_contract["name"]))
 
         rate["price"] = rate["price"] * discount
 
