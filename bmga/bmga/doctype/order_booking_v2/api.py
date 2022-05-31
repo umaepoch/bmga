@@ -145,6 +145,91 @@ def fetch_contract_rate(customer, item_code):
         print("cl......", c[0]["item"])
         return cl
 
+def customer_rate_contract(customer):
+    rc = frappe.db.sql(
+        f"""select name from `tabRate Contract` where customer = '{customer}'""",
+        as_dict=1
+    )
+    if len(rc) > 0: return dict(valid = True, name = rc[0]["name"])
+    else : return dict(valid = False, name = None)
+
+def fetch_batch_detail(batch, item_code):
+    p = frappe.db.sql(
+        f"""select pch_mrp as price from `tabBatch` where batch_id = '{batch}' and item = '{item_code}'""",
+        as_dict=1
+    )
+    if len(p) > 0 and p[0].get('price') is not None: return dict(price = p[0].get('price'))
+    else : return dict(price = 0)
+
+def fetch_batchless_detail(item_code):
+    p = frappe.db.sql(
+        f"""select rci.selling_price_for_customer as price
+        from `tabRate Contract Item` as rci
+            join `tabRate Contract` as rc on (rc.name = rci.parent)
+        where rc.selling_price = 1 and rci.item = '{item_code}'""",
+        as_dict=1
+    )
+    if len(p) > 0 and p[0].get('price') is not None: return dict(price = p[0].get('price'))
+    else : return dict(price = 0)
+
+def fetch_rate_contract_detail(batch, item_code, rate_contract_name):
+    p = frappe.db.sql(
+        f"""select selling_price_for_customer as price, discount_percentage_for_customer_from_mrp as discount, batched_item
+        from `tabRate Contract Item`
+        where item = '{item_code}' and parent = '{rate_contract_name}'""",
+        as_dict=1
+    )
+
+    if len(p) > 0:
+        if p[0].get('price') > 0: return dict(price = p[0].get('price'))
+        elif p[0].get('discount') > 0:
+            discount = (100 - p[0].get('discount')) / 100
+            print("/*-"*25)
+            print(p[0].get('batched_item'), discount)
+            if p[0].get('batched_item') == "Yes":
+                b = fetch_batch_detail(batch, item_code)
+                print(b)
+                return dict(price = b['price'] * discount)
+            else:
+                b = fetch_batchless_detail(item_code)
+                return dict(price = b['price'] * discount)
+        else: return dict(price = 0)
+    elif batch != "" : return fetch_batch_detail(batch, item_code)
+    else: return fetch_batchless_detail(item_code)
+
+def fetch_batch_price(batch, item_code, rate_contract_name):
+    print("RATE CONTRACT NAME", rate_contract_name)
+    if rate_contract_name is None: return fetch_batch_detail(batch, item_code)
+    else: return fetch_rate_contract_detail(batch, item_code, rate_contract_name)
+
+def fetch_batchless_price(item_code, rate_contract_name):
+    if rate_contract_name is None: return fetch_batchless_detail(item_code)
+    else: return fetch_rate_contract_detail("", item_code, rate_contract_name)
+
+def is_item_batched(item_code):
+    d = frappe.db.sql(
+        f"""select batch_id from `tabBatch`
+        where item = '{item_code}'
+        order by expiry_date DESC""",
+        as_dict=1
+    )
+    print("BATCHED ******")
+    print(d)
+    if len(d) > 0:
+        return dict(valid = True, batch = d[0]["batch_id"])
+    else: return dict(valid = False, batch = "")
+
+def fetch_rate_contract_price(item_code, rate_contract_name):
+    is_batch = is_item_batched(item_code)
+    if is_batch['valid']:
+        return fetch_batch_price(is_batch['batch'], item_code, rate_contract_name)
+    else:
+        return fetch_batchless_price(item_code, rate_contract_name)
+
+def fetch_average_price_v2(customer, item_code):
+    rate_contract = customer_rate_contract(customer)
+    return fetch_rate_contract_price(item_code, rate_contract["name"])
+
 def fetch_average_price(stock_data, customer, item_code):
     average_price_list = []
     average_qty_list = []
@@ -215,8 +300,6 @@ def fetch_fulfillment_settings(company):
     else:
         settings = [None]
     return settings
-
-
 
 # Available Qty for Promo
 def available_stock_details_for_promos(item_code, customer_type, settings, expiry_date):
@@ -636,20 +719,16 @@ def sales_promos(item_code, customer_type, company, order_list):
     sales_promos_items = sales_promos_same_item["Promo_sales"] + sales_promo_diff_items["Promo_sales"] + sales_promo_discount["Promo_sales"]
     sales_order = sales_order_calculation(sales_promo_discounted_amount, sales_promos_items, order_list, settings[0]["retail_primary_warehouse"], settings[0]["free_warehouse"])
   
-    
-
     return dict(sales_order = sales_order,sales_promos_items= sales_promos_items, bought_item = item_code, sales_promos_same_item = sales_promos_same_item, sales_promo_diff_items = sales_promo_diff_items, sales_promo_discount= sales_promo_discount, promos_qty = promos_qty, sales_promo_discounted_amount = sales_promo_discounted_amount )
-
-
 
 @frappe.whitelist()
 def item_qty_container(company, item_code, customer_type, customer):
     fulfillment_settings = fetch_fulfillment_settings(company)
     stock_detail = fetch_item_details(item_code, customer_type, fulfillment_settings[0])
     handled_stock = available_stock_details(item_code, customer_type, fulfillment_settings[0])
-    price_details = fetch_average_price(stock_detail, customer, item_code)
+    price_details = fetch_average_price_v2(customer, item_code)
     # sales_promo = fetch_sales_promos(item_code)
-    return dict(available_qty = handled_stock["available_qty"], average_price = price_details["average_price"], price_details = price_details, stock_detail = stock_detail, qty_detail = handled_stock) 
+    return dict(available_qty = handled_stock["available_qty"], average_price = price_details["price"], price_details = price_details, stock_detail = stock_detail, qty_detail = handled_stock) 
 
 @frappe.whitelist()
 def sales_order_container(customer, order_list, company, customer_type, free_promos, promo_dis, sales_order):
