@@ -124,9 +124,12 @@ frappe.ui.form.on('Order Booking V2', {
 						customer_type: customer_type,
 						company : company,
 						order_list: order_list,
+						customer: customer,
 					}
 				}).done((respose) =>{
 					console.log(respose)
+					console.log(respose.message.sales_promo_discounted_amount)
+					console.log(respose.message.sales_promos_items)
 					
 					$.each(respose.message.sales_order.sales_order, function(_i, e) {
 						let entry = frm.add_child("sales_order_preview");
@@ -180,6 +183,7 @@ frappe.ui.form.on('Order Booking Items V2', {
 				frappe.model.set_value(cdt, cdn, "average_price", null);
 				frappe.model.set_value(cdt, cdn, "amount", null);
 				frappe.model.set_value(cdt, cdn, "amount_after_gst", null);
+				frappe.model.set_value(cdt, cdn, "rate_contract", null)
 				refresh_field("order_booking_items_v2");
 			} else {
 				frappe.call({
@@ -194,6 +198,7 @@ frappe.ui.form.on('Order Booking Items V2', {
 					console.log(response)
 					frappe.model.set_value(cdt, cdn, "quantity_available", response.message.available_qty);
 					frappe.model.set_value(cdt, cdn, "average_price", response.message.average_price);
+					frappe.model.set_value(cdt, cdn, "rate_contract", response.message.price_details.rate_contract);
 					refresh_field("order_booking_items_v2");
 				})
 			}
