@@ -183,7 +183,7 @@ frappe.ui.form.on('Order Booking Items V2', {
 				frappe.model.set_value(cdt, cdn, "average_price", null);
 				frappe.model.set_value(cdt, cdn, "amount", null);
 				frappe.model.set_value(cdt, cdn, "amount_after_gst", null);
-				frappe.model.set_value(cdt, cdn, "rate_contract", null)
+				frappe.model.set_value(cdt, cdn, "rate_contract_check", 0)
 				refresh_field("order_booking_items_v2");
 			} else {
 				frappe.call({
@@ -197,8 +197,8 @@ frappe.ui.form.on('Order Booking Items V2', {
 				}).done((response) => {
 					console.log(response)
 					frappe.model.set_value(cdt, cdn, "quantity_available", response.message.available_qty);
-					frappe.model.set_value(cdt, cdn, "average_price", response.message.average_price);
-					frappe.model.set_value(cdt, cdn, "rate_contract", response.message.price_details.rate_contract);
+					frappe.model.set_value(cdt, cdn, "average_price", response.message.price_details.price);
+					frappe.model.set_value(cdt, cdn, "rate_contract_check", response.message.price_details.rate_contract_check);
 					refresh_field("order_booking_items_v2");
 				})
 			}

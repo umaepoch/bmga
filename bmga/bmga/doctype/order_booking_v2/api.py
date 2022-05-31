@@ -3,7 +3,6 @@ import frappe
 import datetime
 import re
 
-
 def fetch_customer_type(customer):
     customer_group = frappe.db.sql(
         f"""SELECT customer_group FROM `tabCustomer` WHERE name = '{customer}'""",
@@ -177,7 +176,9 @@ def fetch_rate_contract_detail(batch, item_code, rate_contract_name):
     )
 
     if len(p) > 0:
-        if p[0].get('price') > 0: return dict(price = p[0].get('price'))
+        if p[0].get('price') > 0:
+            print("PRICE FIXED **************")
+            return dict(price = p[0].get('price'), rate_contract_check = 1)
         elif p[0].get('discount') > 0:
             discount = (100 - p[0].get('discount')) / 100
             print("/*-"*25)
@@ -188,7 +189,7 @@ def fetch_rate_contract_detail(batch, item_code, rate_contract_name):
                 return dict(price = b['price'] * discount)
             else:
                 b = fetch_batchless_detail(item_code)
-                return dict(price = b['price'] * discount)
+                return dict(price = b['price'] * discount, rate_contract_check = 1)
         else: return dict(price = 0)
     elif batch != "" : return fetch_batch_detail(batch, item_code)
     else: return fetch_batchless_detail(item_code)
@@ -724,7 +725,7 @@ def item_qty_container(company, item_code, customer_type, customer):
     handled_stock = available_stock_details(item_code, customer_type, fulfillment_settings[0])
     price_details = fetch_average_price_v2(customer, item_code)
     # sales_promo = fetch_sales_promos(item_code)
-    return dict(available_qty = handled_stock["available_qty"], average_price = price_details["price"], price_details = price_details, stock_detail = stock_detail, qty_detail = handled_stock) 
+    return dict(available_qty = handled_stock["available_qty"], price_details = price_details, stock_detail = stock_detail, qty_detail = handled_stock) 
 
 @frappe.whitelist()
 def sales_order_container(customer, order_list, company, customer_type, free_promos, promo_dis, sales_order):
