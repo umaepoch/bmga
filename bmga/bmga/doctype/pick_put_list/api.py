@@ -455,27 +455,33 @@ def fetch_batchless_detail(item_code):
     else : return dict(price = 0)
 
 def fetch_rate_contract_detail(batch, item_code, rate_contract_name):
+    today = datetime.date.today()
     p = frappe.db.sql(
-        f"""select selling_price_for_customer as price, discount_percentage_for_customer_from_mrp as discount, batched_item
+        f"""select start_date, end_date, selling_price_for_customer as price, discount_percentage_for_customer_from_mrp as discount, batched_item
         from `tabRate Contract Item`
         where item = '{item_code}' and parent = '{rate_contract_name}'""",
         as_dict=1
     )
 
     if len(p) > 0:
-        if p[0].get('price') > 0: return dict(price = p[0].get('price'))
-        elif p[0].get('discount') > 0:
-            discount = (100 - p[0].get('discount')) / 100
-            print("/*-"*25)
-            print(p[0].get('batched_item'), discount)
-            if p[0].get('batched_item') == "Yes":
-                b = fetch_batch_detail(batch, item_code)
-                print(b)
-                return dict(price = b['price'] * discount)
-            else:
-                b = fetch_batchless_detail(item_code)
-                return dict(price = b['price'] * discount)
-        else: return dict(price = 0)
+        if p[0].get('start_date') <= today <= p[0].get('end_date'):
+            if p[0].get('price') > 0:
+                print("PRICE FIXED **************")
+                return dict(price = p[0].get('price'), rate_contract_check = 1)
+            elif p[0].get('discount') > 0:
+                discount = (100 - p[0].get('discount')) / 100
+                print("/*-"*25)
+                print(p[0].get('batched_item'), discount)
+                if p[0].get('batched_item') == "Yes":
+                    b = fetch_batch_detail(batch, item_code)
+                    print(b)
+                    return dict(price = b['price'] * discount)
+                else:
+                    b = fetch_batchless_detail(item_code)
+                    return dict(price = b['price'] * discount, rate_contract_check = 1)
+            else: return dict(price = 0)
+        elif batch != "" : return fetch_batch_detail(batch, item_code)
+        else: return fetch_batchless_detail(item_code)
     elif batch != "" : return fetch_batch_detail(batch, item_code)
     else: return fetch_batchless_detail(item_code)
 
