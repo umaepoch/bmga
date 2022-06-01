@@ -107,15 +107,15 @@ frappe.ui.form.on('Order Booking V2', {
 			let sales_check = false
 			
 			if (item_code_list) {
-				frappe.call({
-					method: "bmga.bmga.doctype.order_booking_v2.api.sales_promo_checked",
-					args:{
-						customer:customer
-					}
-				}).done(response =>{
-					sales_check = response.message
-					console.log("sales_check",sales_check)
-				})
+				// frappe.call({
+				// 	method: "bmga.bmga.doctype.order_booking_v2.api.sales_promo_checked",
+				// 	args:{
+				// 		customer:customer
+				// 	}
+				// }).done(response =>{
+				// 	sales_check = response.message
+				// 	console.log(sales_check)
+				// })
 
 				frappe.call({
 					method : "bmga.bmga.doctype.order_booking_v2.api.sales_promos",
@@ -141,29 +141,26 @@ frappe.ui.form.on('Order Booking V2', {
 						entry.warehouse = e.warehouse;
 					}),
 					refresh_field("sales_order_preview")
-					if(sales_check = true){
-						$.each(respose.message.sales_promos_items, function(_i, e) {
-							let entry = frm.add_child("promos");
-							entry.bought_item = e.bought_item;
-							entry.free_items = e.promo_item;
-							entry.price = e.rate;
-							entry.quantity = e.qty;
-							entry.warehouse_quantity = e.w_qty;
-							entry.promo_type = e.promo_type;
-						}),
-						refresh_field("promos"),
-						$.each(respose.message.sales_promo_discounted_amount, function(_i, e){
-							let entry = frm.add_child("promos_discount");
-							entry.bought_item = e.bought_item;
-							entry.free_item = e.promo_item;
-							entry.quantity = e.dic_qty;
-							entry.discount = e.dic;
-							entry.promo_type = e.promo_type;
-							entry.amount= e.amount;
-						})
-						refresh_field("promos_discount")
-					}
-					
+					$.each(respose.message.sales_promos_items, function(_i, e) {
+						let entry = frm.add_child("promos");
+						entry.bought_item = e.bought_item;
+						entry.free_items = e.promo_item;
+						entry.price = e.rate;
+						entry.quantity = e.qty;
+						entry.warehouse_quantity = e.w_qty;
+						entry.promo_type = e.promo_type;
+					}),
+					refresh_field("promos"),
+					$.each(respose.message.sales_promo_discounted_amount, function(_i, e){
+						let entry = frm.add_child("promos_discount");
+						entry.bought_item = e.bought_item;
+						entry.free_item = e.promo_item;
+						entry.quantity = e.dic_qty;
+						entry.discount = e.dic;
+						entry.promo_type = e.promo_type;
+						entry.amount= e.amount;
+					})
+					refresh_field("promos_discount")
 					frappe.msgprint("Promos Applied")
 				})
 			}	
