@@ -9,6 +9,10 @@
  "field_order": [
   "selling_price",
   "customer",
+  "column_break_3",
+  "html_4",
+  "customer_name",
+  "section_break_5",
   "item"
  ],
  "fields": [
@@ -29,11 +33,31 @@
    "fieldname": "selling_price",
    "fieldtype": "Check",
    "label": "Selling Price"
+  },
+  {
+   "fieldname": "column_break_3",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fetch_from": "customer.customer_name",
+   "fieldname": "customer_name",
+   "fieldtype": "Data",
+   "label": "Customer Name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_break_5",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "html_4",
+   "fieldtype": "HTML",
+   "options": "<div style=\"margin-bottom: 7.5%;\"></div>"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2022-05-26 14:45:33.876071",
+ "modified": "2022-06-02 14:12:57.960691",
  "modified_by": "Administrator",
  "module": "Bmga",
  "name": "Rate Contract",

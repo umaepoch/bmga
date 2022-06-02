@@ -780,14 +780,21 @@ def update_average_price(item_list, sales_order, customer_type, settings, custom
     return new_average_price 
 
 def update_sales_order(sales_doc, average_price, free_warehouse):
+    print(free_warehouse)
     print("update sales order", average_price)
     for child in sales_doc.get_all_children():
             if child.doctype != "Sales Order Item": continue
             sales_item_doc = frappe.get_doc(child.doctype, child.name)
+            print(sales_item_doc.warehouse)
+            print(free_warehouse)
+            print(sales_item_doc.promo_type)
+            print(sales_item_doc.warehouse == free_warehouse)
+            print(sales_item_doc.promo_type == "None" or sales_item_doc.promo_type is None)
             if sales_item_doc.warehouse == free_warehouse:
-                print(sales_item_doc.rate)
+                print("free price", sales_item_doc.rate)
                 sales_item_doc.rate = 0
-            elif sales_item_doc.promo_type is None:
+                print("free price", sales_item_doc.rate)
+            elif sales_item_doc.promo_type == "None" or sales_item_doc.promo_type is None:
                 sales_item_doc.rate = average_price[sales_item_doc.item_code]["normal"]["average"]
             else:
                 sales_item_doc.rate = average_price[sales_item_doc.item_code]["promo"]["average"]
@@ -1005,8 +1012,8 @@ def pick_status(item_list, so_name, company, stage_index, stage_list):
     if next_stage == "Invoiced":
         sales_doc = frappe.get_doc("Sales Order", so_name)
         sales_doc.pch_picking_status = next_stage
+        update_sales_order(sales_doc, average_price, settings["free_warehouse"])
         sales_doc.save()
-        sales_doc.reload()
         sales_doc.submit()
 
         names = stock_correction(customer, so_name, company, item_list, settings)
@@ -1025,6 +1032,4 @@ def pick_status(item_list, so_name, company, stage_index, stage_list):
         sales_doc.save()
         print(sales_doc.pch_picking_status)
         update_sales_order(sales_doc, average_price, settings["free_warehouse"])
-        sales_doc.reload()
-        sales_doc.save()
         return dict(next_stage = next_stage, average_price = average_price)
