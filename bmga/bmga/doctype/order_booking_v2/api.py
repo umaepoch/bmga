@@ -435,10 +435,13 @@ def fetch_sales_promos_get_same_item(item_code, customer_type, free_warehouse, e
                                             sales_promos_quantity = qty
                                     except:
                                         qty = promo_qty[promos[i]["bought_item"]]
-                                    if order_list[t]["rate_contract_check"] == 1 and order_list[t]["item_code"] == promos[i]["bought_item"]:
-                                        continue
-                                    else:
+                                    if order_list[t]["item_code"] == promos[i]["bought_item"]:
+                                        print("HAI***************************")
                                         promos_sale.append({"promo_type": promo_type  , "qty":sales_promos_quantity, "bought_item":promos[i]["bought_item"], "dic": "0", "rate": 0.0 , "promo_item": promos[i]["bought_item"], "w_qty" : qty})
+                                        
+                                    else:
+                                        print("HAI***************************", order_list[t]["rate_contract_check"], order_list[t]["item_code"], promos[i]["bought_item"])
+                                        continue
             else:                   
                 continue
             
@@ -476,8 +479,8 @@ def fetch_sales_promos_get_diff_item(item_code, customer_type, free_warehouse, e
     print("Promos......2", promos)
     print("len.....", len(order_list))
     for t in range (len(order_list)):
-        for m in item_code:
-             if order_list[t]["rate_contract_check"] == 0 and order_list[t]["item_code"] == m["item_code"]:
+        for p in range (len(promos)):
+             if order_list[t]["rate_contract_check"] == 0 and order_list[t]["item_code"] == promos[p]["bought_item"]:
                 if len(promos) > 0:
                     for i in range ((len(promos) -1), -1, -1):
                         print()
@@ -518,12 +521,11 @@ def fetch_sales_promos_get_diff_item(item_code, customer_type, free_warehouse, e
                                     except:
                                         qty = promo_qty[promos[i]["bought_item"]]
                                     
-                                    if order_list[t]["rate_contract_check"] == 1 and order_list[t]["item_code"] == promos[i]["bought_item"]:
-                                        continue
-                                    else:
+                                    if order_list[t]["item_code"] == promos[i]["bought_item"]:
                                         promos_sale.append({"promo_type": promo_type, "qty" : sales_promos_quantity, "bought_item":promos[i]["bought_item"], "dic": "0", "rate": 0.0 ,"promo_item" : promos[i]["free_item"], "w_qty" : qty})
+                                    else:
                                         print("sales qunt diif", sales_promos_quantity)
-                
+                                        continue
     print(".......2", promos_sale)
     return dict({"Promo_sales" : promos_sale, "Promos" : promos, "sales_data" : sales_data})
 
@@ -554,8 +556,8 @@ def fetch_sales_promos_get_same_item_discout(item_code, customer_type, free_ware
     print("promos......3", promos)
     print("len.....", len(order_list))
     for t in range (len(order_list)):
-        for m in item_code:
-             if order_list[t]["rate_contract_check"] == 0 and order_list[t]["item_code"] == m["item_code"]:
+        for p in range (len(promos)):
+             if order_list[t]["rate_contract_check"] == 0 and order_list[t]["item_code"] == promos[p]["bought_item"]:
                 if len(promos) > 0:
                     for i in range ((len(promos) -1), -1, -1):
                         print()
@@ -599,7 +601,8 @@ def fetch_sales_promos_get_same_item_discout(item_code, customer_type, free_ware
                                     except:
                                         qty = promo_qty[promos[i]["bought_item"]]
 
-                                    if order_list[t]["rate_contract_check"] == 1 and order_list[t]["item_code"] == promos[i]["bought_item"]:
+                                    if order_list[t]["item_code"] == promos[i]["bought_item"]:
+                                        print("Hai.....there")
                                         continue
                                     else:
                                         promos_sale.append({ "promo_type": promo_type,"qty":sales_promos_quantity, "dic_qty": sales_promos_dic, "dic":sales_promo_discount,"rate": 0.0 , "bought_item":promos[i]["bought_item"], "promo_item": promos[i]["bought_item"], "w_qty" : qty, "amount":sales_promo_amount })
@@ -644,8 +647,8 @@ def fetch_sales_promos_qty_based_discount(item_code, customer_type, free_warehou
 
 
     for t in range (len(order_list)):
-        for m in item_code:
-             if order_list[t]["rate_contract_check"] == 0 and order_list[t]["item_code"] == m["item_code"]:
+        for p in range (len(promos)):
+             if order_list[t]["rate_contract_check"] == 0 and order_list[t]["item_code"] == promos[p]["bought_item"]:
                 if len(promos) > 0:
                     for i in range ((len(promos) -1), -1, -1):
                         print()
@@ -692,10 +695,10 @@ def fetch_sales_promos_qty_based_discount(item_code, customer_type, free_warehou
                                     except:
                                         qty = promo_qty[promos[i]["bought_item"]]
 
-                                    if order_list[t]["rate_contract_check"] == 1 and order_list[t]["item_code"] == promos[i]["bought_item"]:
-                                        continue
-                                    else:
+                                    if order_list[t]["item_code"] == promos[p]["bought_item"]:
                                         promos_sale.append({"promo_type": promo_type, "qty": 0 , "dic":sales_promo_discount, "dic_qty": j["quantity_booked"], "rate": 0.0 , "bought_item":promos[i]["bought_item"], "promo_item": promos[i]["bought_item"] , "w_qty" : qty})
+                                    else:
+                                        continue
 
       
     return dict({"Promo_sales" : promos_sale, "Promos" : promos, "sales_data" : sales_data})

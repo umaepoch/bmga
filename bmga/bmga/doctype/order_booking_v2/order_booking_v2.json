@@ -72,9 +72,9 @@
   {
    "fieldname": "promos",
    "fieldtype": "Table",
-   "hidden": 1,
    "label": "Promos",
-   "options": "Order Booking V2 Sales Promo"
+   "options": "Order Booking V2 Sales Promo",
+   "read_only": 1
   },
   {
    "fieldname": "column_break_4",
@@ -98,9 +98,9 @@
   {
    "fieldname": "promos_discount",
    "fieldtype": "Table",
-   "hidden": 1,
    "label": "Promos Discount",
-   "options": "Order Booking V2 Sales Discount"
+   "options": "Order Booking V2 Sales Discount",
+   "read_only": 1
   },
   {
    "fieldname": "sales_order_preview",
@@ -112,7 +112,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2022-06-01 20:53:01.114194",
+ "modified": "2022-06-02 08:57:39.764184",
  "modified_by": "Administrator",
  "module": "Bmga",
  "name": "Order Booking V2",
