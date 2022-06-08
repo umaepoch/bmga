@@ -14,63 +14,89 @@
   "discount_percentage_for_customer_from_mrp",
   "mrp",
   "pts",
+  "margin_supply_rate",
   "start_date",
   "end_date"
  ],
  "fields": [
   {
+   "columns": 1,
    "fieldname": "item",
    "fieldtype": "Link",
+   "in_list_view": 1,
    "label": "Item",
    "options": "Item"
   },
   {
+   "columns": 1,
    "fetch_from": "item.stock_uom",
    "fieldname": "stock_uom",
    "fieldtype": "Data",
+   "in_list_view": 1,
    "label": "Stock UOM"
   },
   {
+   "columns": 1,
    "fieldname": "batched_item",
    "fieldtype": "Select",
+   "in_list_view": 1,
    "label": "Batched Item",
    "options": "\nYes\nNo"
   },
   {
+   "columns": 1,
    "fieldname": "selling_price_for_customer",
    "fieldtype": "Currency",
+   "in_list_view": 1,
    "label": "Selling Price For Customer"
   },
   {
+   "columns": 1,
    "fieldname": "discount_percentage_for_customer_from_mrp",
    "fieldtype": "Percent",
+   "in_list_view": 1,
    "label": "Discount Percentage for Customer (from MRP)"
   },
   {
+   "columns": 1,
    "fieldname": "mrp",
    "fieldtype": "Currency",
+   "in_list_view": 1,
    "label": "MRP"
   },
   {
+   "columns": 1,
    "fieldname": "pts",
    "fieldtype": "Currency",
+   "in_list_view": 1,
    "label": "PTS"
   },
   {
+   "columns": 1,
    "fieldname": "start_date",
    "fieldtype": "Date",
+   "in_list_view": 1,
    "label": "Start Date"
   },
   {
+   "columns": 1,
    "fieldname": "end_date",
    "fieldtype": "Date",
+   "in_list_view": 1,
    "label": "End Date"
+  },
+  {
+   "columns": 1,
+   "fieldname": "margin_supply_rate",
+   "fieldtype": "Percent",
+   "in_list_view": 1,
+   "label": "Margin Supply Rate"
   }
  ],
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2022-06-01 09:57:09.625038",
+ "modified": "2022-06-06 15:34:23.667023",
  "modified_by": "Administrator",
  "module": "Bmga",
  "name": "Rate Contract Item",
