@@ -48,7 +48,7 @@ def handle_claim(data):
 			to_add["total_reimbursement"] = to_add["claim_amount"] * to_add["qty"]
 			hd.append(to_add)
 	
-	return hd
+	return data
 
 def fetch_purchase_batch(i):
 	p = frappe.db.sql(
