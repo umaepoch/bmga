@@ -18,30 +18,35 @@ def handle_claim(data):
 	to_add = {}
 
 	for d in data:
-		#if d.get('mrp') is not None and d.get('rc_discount') is not None:
-		to_add = d
-		
-		to_add["division"] = "-"
-		to_add["approval_status"] = ""
-		to_add["reason"] = ""
-		try:
-			to_add["supply_rate"] = to_add["mrp"] * (100 - to_add["rc_discount"])/100
-		except:
-			to_add["supply_rate"] = 0
-		try:
-			to_add["diff_amount"] = to_add["inward_rate"] - d["supply_rate"]
-		except:
-			to_add["diff_amount"] = 0
-		try:
-			to_add["supplier_margin"] = to_add["supply_rate"] * (to_add["supply_margin"])/100
-		except:
-			to_add["supplier_margin"] = 0
-		if to_add["supplier_margin"] + to_add["diff_amount"] > 0:
-			to_add["claim_amount"] = to_add["supplier_margin"] + to_add["diff_amount"]
-		else:
-			to_add["claim_amount"] = 0
-		to_add["total_reimbursement"] = to_add["claim_amount"] * to_add["qty"]
-		hd.append(to_add)
+		if d.get('mrp') is not None and d.get('rc_discount') is not None:
+			to_add = d
+			
+			to_add["division"] = "-"
+			to_add["approval_status"] = ""
+			to_add["reason"] = ""
+
+			try:
+				to_add["supply_rate"] = to_add["mrp"] * (100 - to_add["rc_discount"])/100
+			except:
+				to_add["supply_rate"] = 0
+
+			try:
+				to_add["diff_amount"] = to_add["inward_rate"] - d["supply_rate"]
+			except:
+				to_add["diff_amount"] = 0
+
+			try:
+				to_add["supplier_margin"] = to_add["supply_rate"] * (to_add["supply_margin"])/100
+			except:
+				to_add["supplier_margin"] = 0
+
+			if to_add["supplier_margin"] + to_add["diff_amount"] > 0:
+				to_add["claim_amount"] = to_add["supplier_margin"] + to_add["diff_amount"]
+			else:
+				to_add["claim_amount"] = 0
+
+			to_add["total_reimbursement"] = to_add["claim_amount"] * to_add["qty"]
+			hd.append(to_add)
 	
 	return hd
 
