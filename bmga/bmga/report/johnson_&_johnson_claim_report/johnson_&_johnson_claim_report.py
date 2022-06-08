@@ -101,7 +101,7 @@ def fetch_purchase_detail(invoices):
 	return invoices
 
 def get_sales_invoice(filters):
-	brand = "Cipla"
+	brand = "Johnson & Johnson"
 	to_date = datetime.date.fromisoformat(filters["to_date"])
 	from_date = datetime.date.fromisoformat(filters["from_date"])
 

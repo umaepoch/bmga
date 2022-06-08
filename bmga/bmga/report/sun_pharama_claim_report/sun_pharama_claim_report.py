@@ -7,7 +7,7 @@ import frappe
 
 def execute(filters=None):
 
-	columns = get_columns(filters)
+	columns = get_columns()
 	data = get_sales_invoice(filters)
 	data = handle_claim(data)
 
@@ -118,7 +118,7 @@ def get_sales_invoice(filters):
 	invoices = fetch_purchase_detail(invoices)
 	return invoices
 
-def get_columns(filters):
+def get_columns():
 	"""return columns"""
 
 	columns = [

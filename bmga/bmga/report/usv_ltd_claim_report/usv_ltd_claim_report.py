@@ -20,18 +20,18 @@ def handle_claim(data):
 	for d in data:
 		if d.get('mrp') is not None and d.get('rc_discount') is not None:
 			to_add = d
-
+			
 			to_add["division"] = "-"
 			to_add["approval_status"] = ""
 			to_add["reason"] = ""
 
 			try:
-				to_add["supply_rate"] = to_add["rc_discount"]
+				to_add["supply_rate"] = to_add["mrp"] * (100 - to_add["rc_discount"])/100
 			except:
 				to_add["supply_rate"] = 0
 
 			try:
-				to_add["diff_amount"] = to_add["inward_rate"] - to_add["supply_rate"]
+				to_add["diff_amount"] = to_add["inward_rate"] - d["supply_rate"]
 			except:
 				to_add["diff_amount"] = 0
 
@@ -74,7 +74,7 @@ def fetch_purchase_batch(i):
 
 def fetch_rate_contract_for_item(i):
 	rc = frappe.db.sql(
-		f"""select rci.selling_price_for_customer as rc_discount, rci.margin_supply_rate as supply_margin
+		f"""select rci.discount_percentage_for_customer_from_mrp as rc_discount, rci.margin_supply_rate as supply_margin
 		from `tabRate Contract Item` as rci
 			join `tabRate Contract` as rc on (rc.name = rci.parent)
 		where rc.customer_name = '{i["customer_name"]}' and rci.start_date <= '{i["invoice_date"]}' and rci.end_date >= '{i["invoice_date"]}' and item = '{i["item_code"]}' and rc.docstatus < 2
@@ -101,7 +101,7 @@ def fetch_purchase_detail(invoices):
 	return invoices
 
 def get_sales_invoice(filters):
-	brand = "Cipla"
+	brand = "USV"
 	to_date = datetime.date.fromisoformat(filters["to_date"])
 	from_date = datetime.date.fromisoformat(filters["from_date"])
 
@@ -133,7 +133,7 @@ def get_columns():
 		{"label": _("Division"), "fieldname": "division", "fieldtype": "Data", "width": 100},
 		{"label": _("Customer Name"), "fieldname": "customer_name", "fieldtype": "Data", "width": 150},
 		{"label": _("MRP"), "fieldname": "mrp", "fieldtype": "Currency", "width": 100},
-		{"label": _("Rate Contract Disount on MRP"), "fieldname": "rc_discount", "fieldtype": "Currency", "width": 100},
+		{"label": _("Rate Contract Disount on MRP"), "fieldname": "rc_discount", "fieldtype": "Percent", "width": 100},
 		{"label": _("SPDL Rate/Inward Rate"), "fieldname": "inward_rate", "fieldtype": "Currency", "width": 100},
 		{"label": _("To Customer Supply Rate"), "fieldname": "supply_rate", "fieldtype": "Currency", "width": 100},
 		{"label": _("Difference Amount"), "fieldname": "diff_amount", "fieldtype": "Currency", "width": 100},
