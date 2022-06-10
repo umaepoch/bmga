@@ -31,7 +31,7 @@ def handle_claim(data):
 				to_add["supply_rate"] = 0
 
 			try:
-				to_add["diff_amount"] = to_add["supply_rate"] - to_add["pts"]
+				to_add["diff_amount"] = to_add["pts"] - to_add["supply_rate"]
 			except:
 				to_add["diff_amount"] = 0
 
