@@ -962,7 +962,7 @@ def sales_order_container(customer, order_list, company, customer_type, free_pro
         print(data["quantity"] > data["quantity_available"])
         if data["promo_type"] == "None":
             if data["quantity"] > data["quantity_available"]:
-                if data["quantity_available"] > 0 or data["quantity_available"] == 0:
+                if data["quantity_available"] > 0:
                     innerJson_so = {
                         "doctype": "Sales Order Item",
                         "item_code": data["item_code"],

@@ -71,9 +71,9 @@ frappe.ui.form.on('Order Booking V2', {
 						sales_order: sales_order,
 					}
 				}).done((response) => {
-					console.log(response)
-					console.log(response.message.so_name)
-					console.log(response.message.qo_name)
+					console.log("Response",response)
+					console.log("So_name",response.message.so_name)
+					console.log("Qo_name",response.message.qo_name)
 					frm.set_value("order_booking_so", response.message.so_name);
 					refresh_field("order_booking_so");
 					frm.set_value("hunting_quotation", response.message.qo_name);
