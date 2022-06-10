@@ -31,9 +31,11 @@ def handle_claim(data):
 				to_add["supply_rate"] = 0
 
 			try:
-				to_add["diff_amount"] = to_add["inward_rate"] - to_add["supply_rate"]
+				to_add["diff_amount"] = to_add["supply_rate"] - to_add["pts"]
 			except:
 				to_add["diff_amount"] = 0
+
+			to_add["supply_margin"] = 100 - (to_add["pts"]/to_add["ptr"] * 100)
 
 			try:
 				to_add["supplier_margin"] = to_add["supply_rate"] * (to_add["supply_margin"])/100
@@ -66,7 +68,8 @@ def fetch_purchase_batch(i):
 					i["purchase_no"] = x["parent"]
 					i["purchase_date"] = x["purchase_date"]
 					i["mrp"] = x["pch_mrp"]
-					i["inward_rate"] = x["pch_pts"]
+					i["pts"] = x["pch_pts"]
+					i["ptr"] = x["pch_ptr"]
 			except:
 				pass
 	
@@ -101,7 +104,7 @@ def fetch_purchase_detail(invoices):
 	return invoices
 
 def get_sales_invoice(filters):
-	brand = "Cipla"
+	brand = "Sanofi"
 	to_date = datetime.date.fromisoformat(filters["to_date"])
 	from_date = datetime.date.fromisoformat(filters["from_date"])
 
@@ -134,7 +137,8 @@ def get_columns():
 		{"label": _("Customer Name"), "fieldname": "customer_name", "fieldtype": "Data", "width": 150},
 		{"label": _("MRP"), "fieldname": "mrp", "fieldtype": "Currency", "width": 100},
 		{"label": _("Rate Contract Disount on MRP"), "fieldname": "rc_discount", "fieldtype": "Currency", "width": 100},
-		{"label": _("SPDL Rate/Inward Rate"), "fieldname": "inward_rate", "fieldtype": "Currency", "width": 100},
+		{"label": _("PTS"), "fieldname": "pts", "fieldtype": "Currency", "width": 100},
+		{"label": _("PTR"), "fieldname": "ptr", "fieldtype": "Currency", "width": 100},
 		{"label": _("To Customer Supply Rate"), "fieldname": "supply_rate", "fieldtype": "Currency", "width": 100},
 		{"label": _("Difference Amount"), "fieldname": "diff_amount", "fieldtype": "Currency", "width": 100},
 		{"label": _("Margin on Supply Rate"), "fieldname": "supply_margin", "fieldtype": "Percent", "width": 100},
