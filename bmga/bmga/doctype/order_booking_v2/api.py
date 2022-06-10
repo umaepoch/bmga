@@ -153,7 +153,7 @@ def customer_rate_contract(customer):
 
 def fetch_batch_detail(batch, item_code):
     p = frappe.db.sql(
-        f"""select pch_mrp as price from `tabBatch` where batch_id = '{batch}' and item = '{item_code}'""",
+        f"""select pch_ptr as price from `tabBatch` where batch_id = '{batch}' and item = '{item_code}'""",
         as_dict=1
     )
     if len(p) > 0 and p[0].get('price') is not None: return dict(price = p[0].get('price'), rate_contract_check = 0)
