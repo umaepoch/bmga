@@ -976,6 +976,13 @@ def sales_order_container(customer, order_list, company, customer_type, free_pro
                         "qty": data["quantity"] - data["quantity_available"],
                         "rate": data["average"],
                     }
+                else:
+                    innerJson_qo = {
+                        "doctype": "Quotation Item",
+                        "item_code": data["item_code"],
+                        "qty": data["quantity"],
+                        "rate": data["average"],
+                    }
         else:
             innerJson_so = {
                 "doctype": "Sales Order Item",
