@@ -960,8 +960,9 @@ def sales_order_container(customer, order_list, company, customer_type, free_pro
     for data in sales_order:
         print(data["promo_type"] == "None")
         print(data["quantity"] > data["quantity_available"])
-        if data["promo_type"] == "None":
-            if data["quantity"] > data["quantity_available"]:
+        
+        if data["quantity"] > data["quantity_available"]:
+            if data["promo_type"] == "None":
                 if data["quantity_available"] > 0:
                     innerJson_so = {
                         "doctype": "Sales Order Item",
@@ -983,7 +984,6 @@ def sales_order_container(customer, order_list, company, customer_type, free_pro
                 "rate": data["average"],
                 "promo_type" : data["promo_type"],
                 "warehouse": data["warehouse"],
-
             }
             
         try:
