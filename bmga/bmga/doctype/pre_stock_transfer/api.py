@@ -22,20 +22,31 @@ def validate_qty(qty):
 
 def append_item_to_transfer(i, warehouse, settings, doc):
     if validate_qty(i.get(warehouse)):
-        doc.append("items", {
-            "s_warehouse": i.get('source_warehouse'),
-            "t_warehouse": settings[warehouse],
-            "item_code": i.get('item_code'),
-            "qty": i.get(warehouse),
-            "basic_rate": i.get('rate'),
-            "batch_no": i.get('batch')
-        })
+        if warehouse != 'free':
+            doc.append("items", {
+                "s_warehouse": i.get('source_warehouse'),
+                "t_warehouse": settings[warehouse],
+                "item_code": i.get('item_code'),
+                "qty": i.get(warehouse),
+                "basic_rate": i.get('rate'),
+                "batch_no": i.get('batch')
+            })
+        else:
+            doc.append("items", {
+                "s_warehouse": i.get('source_warehouse'),
+                "t_warehouse": settings[warehouse],
+                "item_code": i.get('item_code'),
+                "qty": i.get(warehouse),
+                "basic_rate": 0,
+                "batch_no": i.get('batch')
+            })
 
 def generate_material_transfer(data, settings):
     if not validate_user_input(data):
         frappe.msgprint('Please make sure the distrabution is equal to the incoming QTY')
         return ""
     doc = frappe.new_doc("Stock Entry")
+    doc.get
     doc.stock_entry_type = "Material Transfer"
     doc.items = []
     for i in data:
