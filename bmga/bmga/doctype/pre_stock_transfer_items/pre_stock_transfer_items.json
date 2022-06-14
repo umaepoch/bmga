@@ -1,0 +1,122 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2022-06-12 22:30:55.799204",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "item_code",
+  "item_name",
+  "batch",
+  "quantity",
+  "rate",
+  "retail",
+  "bulk",
+  "free",
+  "hospital",
+  "institutional",
+  "source_warehouse"
+ ],
+ "fields": [
+  {
+   "columns": 1,
+   "fieldname": "item_code",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Item Code",
+   "options": "Item",
+   "read_only": 1
+  },
+  {
+   "columns": 1,
+   "fieldname": "item_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Item Name",
+   "read_only": 1
+  },
+  {
+   "columns": 1,
+   "fieldname": "batch",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Batch",
+   "options": "Batch",
+   "read_only": 1
+  },
+  {
+   "columns": 1,
+   "fieldname": "quantity",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Quantity",
+   "read_only": 1
+  },
+  {
+   "columns": 1,
+   "fieldname": "rate",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Rate",
+   "read_only": 1
+  },
+  {
+   "columns": 1,
+   "default": "0",
+   "fieldname": "retail",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Retail"
+  },
+  {
+   "columns": 1,
+   "default": "0",
+   "fieldname": "bulk",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Bulk"
+  },
+  {
+   "columns": 1,
+   "default": "0",
+   "fieldname": "free",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Free"
+  },
+  {
+   "columns": 1,
+   "default": "0",
+   "fieldname": "hospital",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Hospital"
+  },
+  {
+   "columns": 1,
+   "default": "0",
+   "fieldname": "institutional",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Institutional"
+  },
+  {
+   "fieldname": "source_warehouse",
+   "fieldtype": "Link",
+   "label": "Source Warehouse",
+   "options": "Warehouse"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2022-06-14 09:31:52.077068",
+ "modified_by": "Administrator",
+ "module": "Bmga",
+ "name": "Pre_Stock Transfer Items",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC"
+}
