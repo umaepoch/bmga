@@ -54,6 +54,8 @@ def create_batchless_price(item):
 		selling.save()
 
 def update_batchless_price(item):
+	print("*"*100)
+	print("updating batchless item")
 	rc = frappe.db.sql(
 		f"""select rci.name, rci.parent
 		from `tabRate Contract Item` as rci
@@ -76,11 +78,13 @@ def update_batchless_price(item):
 # Purchase receipt
 @frappe.whitelist()
 def update_price_list_batch(items):
+	print("-"*100)
+	print("update price")
 	items = json.loads(items)
 	items = list(filter(lambda x: x.get('pch_fields') == 1, items))
 	for i in items:
 		if i.get('pch_mrp') == 0 or i.get('pch_ptr') == 0 or i.get('pch_pts') == 0: continue
-		if i.get('batch_no') == "": update_batchless_price(i)
+		if i.get('batch_no') == "" or i.get('batch_no') is None: update_batchless_price(i)
 		else: update_batch_price(i)
 	return dict(items = items)
 
