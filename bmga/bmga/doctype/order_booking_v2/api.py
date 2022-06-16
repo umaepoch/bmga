@@ -735,9 +735,9 @@ def fetch_sales_promos_qty_based_discount(customer, item_code, customer_type, fr
                                                 break
                                         promo_qty = available_stock_details_for_promos(item_code, customer_type, free_warehouse, expiry_date)
 
-                                        frappe.msgprint(f"promo_qty {promo_qty} {sales_data} {sales_promo_discount}")
+                                        frappe.msgprint(f"promo_qty {promo_qty} {sales_data} {sales_promo_discount} {promos[i]['bought_item']} {promo_qty[promos[i]['bought_item']]}")
+
                                         try:
-                                            
                                             if sales_data[0].get("pending_qty") is None: 
                                                 qty = promo_qty[promos[i]["bought_item"]]
                                                 frappe.msgprint(f"qty_0 {qty}")
