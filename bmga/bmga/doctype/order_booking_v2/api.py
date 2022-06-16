@@ -345,6 +345,7 @@ def available_stock_details_for_promos_y_item(item_code, customer_type, settings
     for batch_info in stock_promo:
         try :
             if batch_info["expiry_date"] is not None: 
+                frappe.msgprint(f"date_delta.days < expiry_date {date_delta.days < expiry_date}")
                 date_delta = batch_info["expiry_date"] - today
                 if date_delta.days < expiry_date: continue
                 available_qty[batch_info["item_code"]] = available_qty.get(batch_info["item_code"], 0) + batch_info["actual_qty"]
