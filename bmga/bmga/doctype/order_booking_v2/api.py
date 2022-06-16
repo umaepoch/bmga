@@ -540,7 +540,7 @@ def fetch_sales_promos_get_diff_item(customer, item_code, customer_type, free_wa
                                         sales_promos_quantity = sales_promos_details*((promos[i]["quantity_of_free_items_thats_given"]))
 
                                         promo_qty = available_stock_details_for_promos_y_item(item_code, customer_type, free_warehouse, expiry_date)
-                                        
+                                        frappe.msgprint(f"sales_data {sales_data} {promo_qty}")
                                         try:
                                             if sales_data[0].get("pending_qty") is None: 
                                                 qty = promo_qty[promos[i]["free_item"]]
