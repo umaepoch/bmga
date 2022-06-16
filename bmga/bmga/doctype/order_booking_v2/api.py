@@ -745,8 +745,7 @@ def fetch_sales_promos_qty_based_discount(customer, item_code, customer_type, fr
                                                 if sales_data[0]["pending_qty"] <= promo_qty[promos[i]["bought_item"]]:
                                                     qty =  promo_qty[promos[i]["bought_item"]] - sales_data[0]["pending_qty"]
                                                     frappe.msgprint(f"qty_0 {qty}")
-                                                else:
-                                                    continue
+                                                
                                         except:
                                             qty = promo_qty[promos[i]["bought_item"]]
                                             frappe.msgprint(f"qty_1 {qty}")
