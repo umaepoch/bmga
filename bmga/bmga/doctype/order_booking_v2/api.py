@@ -341,6 +341,7 @@ def available_stock_details_for_promos_y_item(item_code, customer_type, settings
     stock_promo.extend(stock_data_batch)
     stock_promo.extend(stock_data_batchless)
     available_qty = {}
+    frappe.msgprint(f"stock_promo{stock_promo}")
     for batch_info in stock_promo:
         try :
             if batch_info["expiry_date"] is not None: 
