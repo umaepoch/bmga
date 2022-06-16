@@ -542,6 +542,7 @@ def fetch_sales_promos_get_diff_item(customer, item_code, customer_type, free_wa
                                         
                                         try:
                                             if sales_data[0].get("pending_qty") is None: 
+                                                frappe.msgprint(f"promo_qty {promo_qty}")
                                                 qty = promo_qty[promos[i]["free_item"]]
                                             else:
                                                 if sales_data[0]["pending_qty"] <= promo_qty[promos[i]["free_item"]]:
@@ -549,6 +550,7 @@ def fetch_sales_promos_get_diff_item(customer, item_code, customer_type, free_wa
                                                 else:
                                                     continue
                                         except:
+                                            frappe.msgprint(f"promo_qty {promo_qty}")
                                             qty = promo_qty[promos[i]["free_item"]]
 
 
@@ -662,7 +664,7 @@ def fetch_sales_promos_get_same_item_discout(customer, item_code, customer_type,
     
     return dict({"Promo_sales" : promos_sale, "Promos" : promos, "sales_data" : sales_data})
 
-# Qty based discount
+# Amount based discount
 def fetch_sales_promos_qty_based_discount(customer, item_code, customer_type, free_warehouse, expiry_date, order_list):
     promo_type = "Amount based discount"
     sales_check = sales_promo_checked(customer)
@@ -719,9 +721,10 @@ def fetch_sales_promos_qty_based_discount(customer, item_code, customer_type, fr
                                         print("dis....", dis)
                                         print(j["amount"], j["quantity_booked"], j["item_code"] )
                                         for l in range ((len(promos) -1), -1, -1): 
-                                            print("per......", promos[l]["discount_percentage"] )
+                                            # print("per......",promos[l]["quantity_bought"], promos[l]["discount_percentage"] )
                                             if j["quantity_booked"] >= promos[l]["quantity_bought"]:
-                                                sales_promo_discount = j["average_price"] * (100 - promos[i]["discount_percentage"])/100
+                                                print("per......",promos[l]["quantity_bought"], promos[l]["discount_percentage"] )
+                                                sales_promo_discount = j["average_price"] * (100 - promos[l]["discount_percentage"])/100
                                                 print("..",sales_promo_discount)
                                                 break
                                         promo_qty = available_stock_details_for_promos(item_code, customer_type, free_warehouse, expiry_date)
