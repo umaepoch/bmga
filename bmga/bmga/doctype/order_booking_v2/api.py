@@ -473,7 +473,7 @@ def fetch_sales_promos_get_same_item(customer, item_code, customer_type, free_wa
                                                 sales_promos_quantity = qty
                                         except:
                                             qty = promo_qty[promos[i]["bought_item"]]
-
+                                        
                                         if qty > 0:
                                             if order_list[t]["item_code"] == promos[i]["bought_item"]:
                                                 # print("HAI***************************")
@@ -566,7 +566,8 @@ def fetch_sales_promos_get_diff_item(customer, item_code, customer_type, free_wa
 
                                         except:
                                             qty = promo_qty[promos[i]["free_item"]]
-                                        
+                                            
+                                        frappe.msgprint(f"qty {qty}")
                                         print("...............................................................", qty)
                                         if qty > 0:
                                             if order_list[t]["item_code"] == promos[i]["bought_item"]:
