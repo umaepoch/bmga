@@ -157,6 +157,18 @@ def fetch_stock_details(customer_type, sales_list, settings):
         warehouse_order = "DESC"
     else:
         warehouse_order = "ASC"
+    
+    print("QUERY", 
+    f"""
+        select batch_id , `tabBatch`.stock_uom, item as item_code, expiry_date, `tabStock Ledger Entry`.warehouse as warehouse, sum(`tabStock Ledger Entry`.actual_qty) as actual_qty
+        from `tabBatch`
+            join `tabStock Ledger Entry` ignore index (item_code, warehouse)
+                on (`tabBatch`.batch_id = `tabStock Ledger Entry`.batch_no )
+        where `tabStock Ledger Entry`.item_code in {items} AND warehouse in {warehouse}
+            and `tabStock Ledger Entry`.is_cancelled = 0
+        group by batch_id, warehouse
+        order by warehouse {warehouse_order}, expiry_date ASC
+    """)
 
     stock_data_batch = frappe.db.sql(f"""
         select batch_id , `tabBatch`.stock_uom, item as item_code, expiry_date, `tabStock Ledger Entry`.warehouse as warehouse, sum(`tabStock Ledger Entry`.actual_qty) as actual_qty
@@ -650,8 +662,9 @@ def fetch_promo_type_5(i, sales_order, customer_type, settings):
     elif customer_type == "Institutional":
         warehouse = [settings["institutional_warehouse"]]
     
-    so_filter = list(filter(lambda x: x["warehouse"] in warehouse and x["promo_type"] == "Buy x get same and discount for ineligible qty" and x["item_code"] == i["item"], sales_order))
-    qty = int(so_filter[0]["qty"])
+    so_filter = list(filter(lambda x: x["warehouse"] in warehouse and x["item_code"] == i["item"], sales_order))
+    print("so filter", so_filter)
+    qty = sum(x['qty'] for x in so_filter)
     
     d = frappe.db.sql(
         f"""select pt.for_every_quantity_that_is_bought as b_qty, pt.discount as discount
@@ -661,13 +674,17 @@ def fetch_promo_type_5(i, sales_order, customer_type, settings):
         order by pt.for_every_quantity_that_is_bought DESC""",
         as_dict=1
     )
-
+    print(d)
     for x in d:
+        print(qty)
+        print(x)
         if qty >= x["b_qty"]:
             discount = (100 - int(x["discount"])) / 100
+            print((100 - int(x["discount"])) / 100)
             break
 
-
+    print("*-/"*25)
+    print("discount", discount)
     return discount
 
 def fetch_promo_type_1(i, sales_order, customer_type, settings):
@@ -697,7 +714,7 @@ def fetch_promo_type_1(i, sales_order, customer_type, settings):
         if qty >= x["b_qty"]:
             discount = (100 - int(x["discount"])) / 100
             break
-
+    print(discount)
     return discount
 
 def customer_rate_contract(customer):
@@ -793,6 +810,13 @@ def update_sales_order(sales_doc, average_price, free_warehouse):
             if sales_item_doc.warehouse == free_warehouse:
                 print("free price", sales_item_doc.rate)
                 sales_item_doc.rate = 0
+                """ sales_item_doc.base_rate = 0
+                sales_item_doc.amount = 0
+                sales_item_doc.base_amount = 0
+                sales_item_doc.net_rate = 0
+                sales_item_doc.base_net_rate = 0
+                sales_item_doc.net_amount = 0
+                sales_item_doc.base_net_amount = 0 """
                 print("free price", sales_item_doc.rate)
             elif sales_item_doc.promo_type == "None" or sales_item_doc.promo_type is None:
                 sales_item_doc.rate = average_price[sales_item_doc.item_code]["normal"]["average"]
