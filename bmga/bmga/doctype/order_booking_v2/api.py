@@ -737,6 +737,7 @@ def fetch_sales_promos_qty_based_discount(customer, item_code, customer_type, fr
 
                                         frappe.msgprint(f"promo_qty {promo_qty} {sales_data} {sales_promo_discount}")
                                         try:
+                                            frappe.msgprint(f"qty_0 {qty}")
                                             if sales_data[0].get("pending_qty") is None: 
                                                 qty = promo_qty[promos[i]["bought_item"]]
                                             else:
@@ -749,16 +750,17 @@ def fetch_sales_promos_qty_based_discount(customer, item_code, customer_type, fr
                                             qty = promo_qty[promos[i]["bought_item"]]
 
                                         try:
+                                            frappe.msgprint(f"qty_2 {qty}")
                                             if sales_promos_quantity <= qty:
                                                 sales_promos_quantity = sales_promos_quantity
                                             else:
                                                 sales_promos_quantity = qty
                                         except:
-                                            
                                             qty = promo_qty[promos[i]["bought_item"]]
-                                        frappe.msgprint(f"qty_2 {qty}")
+
+                                        frappe.msgprint(f"Hai....")
                                         if qty > 0:
-                                            frappe.msgprint(f"qty_3 {qty}")
+                                            frappe.msgprint(f"qty_4 {qty}")
                                             if order_list[t]["item_code"] == promos[p]["bought_item"]:
                                                 promos_sale.append({"promo_type": promo_type, "qty": 0 , "dic":sales_promo_discount, "dic_qty": j["quantity_booked"], "rate": 0.0 , "bought_item":promos[i]["bought_item"], "promo_item": promos[i]["bought_item"] , "w_qty" : qty})
                                             else:
