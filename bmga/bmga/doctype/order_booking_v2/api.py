@@ -351,7 +351,7 @@ def available_stock_details_for_promos_y_item(item_code, customer_type, settings
         except: 
             available_qty[batch_info["item_code"]] = available_qty.get(batch_info["item_code"], 0) + batch_info["actual_qty"]
     # print(type(available_qty))
-    
+    frappe.msgprint(f"qty {available_qty}")
     print("AVAILABLE_QTY", available_qty)
     return available_qty
 
