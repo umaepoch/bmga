@@ -340,6 +340,7 @@ def available_stock_details_for_promos_y_item(item_code, customer_type, settings
         
     stock_promo.extend(stock_data_batch)
     stock_promo.extend(stock_data_batchless)
+    frappe.msgprint("Stock_promo", stock_promo)
     available_qty = {}
     for batch_info in stock_promo:
         try :
