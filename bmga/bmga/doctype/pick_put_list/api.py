@@ -650,7 +650,7 @@ def fetch_promo_type_5(i, sales_order, customer_type, settings):
     elif customer_type == "Institutional":
         warehouse = [settings["institutional_warehouse"]]
     
-    so_filter = list(filter(lambda x: x["warehouse"] in warehouse and x["promo_type"] is None and x["item_code"] == i["item"], sales_order))
+    so_filter = list(filter(lambda x: x["warehouse"] in warehouse and x["promo_type"] == "Buy x get same and discount for ineligible qty" and x["item_code"] == i["item"], sales_order))
     qty = int(so_filter[0]["qty"])
     
     d = frappe.db.sql(
