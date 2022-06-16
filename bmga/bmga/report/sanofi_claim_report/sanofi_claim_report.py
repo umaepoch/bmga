@@ -24,6 +24,9 @@ def handle_claim(data):
 			to_add["division"] = "-"
 			to_add["approval_status"] = ""
 			to_add["reason"] = ""
+			to_add["pharmacy_name"] = d["customer_name"]
+			to_add["free_qty"] = 0
+			to_add["landed_price"] = d["rc_discount"] * d["qty"]/(d["qty"] + d["free_qty"])
 
 			try:
 				to_add["supply_rate"] = to_add["rc_discount"]
@@ -31,14 +34,14 @@ def handle_claim(data):
 				to_add["supply_rate"] = 0
 
 			try:
-				to_add["diff_amount"] = to_add["pts"] - to_add["supply_rate"]
+				to_add["diff_amount"] = to_add["landed_price"] - to_add["pts"]
 			except:
 				to_add["diff_amount"] = 0
 
-			to_add["supply_margin"] = 100 - (to_add["pts"]/to_add["ptr"] * 100)
+			to_add["supply_margin"] = 1 - to_add["pts"]/to_add["ptr"]
 
 			try:
-				to_add["supplier_margin"] = to_add["supply_rate"] * (to_add["supply_margin"])/100
+				to_add["supplier_margin"] = to_add["landed_price"] * (to_add["supply_margin"])/100
 			except:
 				to_add["supplier_margin"] = 0
 
@@ -109,7 +112,7 @@ def get_sales_invoice(filters):
 	from_date = datetime.date.fromisoformat(filters["from_date"])
 
 	invoices = frappe.db.sql(
-		f"""select i.brand, si.customer_name, sii.item_name, sii.item_code, sum(sii.qty) as qty, sii.parent as invoice_no, si.due_date as invoice_date, sii.batch_no
+		f"""select i.brand, i.pch_item_code as pch_item_code, si.customer_name, sii.item_name, sii.item_code, sum(sii.qty) as qty, sii.parent as invoice_no, si.due_date as invoice_date, sii.batch_no
 		from `tabSales Invoice Item` as sii
 			join `tabSales Invoice` as si on (si.name = sii.parent)
 			join `tabItem` as i on (sii.item_name = i.item_name)
@@ -126,7 +129,9 @@ def get_columns():
 
 	columns = [
 		{"label": _("Item Name"), "fieldname": "item_name", "fieldtype": "Data", "width": 100},
+		{"label": _("Product Code"), "fieldname": "pch_item_code", "fieldtype": "Data", "width": 100},
 		{"label": _("Quantity"), "fieldname": "qty", "fieldtype": "Int", "width": 100},
+		{"label": _("Free Quantity"), "fieldname": "free_qty", "fieldtype": "Int", "width": 100},
 		{"label": _("Batch"), "fieldname": "batch_no", "fieldtype": "Link", "options": "Batch", "width": 100},
 		{"label": _("Stockist Invoice Number"), "fieldname": "invoice_no", "fieldtype": "Link", "options": "Sales Invoice", "width": 150},
 		{"label": _("Stockist Invoice Date"), "fieldname": "invoice_date", "fieldtype": "Date", "width": 100},
@@ -134,12 +139,14 @@ def get_columns():
 		{"label": _("Purchase Date"), "fieldname": "purchase_date", "fieldtype": "Date", "width": 100},
 		{"label": _("Brand"), "fieldname": "brand", "fieldtype": "Link", "options": "Brand", "width": 100},
 		{"label": _("Division"), "fieldname": "division", "fieldtype": "Data", "width": 100},
-		{"label": _("Customer Name"), "fieldname": "customer_name", "fieldtype": "Data", "width": 150},
+		{"label": _("Supplied to Institution/Hospital"), "fieldname": "customer_name", "fieldtype": "Data", "width": 150},
+		{"label": _("Pharmacy Name"), "fieldname": "pharmacy_name", "fieldtype": "Data", "width": 150},
 		{"label": _("MRP"), "fieldname": "mrp", "fieldtype": "Currency", "width": 100},
 		{"label": _("Rate Contract Disount on MRP"), "fieldname": "rc_discount", "fieldtype": "Currency", "width": 100},
 		{"label": _("PTS"), "fieldname": "pts", "fieldtype": "Currency", "width": 100},
 		{"label": _("PTR"), "fieldname": "ptr", "fieldtype": "Currency", "width": 100},
 		{"label": _("To Customer Supply Rate"), "fieldname": "supply_rate", "fieldtype": "Currency", "width": 100},
+		{"label": _("INST Landed NDP (Per Unit)"), "fieldname": "landed_price", "fieldtype": "Currency", "width": 100},
 		{"label": _("Difference Amount"), "fieldname": "diff_amount", "fieldtype": "Currency", "width": 100},
 		{"label": _("Margin on Supply Rate"), "fieldname": "supply_margin", "fieldtype": "Percent", "width": 100},
 		{"label": _("Supplier Margin"), "fieldname": "supplier_margin", "fieldtype": "Currency", "width": 100},
