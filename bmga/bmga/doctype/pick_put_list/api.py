@@ -685,7 +685,7 @@ def fetch_promo_type_5(i, sales_order, customer_type, settings):
 
     print("*-/"*25)
     print("discount", discount)
-    frappe.msgprint(f"discount percentage {discount} {qty} {d} {i['item']}")
+    # frappe.msgprint(f"discount percentage {discount} {qty} {d} {i['item']}")
     return discount
 
 def fetch_promo_type_1(i, sales_order, customer_type, settings):
