@@ -811,18 +811,14 @@ def update_sales_order(sales_doc, average_price, free_warehouse):
             if sales_item_doc.warehouse == free_warehouse:
                 print("free price", sales_item_doc.rate)
                 sales_item_doc.rate = 0
-                """ sales_item_doc.base_rate = 0
-                sales_item_doc.amount = 0
-                sales_item_doc.base_amount = 0
-                sales_item_doc.net_rate = 0
-                sales_item_doc.base_net_rate = 0
-                sales_item_doc.net_amount = 0
-                sales_item_doc.base_net_amount = 0 """
                 print("free price", sales_item_doc.rate)
             elif sales_item_doc.promo_type == "None" or sales_item_doc.promo_type is None:
                 sales_item_doc.rate = average_price[sales_item_doc.item_code]["normal"]["average"]
             else:
-                sales_item_doc.rate = average_price[sales_item_doc.item_code]["promo"]["average"]
+                try:
+                    sales_item_doc.rate = average_price[sales_item_doc.item_code]["promo"]["average"]
+                except:
+                    sales_item_doc.rate = average_price[sales_item_doc.item_code]["normal"]["average"]
             sales_item_doc.save()
 
 def get_stock_balance(item_code, batch, warehouse):
