@@ -671,6 +671,7 @@ def fetch_sales_promos_get_same_item_discout(customer, item_code, customer_type,
 # Amount based discount
 def fetch_sales_promos_qty_based_discount(customer, item_code, customer_type, free_warehouse, expiry_date, order_list):
     promo_type = "Amount based discount"
+    sales_promos_quantity = []
     sales_check = sales_promo_checked(customer)
     promos_sale = []
     promos = []
@@ -734,7 +735,7 @@ def fetch_sales_promos_qty_based_discount(customer, item_code, customer_type, fr
                                                 break
                                         promo_qty = available_stock_details_for_promos(item_code, customer_type, free_warehouse, expiry_date)
 
-                                        frappe.msgprint(f"promo_qty {promo_qty}")
+                                        frappe.msgprint(f"promo_qty {promo_qty} {sales_data} {sales_promo_discount}")
                                         try:
                                             if sales_data[0].get("pending_qty") is None: 
                                                 qty = promo_qty[promos[i]["bought_item"]]
