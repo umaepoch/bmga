@@ -28,9 +28,8 @@
   },
   {
    "fieldname": "sales_order",
-   "fieldtype": "Link",
+   "fieldtype": "Data",
    "label": "Sales Order",
-   "options": "Sales Order",
    "read_only": 1
   },
   {
@@ -86,7 +85,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2022-05-13 10:54:54.756905",
+ "modified": "2022-06-21 10:32:53.623233",
  "modified_by": "Administrator",
  "module": "Bmga",
  "name": "Pick Put List",
