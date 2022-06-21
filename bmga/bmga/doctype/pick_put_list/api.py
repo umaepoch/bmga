@@ -825,6 +825,7 @@ def update_sales_order(sales_doc, average_price, free_warehouse):
 
 def update_sales_order_for_invoice(sales_doc, customer, customer_type, so_name, sales_order, item_list, settings):
     sales_doc.items = []
+    discount = 1
     for item in item_list:
         
         qty, batch = ppli_qty_and_batch(item)
