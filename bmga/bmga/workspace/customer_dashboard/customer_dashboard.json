@@ -1,0 +1,37 @@
+{
+ "category": "Modules",
+ "charts": [],
+ "creation": "2022-06-11 13:51:31.765384",
+ "developer_mode_only": 0,
+ "disable_user_customization": 1,
+ "docstatus": 0,
+ "doctype": "Workspace",
+ "extends_another_page": 0,
+ "hide_custom": 0,
+ "idx": 0,
+ "is_default": 0,
+ "is_standard": 1,
+ "label": "Customer Dashboard",
+ "links": [],
+ "modified": "2022-06-13 12:31:53.158959",
+ "modified_by": "prithvi@bharathrajesh.co.in",
+ "module": "Bmga",
+ "name": "Customer Dashboard",
+ "owner": "prithvi@bharathrajesh.co.in",
+ "pin_to_bottom": 0,
+ "pin_to_top": 0,
+ "shortcuts": [
+  {
+   "doc_view": "List",
+   "label": "Order Booking V2",
+   "link_to": "Order Booking V2",
+   "type": "DocType"
+  },
+  {
+   "doc_view": "List",
+   "label": "Sales Invoices",
+   "link_to": "Sales Invoice",
+   "type": "DocType"
+  }
+ ]
+}
