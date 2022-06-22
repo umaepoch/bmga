@@ -675,7 +675,7 @@ def fetch_sales_promos_get_same_item_discout(customer, item_code, customer_type,
 
 # Amount based discount
 def fetch_sales_promos_qty_based_discount(customer, item_code, customer_type, free_warehouse, expiry_date, order_list):
-    promo_type = "Amount based discount"
+    promo_type = "Quantity based discount"
     sales_promos_quantity = []
     sales_check = sales_promo_checked(customer)
     promos_sale = []
@@ -707,7 +707,6 @@ def fetch_sales_promos_qty_based_discount(customer, item_code, customer_type, fr
         print(".....", qty_booked, amt)
     seen = []
     sales_promo_discount = None
-    frappe.msgprint(f"promos{promos}")
     if sales_check == True:
         for t in range (len(order_list)):
             for p in range (len(promos)):
@@ -726,21 +725,17 @@ def fetch_sales_promos_qty_based_discount(customer, item_code, customer_type, fr
                                         sales_data = frappe.db.sql(
                                         f"""select sum(qty - delivered_qty) as pending_qty from `tabSales Order Item` where item_code = '{promos[i]["bought_item"]}' and warehouse = '{free_warehouse}'""", as_dict=True
                                         )
-                                        # qty_booked = item_code[0].get("")
-                                        # frappe.msgprint(sales_data)
+                                        
                                         dis = promos[i].get("discount_percentage")
                                         print("dis....", dis)
 
                                         print(j["amount"], j["quantity_booked"], j["item_code"] )
                                         for l in range ((len(promos) -1), -1, -1): 
-                                            frappe.msgprint("Inside")
+                                            
                                             print("Quanty bought",promos[l]["quantity_bought"] )
                                             if j["quantity_booked"] >= promos[l]["quantity_bought"]:
-                                                frappe.msgprint("Inside")
-                                                # frappe.msgprint(promos[l]["quantity_bought"], promos[l]["discount_percentage"] )
                                                 sales_promo_discount = j["average_price"] * (100 - promos[l]["discount_percentage"])/100
                                                 print("..",sales_promo_discount)
-                                                frappe.msgprint(f"sale_promo {sales_promo_discount}")
                                                 break
                                         promo_qty = available_stock_details_for_promos(item_code, customer_type, free_warehouse, expiry_date)
                                         try:
@@ -914,7 +909,7 @@ def sales_promos(item_code, customer_type, company, order_list, customer):
     sales_promos_same_item = fetch_sales_promos_get_same_item(customer, item_code, customer_type, settings[0]["free_warehouse"], settings[0]["expiry_date_limit"], order_list)
     sales_promo_diff_items = fetch_sales_promos_get_diff_item(customer, item_code, customer_type, settings[0]["free_warehouse"], settings[0]["expiry_date_limit"], order_list)
     sales_promo_discount = fetch_sales_promos_get_same_item_discout(customer, item_code, customer_type, settings[0]["free_warehouse"],  settings[0]["expiry_date_limit"], order_list)
-    sales_promo_quantity_discount = fetch_sales_promos_qty_based_discount(customer, item_code, customer_type, settings[0]["free_warehouse"],  settings[0]["expiry_date_limit"], order_list)
+    sales_promo_quantity_discount = fetch_sales_promos_qty_based_discount(customer, item_code, customer_type, settings[0]["retail_primary_warehouse"],  settings[0]["expiry_date_limit"], order_list)
     sales_promo_discounted_amount = sales_promo_discount["Promo_sales"] + sales_promo_quantity_discount["Promo_sales"]
     sales_promos_items = sales_promos_same_item["Promo_sales"] + sales_promo_diff_items["Promo_sales"] + sales_promo_discount["Promo_sales"]
     sales_order = sales_order_calculation(sales_promo_discounted_amount, sales_promos_items, order_list, customer_type, settings, settings[0]["free_warehouse"])

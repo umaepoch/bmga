@@ -41,7 +41,7 @@
    "fieldname": "promo_type",
    "fieldtype": "Select",
    "label": "Promo Type",
-   "options": "\nAmount Based Discount\nBuy X of Item, get Y of Same Item Free\nBuy X of Item, Get Y of another Item Free\nFree Item for Eligible Quantity, Discount for ineligible Quantity"
+   "options": "\nQuantity Based Discount\nBuy X of Item, get Y of Same Item Free\nBuy X of Item, Get Y of another Item Free\nFree Item for Eligible Quantity, Discount for ineligible Quantity"
   },
   {
    "fieldname": "section_break_1",
@@ -86,7 +86,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2022-05-13 16:01:08.881778",
+ "modified": "2022-06-22 10:37:59.858386",
  "modified_by": "Administrator",
  "module": "Bmga",
  "name": "Sales Promos",
