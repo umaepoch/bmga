@@ -673,7 +673,7 @@ def fetch_sales_promos_get_same_item_discout(customer, item_code, customer_type,
     
     return dict({"Promo_sales" : promos_sale, "Promos" : promos, "sales_data" : sales_data})
 
-# Amount based discount
+# Quantity based discount
 def fetch_sales_promos_qty_based_discount(customer, item_code, customer_type, free_warehouse, expiry_date, order_list):
     promo_type = "Quantity based discount"
     sales_promos_quantity = []
@@ -849,7 +849,7 @@ def sales_order_calculation(sales_promo_discounted_amount, sales_promos_items, o
         for o in range (len(order_list)):
             if order_list[o]["rate_contract_check"] == 0 and order_list[o]["item_code"] == sales_promo_discounted_amount[j]["promo_item"]:
                 if sales_promo_discounted_amount[j].get("dic_qty") is not None:
-                    if order_list[o]["item_code"] == sales_promo_discounted_amount[j]["promo_item"] and sales_promo_discounted_amount[j]["promo_type"] == "Amount based discount":
+                    if order_list[o]["item_code"] == sales_promo_discounted_amount[j]["promo_item"] and sales_promo_discounted_amount[j]["promo_type"] == "Quantity based discount":
                         # print("Hello......")
                         promo_sales_order.append({"item_code":sales_promo_discounted_amount[j]["promo_item"], "qty": sales_promo_discounted_amount[j]["dic_qty"], "average_price": sales_promo_discounted_amount[j]["dic"], "warehouse" : warehouse , "promo_type": sales_promo_discounted_amount[j]["promo_type"], "qty_available": order_list[o]["quantity_available"]})
 
@@ -969,7 +969,7 @@ def sales_order_container(customer, order_list, company, customer_type, free_pro
         print(data["quantity"] > data["quantity_available"])
         
         if data["quantity"] > data["quantity_available"]:
-            if data["promo_type"] == "None" or data["promo_type"] == "Amount based discount" or data["promo_type"] == "Buy x get same and discount for ineligible qty":
+            if data["promo_type"] == "None" or data["promo_type"] == "Quantity based discount" or data["promo_type"] == "Buy x get same and discount for ineligible qty":
                 if data["quantity_available"] > 0:
                     innerJson_so = {
                         "doctype": "Sales Order Item",
