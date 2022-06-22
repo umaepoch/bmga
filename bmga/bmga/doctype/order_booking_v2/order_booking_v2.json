@@ -86,7 +86,8 @@
    "fieldname": "customer_name",
    "fieldtype": "Data",
    "label": "Customer Name",
-   "read_only": 1
+   "read_only": 1,
+   "reqd": 1
   },
   {
    "fieldname": "spacing",
@@ -112,7 +113,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2022-06-02 08:57:39.764184",
+ "modified": "2022-06-06 17:28:30.583657",
  "modified_by": "Administrator",
  "module": "Bmga",
  "name": "Order Booking V2",

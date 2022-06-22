@@ -514,9 +514,10 @@ def fetch_storage_location_from_id(id):
 
     return location[0]
 
-def get_so_detail(so_name, item_code, warehouse):
+def get_so_detail(so_name, item_code, warehouse, batch, qty):
     so_detail = frappe.db.sql(
-        f"""select name from `tabSales Order Item` where parent = '{so_name}' and item_code = '{item_code}' and warehouse = '{warehouse}'""",
+        f"""select name from `tabSales Order Item`
+        where parent = '{so_name}' and item_code = '{item_code}' and warehouse = '{warehouse}' and pch_batch_no = '{batch}' and qty = '{qty}'""",
         as_dict=1
     )
     
@@ -570,6 +571,7 @@ def generate_sales_invoice_json(customer, customer_type, so_name, sales_order, c
         print("*"*100)
 
         if qty <= 0: continue
+        so_detail = get_so_detail(so_name, item['item'], item['warehouse'], batch, qty)
         if item.get("wbs_storage_location") != '':
             storage_id = item["wbs_storage_location"]
             storage_location = fetch_storage_location_from_id(storage_id)
@@ -586,7 +588,7 @@ def generate_sales_invoice_json(customer, customer_type, so_name, sales_order, c
                 "storage_location_id": storage_id,
                 "batch_no": batch,
                 "sales_order": so_name,
-                "so_detail": item["so_detail"],
+                "so_detail": so_detail['name'],
                 "delivered_qty": qty
             }
         else:
@@ -599,14 +601,14 @@ def generate_sales_invoice_json(customer, customer_type, so_name, sales_order, c
                 "warehouse": item["warehouse"],
                 "batch_no": batch,
                 "sales_order": so_name,
-                "so_detail": item["so_detail"],
+                "so_detail": so_detail['name'],
                 "delivered_qty": qty,
             }
 
         outerJson["items"].append(innerJson)
 
-    for d in outerJson["items"]:
-        print(d["item_code"], d["sales_order"], d["warehouse"], d["so_detail"], d["delivered_qty"], d["rate"])
+    """ for d in outerJson["items"]:
+        print(d["item_code"], d["sales_order"], d["warehouse"], d["so_detail"], d["delivered_qty"], d["rate"]) """
     return outerJson
 
 def ppli_qty_and_batch(item):
@@ -821,6 +823,44 @@ def update_sales_order(sales_doc, average_price, free_warehouse):
                     sales_item_doc.rate = average_price[sales_item_doc.item_code]["normal"]["average"]
             sales_item_doc.save()
 
+def update_sales_order_for_invoice(sales_doc, customer, customer_type, so_name, sales_order, item_list, settings):
+    sales_doc.items = []
+    discount = 1
+    for item in item_list:
+        
+        qty, batch = ppli_qty_and_batch(item)
+        if qty == 0: continue
+
+        rate_contract = customer_rate_contract(customer) 
+        if not rate_contract["valid"]:
+            if item.get("promo_type") == "Buy x get same and discount for ineligible qty":
+                discount = fetch_promo_type_5(item, sales_order, customer_type, settings)
+            elif item.get("promo_type") == "Amount based discount":
+                discount = fetch_promo_type_1(item, sales_order, customer_type, settings)
+            else:
+                discount = 1
+
+        if item["warehouse"] == settings["free_warehouse"]:
+            rate = {"price": 0}
+        else:
+            if batch:
+                rate = fetch_batch_price(batch, item["item"], rate_contract["name"])
+            else:
+                rate = fetch_batchless_price(item["item"], rate_contract["name"])
+        
+        rate["price"] = rate["price"] * discount
+
+        if qty <= 0: continue
+        sales_doc.append('items', {
+            'item_code': item['item'],
+            'pch_batch_no': batch,
+            'qty': qty,
+            'rate': rate['price'],
+            'warehouse': item['warehouse']
+        })
+        
+
+
 def get_stock_balance(item_code, batch, warehouse):
     s = frappe.db.sql(
         f"""select sum(`tabStock Ledger Entry`.actual_qty) as actual_qty
@@ -1033,7 +1073,7 @@ def pick_status(item_list, so_name, company, stage_index, stage_list):
     if next_stage == "Invoiced":
         sales_doc = frappe.get_doc("Sales Order", so_name)
         sales_doc.pch_picking_status = next_stage
-        update_sales_order(sales_doc, average_price, settings["free_warehouse"])
+        update_sales_order_for_invoice(sales_doc, customer, customer_type, so_name, sales_order, item_list, settings)
         sales_doc.save()
         sales_doc.submit()
 
@@ -1043,6 +1083,7 @@ def pick_status(item_list, so_name, company, stage_index, stage_list):
         sales_invoice_doc = frappe.new_doc("Sales Invoice")
         sales_invoice_doc.update(outerJson_salesinvoice)
         sales_invoice_doc.save()
+
         return dict(next_stage = next_stage, sales_invoice_name = sales_invoice_doc.name, names = names)
 
     else:
