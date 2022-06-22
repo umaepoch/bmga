@@ -88,29 +88,6 @@ def update_price_list_batch(items):
 		else: update_batch_price(i)
 	return dict(items = items)
 
-def get_batched_latest_rate(i):
-	p = frappe.db.get_value("Batch", {"name": i.get('batch_no')}, "pch_ptr", as_dict=1)
-	if p:
-		return p.get('pch_ptr')
-	else:
-		return 0
-
-def get_batchless_latest_rate(i):
-	n = frappe.db.get_value("Rate Contract", {"selling_price": 1}, "name", as_dict=1)
-	if n:
-		p = frappe.db.get_value("Rate Contract Item", {"parent": n.get('name'), "item": i.get('item_code')}, "selling_price_for_customer", as_dict=1)
-		if p: return p.get('selling_price_for_customer')
-		else: return 0
-	else: return 0
-
-def get_rate(i):
-	if i.get('pch_fields') == 1 and i.get('pch_mrp') > 0 and i.get('pch_ptr') > 0 and i.get('pch_pts') > 0:
-		return i.get('pch_ptr')
-	elif i.get('batch_no') != '':
-		return get_batched_latest_rate(i)
-	else:
-		return get_batchless_latest_rate(i)
-
 def create_prestock_transfer(items, name):
 	today = datetime.date.today()
 	doc_name = ""
@@ -122,14 +99,13 @@ def create_prestock_transfer(items, name):
 	}
 
 	for i in items:
-		rate = get_rate(i)
 		innerJson = {
 			"doctype": "Pre_Stock Transfer Items",
 			"item_code": i.get('item_code'),
 			"item_name": i.get('item_name'),
 			"batch": i.get('batch_no'),
 			"quantity": i.get('qty'),
-			"rate": rate,
+			"rate": i.get('rate'),
 			"source_warehouse": i.get('warehouse')
 		}
 		outerJson['items'].append(innerJson)

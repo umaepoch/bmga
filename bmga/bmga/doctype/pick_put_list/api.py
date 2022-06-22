@@ -230,6 +230,8 @@ def handle_free_data(free_data):
     return stock_map
 
 def fetch_wbs_location(customer_type, sales_list, settings):
+    print('*'*50)
+    print(sales_list)
     items = [data["item_code"] for data in sales_list]
     # print(items)
     if customer_type == "Retail":
@@ -280,10 +282,11 @@ def fetch_wbs_location(customer_type, sales_list, settings):
             wbs_structured[data["rarb_warehouse"]][data["item_code"]] = {}
         wbs_structured[data["rarb_warehouse"]][data["item_code"]]["wbs_storage_location_id"] = data["name_of_attribute_id"]
         wbs_structured[data["rarb_warehouse"]][data["item_code"]]["wbs_storage_location"] = data["name"]
-    # print(wbs_structured)
+    print("+"*100)
+    print(wbs_structured)
     return wbs_structured
 
-def sales_order_handle(sales_list, stock_data, free_data, wbs_details, expiry_date, free_warehouse):
+def sales_order_handle(sales_list, stock_data, free_data, wbs_details, settings):
     today = datetime.date.today()
     pick_up_list = []
     free_pick_list = []
@@ -291,14 +294,14 @@ def sales_order_handle(sales_list, stock_data, free_data, wbs_details, expiry_da
     for sales in sales_list:
         to_pickup = sales["qty"]
         print("SALES LIST", sales)
-        if sales["warehouse"] != free_warehouse:
+        if sales["warehouse"] != settings['free_warehouse']:
             print("Normal Data")
             if stock_data.get(sales["item_code"]) is None: continue
             for stock in stock_data[sales["item_code"]]:
                 if stock["actual_qty"] == 0: continue
                 try:
                     date_delta = stock["expiry_date"] - today
-                    if date_delta.days < expiry_date: continue
+                    if date_delta.days < settings['expiry_date']: continue
                 except:
                     pass
                 pick_up = {}
@@ -332,7 +335,7 @@ def sales_order_handle(sales_list, stock_data, free_data, wbs_details, expiry_da
                 if stock["actual_qty"] == 0: continue
                 try:
                     date_delta = stock["expiry_date"] - today
-                    if date_delta.days < expiry_date: continue
+                    if date_delta.days < settings['expiry_date']: continue
                 except:
                     pass
                 pick_up = {}
@@ -342,8 +345,8 @@ def sales_order_handle(sales_list, stock_data, free_data, wbs_details, expiry_da
                 pick_up["promo_type"] = sales["promo_type"]
                 pick_up["so_detail"] = sales["so_detail"]
                 try:
-                    pick_up["wbs_storage_location_id"] = wbs_details[stock["warehouse"]][sales["item_code"]]["wbs_storage_location_id"]
-                    pick_up["wbs_storage_location"] = wbs_details[stock["warehouse"]][sales["item_code"]]["wbs_storage_location"]
+                    pick_up["wbs_storage_location_id"] = wbs_details[settings["retail_primary_warehouse"]][sales["item_code"]]["wbs_storage_location_id"]
+                    pick_up["wbs_storage_location"] = wbs_details[settings["retail_primary_warehouse"]][sales["item_code"]]["wbs_storage_location"]
                 except:
                     pick_up["wbs_storage_location_id"] = ''
                     pick_up["wbs_storage_location"] = ''
@@ -437,8 +440,8 @@ def item_list_container(so_name, company):
     print(handled_free)
     print("HANDLED DATA")
     print(handled_data)
-    wbs_details = fetch_wbs_location(customer_type, order_list, fulfillment_settings)
-    pick_put_list = sales_order_handle(sales_list, handled_data, handled_free, wbs_details, fulfillment_settings["expiry_date_limit"], fulfillment_settings["free_warehouse"])
+    wbs_details = fetch_wbs_location(customer_type, sales_list, fulfillment_settings)
+    pick_put_list = sales_order_handle(sales_list, handled_data, handled_free, wbs_details, fulfillment_settings)
     return dict(free_data = free_data, order_list = order_list, free_list = free_list, p_stock = p_stock, wbs_details = wbs_details, pick_put_list = pick_put_list ,sales_list = sales_list, customer_type = customer_type, settings = fulfillment_settings, stock_data = handled_data)
 
 def get_customer(so_name):
@@ -572,7 +575,7 @@ def generate_sales_invoice_json(customer, customer_type, so_name, sales_order, c
 
         if qty <= 0: continue
         so_detail = get_so_detail(so_name, item['item'], item['warehouse'], batch, qty)
-        if item.get("wbs_storage_location") != '':
+        if item.get("wbs_storage_location") != '' and item.get('warehouse') != settings['free_warehouse']:
             storage_id = item["wbs_storage_location"]
             storage_location = fetch_storage_location_from_id(storage_id)
             print("*" * 50)
@@ -858,7 +861,6 @@ def update_sales_order_for_invoice(sales_doc, customer, customer_type, so_name, 
             'rate': rate['price'],
             'warehouse': item['warehouse']
         })
-        
 
 
 def get_stock_balance(item_code, batch, warehouse):

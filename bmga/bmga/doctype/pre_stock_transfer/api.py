@@ -22,6 +22,9 @@ def validate_qty(qty):
 
 def append_item_to_transfer(i, warehouse, settings, doc):
     if validate_qty(i.get(warehouse)):
+        print("*"*100)
+        print(i.get('rate'))
+        print(warehouse != 'free')
         if warehouse != 'free':
             doc.append("items", {
                 "s_warehouse": i.get('source_warehouse'),
@@ -55,7 +58,14 @@ def generate_material_transfer(data, settings):
         append_item_to_transfer(i, 'hospital', settings, doc)
         append_item_to_transfer(i, 'institutional', settings, doc)
         append_item_to_transfer(i, 'free', settings, doc)
+        doc.save()
+        # doc.submit()
+        print(doc.items)
+        print()
     if len(doc.items) > 0:
+        for i in doc.items:
+            print(i.as_dict())
+            print()
         doc.save()
         frappe.msgprint("Stock Entry in Draft mode")
         return doc.name
