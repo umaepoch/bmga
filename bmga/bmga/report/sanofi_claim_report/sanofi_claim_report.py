@@ -117,7 +117,7 @@ def get_sales_invoice(filters):
 			join `tabSales Invoice` as si on (si.name = sii.parent)
 			join `tabItem` as i on (sii.item_name = i.item_name)
 		where si.due_date <= '{to_date}' and si.due_date >= '{from_date}' and si.docstatus < 2 and i.brand = '{brand}'
-		group by sii.parent, sii.item_name
+		group by sii.parent, sii.item_name, sii.batch_no
 		order by sii.parent DESC""", as_dict=1
 	)
 	
