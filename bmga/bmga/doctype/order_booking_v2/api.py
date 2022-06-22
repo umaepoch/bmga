@@ -710,7 +710,6 @@ def fetch_sales_promos_qty_based_discount(customer, item_code, customer_type, fr
     # frappe.msgprint(promos)
     if sales_check == True:
         for t in range (len(order_list)):
-        
             for p in range (len(promos)):
                  if order_list[t]["rate_contract_check"] == 0 and order_list[t]["item_code"] == promos[p]["bought_item"]:
                     if len(promos) > 0:
@@ -728,7 +727,7 @@ def fetch_sales_promos_qty_based_discount(customer, item_code, customer_type, fr
                                         f"""select sum(qty - delivered_qty) as pending_qty from `tabSales Order Item` where item_code = '{promos[i]["bought_item"]}' and warehouse = '{free_warehouse}'""", as_dict=True
                                         )
                                         # qty_booked = item_code[0].get("")
-                                        frappe.msgprint(sales_data)
+                                        # frappe.msgprint(sales_data)
                                         dis = promos[i].get("discount_percentage")
                                         print("dis....", dis)
                                         print(j["amount"], j["quantity_booked"], j["item_code"] )
@@ -741,9 +740,6 @@ def fetch_sales_promos_qty_based_discount(customer, item_code, customer_type, fr
                                                 print("..",sales_promo_discount)
                                                 break
                                         promo_qty = available_stock_details_for_promos(item_code, customer_type, free_warehouse, expiry_date)
-
-                                        
-
                                         try:
                                             if sales_data[0].get("pending_qty") is None: 
                                                 qty = promo_qty[promos[i]["bought_item"]]
