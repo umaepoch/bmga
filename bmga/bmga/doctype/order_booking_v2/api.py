@@ -303,11 +303,13 @@ def fetch_fulfillment_settings(company):
         settings[0]["expiry_date_limit"] = fs_name[0]["expiry_date_limit"]
     else:
         settings = [None]
+    print("Full_fillment settings.......................................",fs_name, settings[0]["expiry_date_limit"])
     return settings
 #Available qty for y item
-def available_stock_details_for_promos_y_item(item_code, customer_type, settings, expiry_date):
+def available_stock_details_for_promos_y_item(item_code, customer_type, settings, expiry_date, ):
     today = datetime.date.today()
     stock_promo = []
+    
     i = [x["item_code"] for x in item_code]
     i = re.sub(',\)$', ')', str(tuple(i)))
     
@@ -361,6 +363,7 @@ def available_stock_details_for_promos_y_item(item_code, customer_type, settings
 # Available Qty for Promo
 def available_stock_details_for_promos(item_code, customer_type, settings, expiry_date):
     print("item_code", item_code)
+    
     today = datetime.date.today()
     stock_promo = []
     i = [x["item_code"] for x in item_code]
@@ -406,6 +409,7 @@ def available_stock_details_for_promos(item_code, customer_type, settings, expir
 # Buy x get same x
 def fetch_sales_promos_get_same_item(customer, item_code, customer_type, free_warehouse, expiry_date, order_list):
     promo_type = "Buy x get same x"
+    # fullfillment_settings = fetch_fulfillment_settings(company)
     # print("ORDER LIST*****************", order_list)
     sales_check = sales_promo_checked(customer)
     sales_promos_quantity = []
@@ -703,7 +707,7 @@ def fetch_sales_promos_qty_based_discount(customer, item_code, customer_type, fr
         print(".....", qty_booked, amt)
     seen = []
     sales_promo_discount = None
-
+    # frappe.msgprint(promos)
     if sales_check == True:
         for t in range (len(order_list)):
         
@@ -724,13 +728,15 @@ def fetch_sales_promos_qty_based_discount(customer, item_code, customer_type, fr
                                         f"""select sum(qty - delivered_qty) as pending_qty from `tabSales Order Item` where item_code = '{promos[i]["bought_item"]}' and warehouse = '{free_warehouse}'""", as_dict=True
                                         )
                                         # qty_booked = item_code[0].get("")
+                                        frappe.msgprint(sales_data)
                                         dis = promos[i].get("discount_percentage")
                                         print("dis....", dis)
                                         print(j["amount"], j["quantity_booked"], j["item_code"] )
                                         for l in range ((len(promos) -1), -1, -1): 
-                                            # print("per......",promos[l]["quantity_bought"], promos[l]["discount_percentage"] )
+                                            frappe.msgprint("Inside")
+                                            # frappe.msgprint("per......",promos[l]["quantity_bought"], promos[l]["discount_percentage"] )
                                             if j["quantity_booked"] >= promos[l]["quantity_bought"]:
-                                                print("per......",promos[l]["quantity_bought"], promos[l]["discount_percentage"] )
+                                                # frappe.msgprint(promos[l]["quantity_bought"], promos[l]["discount_percentage"] )
                                                 sales_promo_discount = j["average_price"] * (100 - promos[l]["discount_percentage"])/100
                                                 print("..",sales_promo_discount)
                                                 break
@@ -885,6 +891,9 @@ def sales_promo_checked(customer):
     else:
         return False
 
+@frappe.whitelist(allow_guest= True)
+def hello():
+    return dict(msg = "Hello")
 
 @frappe.whitelist()
 def fulfillment_settings_container(company):
