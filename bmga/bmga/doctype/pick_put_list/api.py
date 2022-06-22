@@ -552,7 +552,7 @@ def generate_sales_invoice_json(customer, customer_type, so_name, sales_order, c
         if not rate_contract["valid"]:
             if item.get("promo_type") == "Buy x get same and discount for ineligible qty":
                 discount = fetch_promo_type_5(item, sales_order, customer_type, settings)
-            elif item.get("promo_type") == "Amount based discount":
+            elif item.get("promo_type") == "Quantity based discount":
                 discount = fetch_promo_type_1(item, sales_order, customer_type, settings)
             else:
                 discount = 1
@@ -704,7 +704,7 @@ def fetch_promo_type_1(i, sales_order, customer_type, settings):
     elif customer_type == "Institutional":
         warehouse = [settings["institutional_warehouse"]]
     
-    so_filter = list(filter(lambda x: x["warehouse"] in warehouse and x["promo_type"] == "Amount based discount" and x["item_code"] == i["item"], sales_order))
+    so_filter = list(filter(lambda x: x["warehouse"] in warehouse and x["promo_type"] == "Quantity based discount" and x["item_code"] == i["item"], sales_order))
     qty = int(so_filter[0]["qty"])
 
     d = frappe.db.sql(
@@ -745,7 +745,7 @@ def update_average_price(item_list, sales_order, customer_type, settings, custom
         if not rate_contract["valid"]:
             if item.get("promo_type") == "Buy x get same and discount for ineligible qty":
                 discount = fetch_promo_type_5(item, sales_order, customer_type, settings)
-            elif item.get("promo_type") == "Amount based discount":
+            elif item.get("promo_type") == "Quantity based discount":
                 discount = fetch_promo_type_1(item, sales_order, customer_type, settings)
             else:
                 discount = 1
@@ -838,7 +838,7 @@ def update_sales_order_for_invoice(sales_doc, customer, customer_type, so_name, 
         if not rate_contract["valid"]:
             if item.get("promo_type") == "Buy x get same and discount for ineligible qty":
                 discount = fetch_promo_type_5(item, sales_order, customer_type, settings)
-            elif item.get("promo_type") == "Amount based discount":
+            elif item.get("promo_type") == "Quantity based discount":
                 discount = fetch_promo_type_1(item, sales_order, customer_type, settings)
             else:
                 discount = 1
