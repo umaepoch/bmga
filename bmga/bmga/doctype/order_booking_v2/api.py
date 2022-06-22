@@ -730,11 +730,14 @@ def fetch_sales_promos_qty_based_discount(customer, item_code, customer_type, fr
                                         # frappe.msgprint(sales_data)
                                         dis = promos[i].get("discount_percentage")
                                         print("dis....", dis)
+
                                         print(j["amount"], j["quantity_booked"], j["item_code"] )
                                         for l in range ((len(promos) -1), -1, -1): 
                                             frappe.msgprint("Inside")
+                                            print("Quanty bought",promos[l]["quantity_bought"] )
                                             # frappe.msgprint("per......",promos[l]["quantity_bought"], promos[l]["discount_percentage"] )
                                             if j["quantity_booked"] >= promos[l]["quantity_bought"]:
+                                                frappe.msgprint("Inside")
                                                 # frappe.msgprint(promos[l]["quantity_bought"], promos[l]["discount_percentage"] )
                                                 sales_promo_discount = j["average_price"] * (100 - promos[l]["discount_percentage"])/100
                                                 print("..",sales_promo_discount)
