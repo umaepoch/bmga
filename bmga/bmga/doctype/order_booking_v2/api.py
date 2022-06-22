@@ -707,7 +707,7 @@ def fetch_sales_promos_qty_based_discount(customer, item_code, customer_type, fr
         print(".....", qty_booked, amt)
     seen = []
     sales_promo_discount = None
-    # frappe.msgprint(promos)
+    frappe.msgprint(f"promos{promos}")
     if sales_check == True:
         for t in range (len(order_list)):
             for p in range (len(promos)):
@@ -735,12 +735,12 @@ def fetch_sales_promos_qty_based_discount(customer, item_code, customer_type, fr
                                         for l in range ((len(promos) -1), -1, -1): 
                                             frappe.msgprint("Inside")
                                             print("Quanty bought",promos[l]["quantity_bought"] )
-                                            # frappe.msgprint("per......",promos[l]["quantity_bought"], promos[l]["discount_percentage"] )
                                             if j["quantity_booked"] >= promos[l]["quantity_bought"]:
                                                 frappe.msgprint("Inside")
                                                 # frappe.msgprint(promos[l]["quantity_bought"], promos[l]["discount_percentage"] )
                                                 sales_promo_discount = j["average_price"] * (100 - promos[l]["discount_percentage"])/100
                                                 print("..",sales_promo_discount)
+                                                frappe.msgprint(f"sale_promo {sales_promo_discount}")
                                                 break
                                         promo_qty = available_stock_details_for_promos(item_code, customer_type, free_warehouse, expiry_date)
                                         try:
