@@ -27,9 +27,8 @@
   },
   {
    "fieldname": "purchase_receipt_no",
-   "fieldtype": "Link",
-   "label": "Purchase Receipt No",
-   "options": "Purchase Receipt"
+   "fieldtype": "Data",
+   "label": "Purchase Receipt No"
   },
   {
    "fieldname": "items",
@@ -48,7 +47,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2022-06-12 23:44:41.133821",
+ "modified": "2022-06-22 11:41:16.657295",
  "modified_by": "Administrator",
  "module": "Bmga",
  "name": "Pre_Stock Transfer",
