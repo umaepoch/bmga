@@ -18,7 +18,7 @@ def handle_claim(data):
 	to_add = {}
 
 	for d in data:
-		if d.get('mrp') is not None and d.get('rc_discount') is not None:
+		if d.get('invoice_rate') is not None:
 			to_add = d
 
 			to_add["division"] = "-"

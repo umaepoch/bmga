@@ -18,7 +18,7 @@ def handle_claim(data):
 	to_add = {}
 
 	for d in data:
-		if d.get('mrp') is not None and d.get('rc_discount') is not None:
+		if d.get('invoice_rate') is not None:
 			to_add = d
 
 			to_add["division"] = "-"
@@ -26,7 +26,7 @@ def handle_claim(data):
 			to_add["reason"] = ""
 
 			try:
-				to_add["supply_rate"] = to_add["rc_discount"]
+				to_add["supply_rate"] = to_add["invoice_rate"]
 			except:
 				to_add["supply_rate"] = 0
 
@@ -106,7 +106,7 @@ def get_sales_invoice(filters):
 	from_date = datetime.date.fromisoformat(filters["from_date"])
 
 	invoices = frappe.db.sql(
-		f"""select i.brand, si.customer_name, sii.item_name, sii.item_code, sum(sii.qty) as qty, sii.parent as invoice_no, si.due_date as invoice_date, sii.batch_no
+		f"""select i.brand, si.customer_name, sii.item_name, sii.rate as invoice_rate, sii.item_code, sum(sii.qty) as qty, sii.parent as invoice_no, si.due_date as invoice_date, sii.batch_no
 		from `tabSales Invoice Item` as sii
 			join `tabSales Invoice` as si on (si.name = sii.parent)
 			join `tabItem` as i on (sii.item_name = i.item_name)
