@@ -67,6 +67,7 @@ def fetch_purchase_batch(i):
 					i["purchase_date"] = x["purchase_date"]
 					i["mrp"] = x["pch_mrp"]
 					i["inward_rate"] = x["pch_pts"]
+					break
 			except:
 				pass
 	
