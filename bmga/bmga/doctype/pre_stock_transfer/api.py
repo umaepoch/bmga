@@ -75,14 +75,14 @@ def valided_stock_transfer(details):
     v = validate_user_input_qty(details)
     if not v.get('valid'):
         frappe.msgprint(f'Make sure the QTY is equal to the Sum for transfers in line {v.get("index")}')
-        return dict(details = details, show = False)
+        return dict(details = details, show = False, valid = False)
     settings = fetch_fulfillment_settings()
     print(settings)
     wbs_id = check_if_wbs_location_is_needed(details, settings)
     print(wbs_id)
     if not wbs_id['valid_wbs_id']:
-        return dict(details = details, show = False)
-    return dict(details = details, show = True, wbs_loc_list = wbs_id['wbs_loc_list'])
+        return dict(details = details, show = False, valid = True)
+    return dict(details = details, show = True, wbs_loc_list = wbs_id['wbs_loc_list'], valid = True)
 
 
 def fetch_source_warehouse(purchase_no):

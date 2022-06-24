@@ -10,6 +10,13 @@ frappe.ui.form.on('Pre_Stock Transfer', {
 				]
 			}
 		});
+
+		frm.revert_validation = function(frm) {
+			if(frm.doc.validate_transfer) {
+				frm.doc.validate_transfer = null;
+				refresh_field('validate_transfer');
+			}
+		}
 	},
 
 
@@ -28,16 +35,19 @@ frappe.ui.form.on('Pre_Stock Transfer', {
 					console.log(r);
 					frm.toggle_display('wbs_locations', r.message.show);
 					frm.doc.wbs_locations = []
-					if(r.message.wbs_loc_list) {
-						$.each(r.message.wbs_loc_list, function(_i, e) {
-							let entry = frm.add_child('wbs_locations');
-							entry.item_code = e.item_code;
-						});
+					if(r.message.valid) {
+						if(r.message.wbs_loc_list) {
+							$.each(r.message.wbs_loc_list, function(_i, e) {
+								let entry = frm.add_child('wbs_locations');
+								entry.item_code = e.item_code;
+								entry.warehouse = e.warehouse;
+							});
 
-						refresh_field('wbs_locations');
+							refresh_field('wbs_locations');
+						}
+						frm.doc.validate_transfer = "Done";
+						refresh_field('validate_transfer');
 					}
-					frm.doc.validate_transfer = "Done";
-					refresh_field('validate_transfer');
 				});
 			}
 		});
@@ -72,3 +82,10 @@ frappe.ui.form.on('Pre_Stock Transfer', {
 		});
 	}
 });
+
+
+frappe.ui.form.on('Pre_Stock Transfer Items', {
+	retail: function(frm) {
+		frm.revert_validation(frm);
+	}
+})

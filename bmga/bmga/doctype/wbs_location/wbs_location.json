@@ -7,6 +7,7 @@
  "engine": "InnoDB",
  "field_order": [
   "item_code",
+  "warehouse",
   "wbs_storage_location",
   "storage_location_id"
  ],
@@ -22,26 +23,37 @@
    "reqd": 1
   },
   {
-   "columns": 4,
+   "columns": 3,
    "fieldname": "wbs_storage_location",
    "fieldtype": "Link",
+   "in_list_view": 1,
    "label": "WBS Storage Location",
    "options": "WBS Storage Location",
    "reqd": 1
   },
   {
-   "columns": 4,
+   "columns": 3,
    "fetch_from": "wbs_storage_location.name_of_attribute_id",
    "fieldname": "storage_location_id",
    "fieldtype": "Data",
+   "in_list_view": 1,
    "label": "Storage Location ID",
+   "read_only": 1
+  },
+  {
+   "columns": 2,
+   "fieldname": "warehouse",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Warehouse",
+   "options": "Warehouse",
    "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2022-06-23 16:04:58.554524",
+ "modified": "2022-06-24 10:20:37.787948",
  "modified_by": "Administrator",
  "module": "Bmga",
  "name": "WBS Location",
