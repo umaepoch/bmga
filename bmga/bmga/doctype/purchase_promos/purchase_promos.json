@@ -1,0 +1,105 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "PURP-.####",
+ "creation": "2022-06-29 23:18:12.077988",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "start_date",
+  "warehouse_free_item",
+  "column_break_4",
+  "end_date",
+  "section_break_6",
+  "promo_type",
+  "promo_table_for_quantityamount_based_discount",
+  "promos_table_of_same_item",
+  "promos_table_of_different_items",
+  "free_item_for_eligible_quantity"
+ ],
+ "fields": [
+  {
+   "fieldname": "start_date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Start Date"
+  },
+  {
+   "fieldname": "column_break_4",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "end_date",
+   "fieldtype": "Date",
+   "label": "End Date"
+  },
+  {
+   "fieldname": "section_break_6",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "promo_type",
+   "fieldtype": "Select",
+   "label": "Promo Type",
+   "options": "\nQuantity Based Discount\nBuy X of Item, get Y of Same Item Free\nBuy X of Item, Get Y of another Item Free\nFree Item for Eligible Quantity, Discount for ineligible Quantity"
+  },
+  {
+   "depends_on": "eval:doc.promo_type == \"Quantity Based Discount\"",
+   "fieldname": "promo_table_for_quantityamount_based_discount",
+   "fieldtype": "Table",
+   "label": "Promo Table For Quantity/Amount Based Discount",
+   "options": "Promo Type 1"
+  },
+  {
+   "depends_on": "eval:doc.promo_type == \"Buy X of Item, get Y of Same Item Free\"",
+   "fieldname": "promos_table_of_same_item",
+   "fieldtype": "Table",
+   "label": "Promos Table Of Same Item",
+   "options": "Promo Type 2"
+  },
+  {
+   "depends_on": "eval:doc.promo_type == \"Buy X of Item, Get Y of another Item Free\"",
+   "fieldname": "promos_table_of_different_items",
+   "fieldtype": "Table",
+   "label": "Promos Table Of Different Items",
+   "options": "Promo Type 3"
+  },
+  {
+   "depends_on": "eval:doc.promo_type == \"Free Item for Eligible Quantity, Discount for ineligible Quantity\"",
+   "fieldname": "free_item_for_eligible_quantity",
+   "fieldtype": "Table",
+   "label": "Free Item For Eligible Quantity",
+   "options": "Promo Type 5"
+  },
+  {
+   "fieldname": "warehouse_free_item",
+   "fieldtype": "Link",
+   "label": "Warehouse (Free Item)",
+   "options": "Warehouse"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2022-06-29 23:28:18.642858",
+ "modified_by": "Administrator",
+ "module": "Bmga",
+ "name": "Purchase Promos",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC"
+}

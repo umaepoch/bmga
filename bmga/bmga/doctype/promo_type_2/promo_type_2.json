@@ -18,25 +18,33 @@
  ],
  "fields": [
   {
+   "columns": 2,
    "fieldname": "promo_based_on",
    "fieldtype": "Select",
+   "in_list_view": 1,
    "label": "Promo Based On ",
    "options": "\nItem Code\nItem Group\nBrand"
   },
   {
+   "columns": 2,
    "fieldname": "bought_item",
    "fieldtype": "Link",
+   "in_list_view": 1,
    "label": "Bought Item",
    "options": "Item"
   },
   {
+   "columns": 2,
    "fieldname": "for_every_quantity_that_is_bought",
    "fieldtype": "Int",
+   "in_list_view": 1,
    "label": "For every Quantity that is bought"
   },
   {
+   "columns": 2,
    "fieldname": "quantity_of_free_items_thats_given",
    "fieldtype": "Int",
+   "in_list_view": 1,
    "label": "Quantity of Free items that's given"
   },
   {
@@ -64,7 +72,7 @@
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2022-05-17 15:51:11.567083",
+ "modified": "2022-06-29 23:22:11.795005",
  "modified_by": "Administrator",
  "module": "Bmga",
  "name": "Promo Type 2",
