@@ -526,9 +526,25 @@ def get_so_detail(so_name, item_code, warehouse, batch, qty):
     
     return so_detail[0]
 
+def rate_fetch_mrp_batch(batch, item_code):
+    p = frappe.db.get_value('Batch', {'batch_id': batch, 'item': item_code}, 'pch_mrp', as_dict=1)
+    return dict(price = p.get('pch_mrp', 0))
+
+def rate_fetch_mrp_batchless(item_code):
+    p = frappe.db.sql(
+        f"""select rci.mrp
+        from `tabRate Contract Item` as rci
+            join `tabRate Contract` as rc on (rci.parent = rc.name)
+        where rc.selling_price = 1 rci.item = '{item_code}'""",
+        as_dict=1
+    )
+
+    if len(p) > 0:
+        return dict(price = p.get('mrp', 0))
+    else: return dict(price = 0)
+
 def generate_sales_invoice_json(customer, customer_type, so_name, sales_order, company, item_list, settings):
     due_date = datetime.datetime.today()
-    discount = 1
     # due_date = due_date + datetime.timedelta(2)
 
     outerJson = {
@@ -552,20 +568,28 @@ def generate_sales_invoice_json(customer, customer_type, so_name, sales_order, c
         if not rate_contract["valid"]:
             if item.get("promo_type") == "Buy x get same and discount for ineligible qty":
                 discount = fetch_promo_type_5(item, sales_order, customer_type, settings)
+                if batch:
+                    rate = rate_fetch_mrp_batch(batch, item['item'])
+                    rate['price'] = rate['price'] * discount
+                else:
+                    rate = rate_fetch_mrp_batchless(item['item'])
+                    rate['price'] = rate['price'] * discount
             elif item.get("promo_type") == "Quantity based discount":
                 discount = fetch_promo_type_1(item, sales_order, customer_type, settings)
-            else:
-                discount = 1
-
-        if item["warehouse"] == settings["free_warehouse"]:
-            rate = {"price": 0}
+                if batch:
+                    rate = rate_fetch_mrp_batch(batch, item['item'])
+                    rate['price'] = rate['price'] * discount
+                else:
+                    rate = rate_fetch_mrp_batchless(item['item'])
+                    rate['price'] = rate['price'] * discount
         else:
-            if batch:
-                rate = fetch_batch_price(batch, item["item"], rate_contract["name"])
+            if item["warehouse"] == settings["free_warehouse"]:
+                rate = {"price": 0}
             else:
-                rate = fetch_batchless_price(item["item"], rate_contract["name"])
-        
-        rate["price"] = rate["price"] * discount
+                if batch:
+                    rate = fetch_batch_price(batch, item["item"], rate_contract["name"])
+                else:
+                    rate = fetch_batchless_price(item["item"], rate_contract["name"])
         
         print("qty", qty)
         print(type(qty))
@@ -741,24 +765,32 @@ def update_average_price(item_list, sales_order, customer_type, settings, custom
         qty, batch = ppli_qty_and_batch(item)
         if qty == 0: continue
 
-        rate_contract = customer_rate_contract(customer)
+        rate_contract = customer_rate_contract(customer) 
         if not rate_contract["valid"]:
             if item.get("promo_type") == "Buy x get same and discount for ineligible qty":
                 discount = fetch_promo_type_5(item, sales_order, customer_type, settings)
+                if batch:
+                    rate = rate_fetch_mrp_batch(batch, item['item'])
+                    rate['price'] = rate['price'] * discount
+                else:
+                    rate = rate_fetch_mrp_batchless(item['item'])
+                    rate['price'] = rate['price'] * discount
             elif item.get("promo_type") == "Quantity based discount":
                 discount = fetch_promo_type_1(item, sales_order, customer_type, settings)
-            else:
-                discount = 1
-
-        if batch:
-            rate = fetch_batch_price(batch, item["item"], rate_contract["name"])
-            print("NEW PRICE", fetch_batch_price(batch, item["item"], rate_contract["name"]))
+                if batch:
+                    rate = rate_fetch_mrp_batch(batch, item['item'])
+                    rate['price'] = rate['price'] * discount
+                else:
+                    rate = rate_fetch_mrp_batchless(item['item'])
+                    rate['price'] = rate['price'] * discount
         else:
-            rate = fetch_batchless_price(item["item"], rate_contract["name"])
-            # fetch_batchless_price
-            print("NEW PRICE Batchless", fetch_batchless_price(item["item"], rate_contract["name"]))
-
-        rate["price"] = rate["price"] * discount
+            if item["warehouse"] == settings["free_warehouse"]:
+                rate = {"price": 0}
+            else:
+                if batch:
+                    rate = fetch_batch_price(batch, item["item"], rate_contract["name"])
+                else:
+                    rate = fetch_batchless_price(item["item"], rate_contract["name"])
 
         if item["item"] not in new_average_price:
             new_average_price[item["item"]] = {
@@ -838,20 +870,28 @@ def update_sales_order_for_invoice(sales_doc, customer, customer_type, so_name, 
         if not rate_contract["valid"]:
             if item.get("promo_type") == "Buy x get same and discount for ineligible qty":
                 discount = fetch_promo_type_5(item, sales_order, customer_type, settings)
+                if batch:
+                    rate = rate_fetch_mrp_batch(batch, item['item'])
+                    rate['price'] = rate['price'] * discount
+                else:
+                    rate = rate_fetch_mrp_batchless(item['item'])
+                    rate['price'] = rate['price'] * discount
             elif item.get("promo_type") == "Quantity based discount":
                 discount = fetch_promo_type_1(item, sales_order, customer_type, settings)
-            else:
-                discount = 1
-
-        if item["warehouse"] == settings["free_warehouse"]:
-            rate = {"price": 0}
+                if batch:
+                    rate = rate_fetch_mrp_batch(batch, item['item'])
+                    rate['price'] = rate['price'] * discount
+                else:
+                    rate = rate_fetch_mrp_batchless(item['item'])
+                    rate['price'] = rate['price'] * discount
         else:
-            if batch:
-                rate = fetch_batch_price(batch, item["item"], rate_contract["name"])
+            if item["warehouse"] == settings["free_warehouse"]:
+                rate = {"price": 0}
             else:
-                rate = fetch_batchless_price(item["item"], rate_contract["name"])
-        
-        rate["price"] = rate["price"] * discount
+                if batch:
+                    rate = fetch_batch_price(batch, item["item"], rate_contract["name"])
+                else:
+                    rate = fetch_batchless_price(item["item"], rate_contract["name"])
 
         if qty <= 0: continue
         sales_doc.append('items', {

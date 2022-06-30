@@ -18,7 +18,7 @@ def handle_claim(data):
 	to_add = {}
 
 	for d in data:
-		if d.get('mrp') is not None and d.get('rc_discount') is not None:
+		if d.get('invoice_rate') is not None and d.get('invoice_rate') > 0:
 			to_add = d
 
 			to_add["division"] = "-"
@@ -26,10 +26,10 @@ def handle_claim(data):
 			to_add["reason"] = ""
 			to_add["pharmacy_name"] = d["customer_name"]
 			to_add["free_qty"] = 0
-			to_add["landed_price"] = d["rc_discount"] * d["qty"]/(d["qty"] + d["free_qty"])
+			to_add["landed_price"] = d["invoice_rate"] * d["qty"]/(d["qty"] + d["free_qty"])
 
 			try:
-				to_add["supply_rate"] = to_add["rc_discount"]
+				to_add["supply_rate"] = to_add["invoice_rate"]
 			except:
 				to_add["supply_rate"] = 0
 
@@ -73,6 +73,7 @@ def fetch_purchase_batch(i):
 					i["mrp"] = x["pch_mrp"]
 					i["pts"] = x["pch_pts"]
 					i["ptr"] = x["pch_ptr"]
+					break
 			except:
 				pass
 	
@@ -112,12 +113,12 @@ def get_sales_invoice(filters):
 	from_date = datetime.date.fromisoformat(filters["from_date"])
 
 	invoices = frappe.db.sql(
-		f"""select i.brand, i.pch_item_code as pch_item_code, si.customer_name, sii.item_name, sii.item_code, sum(sii.qty) as qty, sii.parent as invoice_no, si.due_date as invoice_date, sii.batch_no
+		f"""select i.brand, i.pch_item_code as pch_item_code, si.customer_name, sii.rate as invoice_rate, sii.item_name, sii.item_code, sum(sii.qty) as qty, sii.parent as invoice_no, si.due_date as invoice_date, sii.batch_no
 		from `tabSales Invoice Item` as sii
 			join `tabSales Invoice` as si on (si.name = sii.parent)
 			join `tabItem` as i on (sii.item_name = i.item_name)
 		where si.due_date <= '{to_date}' and si.due_date >= '{from_date}' and si.docstatus < 2 and i.brand = '{brand}'
-		group by sii.parent, sii.item_name
+		group by sii.parent, sii.item_name, sii.batch_no
 		order by sii.parent DESC""", as_dict=1
 	)
 	

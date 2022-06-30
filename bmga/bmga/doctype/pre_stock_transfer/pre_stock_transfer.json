@@ -11,8 +11,13 @@
   "purchase_receipt_no",
   "column_break_3",
   "date",
+  "validate_transfer",
+  "material_receipt",
+  "material_issue",
   "section_break_5",
-  "items"
+  "items",
+  "section_break_7",
+  "wbs_locations"
  ],
  "fields": [
   {
@@ -43,11 +48,42 @@
   {
    "fieldname": "section_break_5",
    "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "section_break_7",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "wbs_locations",
+   "fieldtype": "Table",
+   "hidden": 1,
+   "label": "WBS Locations",
+   "options": "WBS Location"
+  },
+  {
+   "fieldname": "validate_transfer",
+   "fieldtype": "Data",
+   "label": "Validate Transfer",
+   "read_only": 1
+  },
+  {
+   "fieldname": "material_receipt",
+   "fieldtype": "Link",
+   "label": "Material Receipt",
+   "options": "Stock Entry",
+   "read_only": 1
+  },
+  {
+   "fieldname": "material_issue",
+   "fieldtype": "Link",
+   "label": "Material Issue",
+   "options": "Stock Entry",
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2022-06-22 11:41:16.657295",
+ "modified": "2022-06-23 23:32:08.461650",
  "modified_by": "Administrator",
  "module": "Bmga",
  "name": "Pre_Stock Transfer",

@@ -18,7 +18,7 @@ def handle_claim(data):
 	to_add = {}
 
 	for d in data:
-		if d.get('mrp') is not None and d.get('rc_discount') is not None:
+		if d.get('invoice_rate') is not None:
 			to_add = d
 			
 			to_add["division"] = "-"
@@ -26,7 +26,7 @@ def handle_claim(data):
 			to_add["reason"] = ""
 
 			try:
-				to_add["supply_rate"] = to_add["mrp"] * (100 - to_add["rc_discount"])/100
+				to_add["supply_rate"] = to_add['invoice_rate']
 			except:
 				to_add["supply_rate"] = 0
 
@@ -59,14 +59,19 @@ def fetch_purchase_batch(i):
 		order by pr.posting_date DESC""",
 		as_dict=1
 	)
+	print(i)
 	if len(p) > 0:
 		for x in p:
+			print()
 			try:
 				if x["pch_mrp"] > 0 and x["pch_pts"] > 0:
+					mrp = frappe.db.get_value("Batch", {"batch_id": i["batch_no"]}, 'pch_mrp', as_dict=1)
+					print("mrp", mrp)
 					i["purchase_no"] = x["parent"]
 					i["purchase_date"] = x["purchase_date"]
-					i["mrp"] = x["pch_mrp"]
 					i["inward_rate"] = x["pch_pts"]
+					i["mrp"] = mrp['pch_mrp']
+					break
 			except:
 				pass
 	
@@ -82,6 +87,7 @@ def fetch_rate_contract_for_item(i):
 		order by rci.end_date ASC""",
 		as_dict=1
 	)
+	print("rc", rc)
 	if len(rc) > 0:
 		for x in rc:
 			try:
@@ -106,12 +112,12 @@ def get_sales_invoice(filters):
 	from_date = datetime.date.fromisoformat(filters["from_date"])
 
 	invoices = frappe.db.sql(
-		f"""select i.brand, si.customer_name, sii.item_name, sii.item_code, sum(sii.qty) as qty, sii.parent as invoice_no, si.due_date as invoice_date, sii.batch_no
+		f"""select i.brand, si.customer_name, sii.item_name, sii.item_code, sii.rate as invoice_rate, sum(sii.qty) as qty, sii.parent as invoice_no, si.due_date as invoice_date, sii.batch_no
 		from `tabSales Invoice Item` as sii
 			join `tabSales Invoice` as si on (si.name = sii.parent)
 			join `tabItem` as i on (sii.item_name = i.item_name)
 		where si.due_date <= '{to_date}' and si.due_date >= '{from_date}' and si.docstatus < 2 and i.brand = '{brand}'
-		group by sii.parent, sii.item_name
+		group by sii.parent, sii.item_name, sii.batch_no
 		order by sii.parent DESC""", as_dict=1
 	)
 	
