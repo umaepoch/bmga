@@ -304,4 +304,4 @@ def update_pending_qty(purchase_receipt):
     print('summary', received_summary)
     update_qty(received_summary, purchase_receipt[0].get('parent'))
 
-    return dict(to_remove = to_remove)
+    return dict(to_remove = to_remove, received_summary = received_summary)
