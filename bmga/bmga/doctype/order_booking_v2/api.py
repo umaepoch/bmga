@@ -1,5 +1,4 @@
 import json
-from operator import is_not, le
 import frappe
 import datetime
 import re
