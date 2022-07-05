@@ -200,13 +200,20 @@ def fetch_items_container(brand, division):
     return dict(items = items)
 
 
+def fetch_goods_warehouse():
+    warehouse = frappe.db.get_list("Fulfillment Settings Details V1", 'goods_warehouse')
+    print(warehouse)
+    return warehouse[0].get('goods_warehouse')
+
+
 def generate_json(supplier, data):
     name = None
-
+    warehouse = fetch_goods_warehouse()
     outerJson = {
         'doctype': 'Purchase Receipt',
         'supplier': supplier,
         'naming_series': 'BMGAPR-',
+        'set_warehouse': warehouse,
         'items': []
     }
     

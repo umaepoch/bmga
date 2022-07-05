@@ -11,7 +11,8 @@
   "hospital_warehouse",
   "institutional_warehouse",
   "qc_and_dispatch",
-  "free_warehouse"
+  "free_warehouse",
+  "goods_warehouse"
  ],
  "fields": [
   {
@@ -53,12 +54,18 @@
    "fieldtype": "Link",
    "label": "Free Warehouse",
    "options": "Warehouse"
+  },
+  {
+   "fieldname": "goods_warehouse",
+   "fieldtype": "Link",
+   "label": "Goods Warehouse",
+   "options": "Warehouse"
   }
  ],
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2022-05-09 10:47:04.221799",
+ "modified": "2022-07-05 16:07:48.963128",
  "modified_by": "Administrator",
  "module": "Bmga",
  "name": "Fulfillment Settings Details V1",
