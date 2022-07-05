@@ -216,8 +216,8 @@ frappe.ui.form.on('Order Booking Items V2', {
 		if(item_code) {
 			let quantity_booked = frappe.get_doc(cdt, cdn).quantity_booked;
 			let average_price = frappe.get_doc(cdt, cdn).average_price;
-			var gst = parseFloat(frappe.get_doc(cdt, cdn).gst_rate);
-			gst = (gst + 100)/100
+			// var gst = parseFloat(frappe.get_doc(cdt, cdn).gst_rate);
+			// gst = (gst + 100)/100
 			if(quantity_booked) {
 				let amount = average_price * quantity_booked;
 				frappe.model.set_value(cdt, cdn, "amount", amount);
