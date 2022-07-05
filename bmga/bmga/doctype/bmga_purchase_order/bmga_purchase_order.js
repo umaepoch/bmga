@@ -86,6 +86,25 @@ frappe.ui.form.on('BMGA Purchase Order', {
 				}
 			}).done(r => {
 				console.log(r.message)
+				let to_remove = r.message.to_remove;
+				if(to_remove.length > 0) {
+					console.log('need to remove!');
+					
+					var tbl = frm.doc.purchase_receipt || [];
+					var i = tbl.length;
+					
+					while(i--) {
+						for(var j=0; j<to_remove.length; j++) {
+							if(tbl[i].purchase_receipt == to_remove[j]) {
+								cur_frm.get_field("purchase_receipt").grid.grid_rows[i].remove();
+							}
+						}
+					}
+					cur_frm.refresh();
+					frm.save();
+				} else {
+					console.log('no need to remove');
+				}
 			})
 		}
 	}
@@ -97,7 +116,7 @@ frappe.ui.form.on('BMGA Purchase Items', {
 		let qty = locals[cdt][cdn].qty_ordered;
 		if(qty) {
 			frappe.model.set_value(cdt, cdn, "pending_qty", qty);
-			refresh_field('items');
+			refresh_field('items');	
 		}
 	}
 })

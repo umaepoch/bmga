@@ -238,28 +238,23 @@ def generate_purchase_receipt(supplier, data):
     return dict(name = name, data = data)
 
 
-def update_qty(item_code, received_qty, name):
-    order_doc = frappe.get_doc('BMGA Purchase Order', name)
-    for child in order_doc.get_all_children():
-        if child.doctype != 'BMGA Purchase Items': continue
-        if child.as_dict().get('item_code') != item_code: continue
-        child_doctype = child.doctype
-        child_doc = frappe.get_doc(child_doctype, child.name)
-
-        child_doc.pending_qty = child_doc.qty_ordered - received_qty
-        print(child_doc.as_dict())
-        child_doc.save()
-
-
 def get_purchase_qty(p):
     purchase_doc = frappe.get_doc('Purchase Receipt', p.get('purchase_receipt'))
-    for child in purchase_doc.get_all_children():
-        if child.doctype != 'Purchase Receipt Item': continue
-        if child.as_dict().get('docstatus') != 1: continue
-        received_qty = child.as_dict().get('received_stock_qty')
-        item_code = child.as_dict().get('item_code')
-        print('hi')
-        update_qty(item_code, received_qty, p.get('parent'))
+    if purchase_doc.docstatus == 2:
+        return dict(to_remove = True, name = p.get('purchase_receipt'))
+    
+    pr = frappe.db.sql(
+        f"""select sum(received_stock_qty) as received_stock_qty, item_code
+        from `tabPurchase Receipt Item`
+        where parent = '{p.get('purchase_receipt')}' and docstatus < 2
+        group by item_code""",
+        as_dict=1
+    )
+    
+    if len(pr) > 0:
+        return dict(to_remove = False, detail = pr)
+    
+    return dict(to_remove = True, name = p.get('purchase_receipt'))
 
 
 def init_pending_qty(name):
@@ -271,10 +266,35 @@ def init_pending_qty(name):
         child_doc.save()
 
 
+def update_qty(received_summary, name):
+    order_doc = frappe.get_doc('BMGA Purchase Order', name)
+    for child in order_doc.get_all_children():
+        if child.doctype != 'BMGA Purchase Items': continue
+        if child.as_dict().get('item_code') not in received_summary: continue
+        child_doctype = child.doctype
+        child_doc = frappe.get_doc(child_doctype, child.name)
+
+        child_doc.pending_qty = child_doc.qty_ordered - received_summary.get(child_doc.item_code)
+        child_doc.save()
+
+
 @frappe.whitelist()
 def update_pending_qty(purchase_receipt):
     purchase_receipt = json.loads(purchase_receipt)
+    to_remove = []
+    received_summary = {}
+
     init_pending_qty(purchase_receipt[0].get('parent'))
+
     for p in purchase_receipt:
-        get_purchase_qty(p)
-    return purchase_receipt
+        validator = get_purchase_qty(p)
+        if validator.get('to_remove'):
+            to_remove.append(validator.get('name'))
+        else:
+            for x in validator.get('detail'):
+                received_summary[x['item_code']] = received_summary.get(x['item_code'], 0) + x.get('received_stock_qty')
+    
+    print('summary', received_summary)
+    update_qty(received_summary, purchase_receipt[0].get('parent'))
+
+    return dict(to_remove = to_remove)
