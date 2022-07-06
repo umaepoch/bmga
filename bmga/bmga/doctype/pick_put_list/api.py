@@ -564,7 +564,7 @@ def generate_sales_invoice_json(customer, customer_type, so_name, sales_order, c
         qty, batch = ppli_qty_and_batch(item)
         if qty == 0: continue
 
-        rate_contract = customer_rate_contract(customer) 
+        rate_contract = customer_rate_contract(customer, item.get('item')) 
         if not rate_contract["valid"]:
             if item.get("promo_type") == "Buy x get same and discount for ineligible qty":
                 discount = fetch_promo_type_5(item, sales_order, customer_type, settings)
@@ -758,6 +758,8 @@ def customer_rate_contract(customer, item_code):
         as_dict=1
     )
 
+    frappe.msgprint(f'{rc}')
+
     if len(rc) > 0: return dict(valid = True, name = rc[0]["name"])
     else : return dict(valid = False, name = None)
 
@@ -770,7 +772,7 @@ def update_average_price(item_list, sales_order, customer_type, settings, custom
         qty, batch = ppli_qty_and_batch(item)
         if qty == 0: continue
 
-        rate_contract = customer_rate_contract(customer, item.get()) 
+        rate_contract = customer_rate_contract(customer, item.get('item')) 
         frappe.msgprint(f'{rate_contract["valid"]}')
         if not rate_contract["valid"]:
             if item.get("promo_type") == "Buy x get same and discount for ineligible qty":
@@ -872,7 +874,7 @@ def update_sales_order_for_invoice(sales_doc, customer, customer_type, so_name, 
         qty, batch = ppli_qty_and_batch(item)
         if qty == 0: continue
 
-        rate_contract = customer_rate_contract(customer) 
+        rate_contract = customer_rate_contract(customer, item.get('item'))  
         if not rate_contract["valid"]:
             if item.get("promo_type") == "Buy x get same and discount for ineligible qty":
                 discount = fetch_promo_type_5(item, sales_order, customer_type, settings)
