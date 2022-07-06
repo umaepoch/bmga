@@ -488,11 +488,11 @@ def fetch_rate_contract_detail(batch, item_code, rate_contract_name):
                 print("/*-"*25)
                 print(p[0].get('batched_item'), discount)
                 if p[0].get('batched_item') == "Yes":
-                    b = fetch_batch_detail(batch, item_code)
+                    b = rate_fetch_mrp_batch(batch, item_code)
                     print(b)
                     return dict(price = b['price'] * discount)
                 else:
-                    b = fetch_batchless_detail(item_code)
+                    b = rate_fetch_mrp_batchless(item_code)
                     return dict(price = b['price'] * discount, rate_contract_check = 1)
             else: return dict(price = 0)
         elif batch != "" : return fetch_batch_detail(batch, item_code)
