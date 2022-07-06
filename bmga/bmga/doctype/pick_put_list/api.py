@@ -721,6 +721,8 @@ def fetch_promo_type_1(i, sales_order, customer_type, settings):
     today = datetime.date.today()
     discount = 1
 
+    frappe.msgprint('Inside quantity based discount')
+
     if customer_type == "Retail":
         warehouse = [settings["retail_primary_warehouse"], settings["retail_bulk_warehouse"]]
     elif customer_type == "Hospital":
@@ -731,6 +733,8 @@ def fetch_promo_type_1(i, sales_order, customer_type, settings):
     so_filter = list(filter(lambda x: x["warehouse"] in warehouse and x["promo_type"] == "Quantity based discount" and x["item_code"] == i["item"], sales_order))
     qty = int(so_filter[0]["qty"])
 
+    frappe.msgprint(so_filter, qty)
+
     d = frappe.db.sql(
         f"""select pt.quantity_bought as b_qty, pt.discount_percentage as discount
         from `tabPromo Type 1` as pt
@@ -740,11 +744,14 @@ def fetch_promo_type_1(i, sales_order, customer_type, settings):
         as_dict=1
     )   
 
+    frappe.msgprint(d)
+
     for x in d:
         if qty >= x["b_qty"]:
             discount = (100 - int(x["discount"])) / 100
             break
-    print(discount)
+    print("QUANTITY BASED DISCOUNT!!!!!!!!!!!!!!!", discount)
+    frappe.msgprint(f'discount {discount}')
     return discount
 
 def customer_rate_contract(customer):
