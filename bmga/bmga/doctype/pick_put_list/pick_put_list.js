@@ -66,7 +66,7 @@ frappe.ui.form.on('Pick Put List', {
 							refresh_field('sales_invoice');
 						}
 
-						frm.save();
+						//frm.save();
 					})
 				} else {
 					frappe.msgprint("No items or Already Picked!")

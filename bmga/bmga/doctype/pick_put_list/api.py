@@ -773,7 +773,8 @@ def update_average_price(item_list, sales_order, customer_type, settings, custom
         if qty == 0: continue
 
         rate_contract = customer_rate_contract(customer) 
-        frappe.msgprint(item.get("promo_type"), len(item.get("promo_type")))
+        frappe.msgprint(f'{item.get("promo_type")} {len(item.get("promo_type"))}')
+        frappe.msgprint(f'{rate_contract["valid"]}')
         if not rate_contract["valid"]:
             if item.get("promo_type") == "Buy x get same and discount for ineligible qty":
                 discount = fetch_promo_type_5(item, sales_order, customer_type, settings)
