@@ -241,20 +241,20 @@ def generate_json(supplier, data):
         doc.save()
         name = doc.name
     
-    return name
+    return dict(name = name, status = doc.status)
 
 
 @frappe.whitelist()
 def generate_purchase_receipt(supplier, data):
     data = json.loads(data)
     name = generate_json(supplier, data)
-    return dict(name = name, data = data)
+    return dict(detail = name, data = data)
 
 
 def get_purchase_qty(p):
     purchase_doc = frappe.get_doc('Purchase Receipt', p.get('purchase_receipt'))
     if purchase_doc.docstatus == 2:
-        return dict(to_remove = True, name = p.get('purchase_receipt'))
+        return dict(valid = False, name = p.get('purchase_receipt'), status = purchase_doc.status)
     
     pr = frappe.db.sql(
         f"""select sum(received_stock_qty) as received_stock_qty, item_code
@@ -265,9 +265,9 @@ def get_purchase_qty(p):
     )
     
     if len(pr) > 0:
-        return dict(to_remove = False, detail = pr)
+        return dict(valid = True, detail = pr, name = p.get('purchase_receipt'), status = purchase_doc.status)
     
-    return dict(to_remove = True, name = p.get('purchase_receipt'))
+    dict(valid = False, name = p.get('purchase_receipt'), status = purchase_doc.status)
 
 
 def init_pending_qty(name):
@@ -294,20 +294,24 @@ def update_qty(received_summary, name):
 @frappe.whitelist()
 def update_pending_qty(purchase_receipt):
     purchase_receipt = json.loads(purchase_receipt)
-    to_remove = []
+    update_status = []
     received_summary = {}
 
     init_pending_qty(purchase_receipt[0].get('parent'))
 
     for p in purchase_receipt:
         validator = get_purchase_qty(p)
-        if validator.get('to_remove'):
-            to_remove.append(validator.get('name'))
-        else:
+        print(validator)
+        if validator.get('valid'):
             for x in validator.get('detail'):
                 received_summary[x['item_code']] = received_summary.get(x['item_code'], 0) + x.get('received_stock_qty')
+        
+        update_status.append({
+            'name': validator.get('name'),
+            'status': validator.get('status')
+        })
     
     print('summary', received_summary)
     update_qty(received_summary, purchase_receipt[0].get('parent'))
 
-    return dict(to_remove = to_remove, received_summary = received_summary)
+    return dict(update_status = update_status, received_summary = received_summary)

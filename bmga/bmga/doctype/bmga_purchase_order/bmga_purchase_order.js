@@ -47,10 +47,6 @@ frappe.ui.form.on('BMGA Purchase Order', {
 		}
 	},
 
-	on_submit: function(frm) {
-		frm.doc.status = 'In Progress';
-	},
-
 	refresh: function(frm) {
 		let items = frm.doc.items;
 		let supplier = frm.doc.supplier;
@@ -58,7 +54,7 @@ frappe.ui.form.on('BMGA Purchase Order', {
 		let docstatus = frm.doc.docstatus;
 		console.log(frm.doc);
 
-		if(items && supplier && workflow != 'Closed' && docstatus == 1) {
+		if(items && supplier && workflow != 'Draft' && docstatus < 1) {
 			if(items.length > 0) {
 				frm.add_custom_button('Make Purchase Receipt', function() {
 					frappe.call({
@@ -69,18 +65,24 @@ frappe.ui.form.on('BMGA Purchase Order', {
 						}
 					}).done(r => {
 						console.log(r.message);
-						if(r.message.name) {
+						if(r.message.detail) {
 							let entry = frm.add_child('purchase_receipt');
-							entry.purchase_receipt = r.message.name;
+							entry.purchase_receipt = r.message.detail.name;
+							entry.status = r.message.detail.status;
 							refresh_field('purchase_receipt');
 							frappe.msgprint('Purchase Receipt Added');
-							frm.save()
+
+							frm.save();
 						} else {
 							frappe.msgprint('Place QTY for Order')
 						}
 					})
 				});
 			}
+		}
+
+		if(frm.workflow_state != 'Draft') {
+			frm.set_df_property('items', 'read_only', 1);
 		}
 
 		let purchase_receipt = frm.doc.purchase_receipt;
@@ -92,21 +94,22 @@ frappe.ui.form.on('BMGA Purchase Order', {
 				}
 			}).done(r => {
 				console.log(r.message)
-				let to_remove = r.message.to_remove;
+				let update_status = r.message.update_status;
 				let keys = Object.keys(r.message.received_summary);
 
-				if(to_remove.length > 0) {	
+				if(update_status.length > 0) {	
 					var tbl = frm.doc.purchase_receipt || [];
 					var i = tbl.length;
 					
 					while(i--) {
-						for(var j=0; j<to_remove.length; j++) {
-							if(tbl[i].purchase_receipt == to_remove[j]) {
-								cur_frm.get_field("purchase_receipt").grid.grid_rows[i].remove();
+						for(var j=0; j<update_status.length; j++) {
+							if(tbl[i].purchase_receipt == update_status[j].name) {
+								// cur_frm.get_field("purchase_receipt").grid.grid_rows[i].remove();
+								tbl[i].status = update_status[j].status;
 							}
 						}
 					}
-					cur_frm.refresh();
+					refresh_field('purchase_receipt');
 					frm.save();
 				}
 
@@ -122,7 +125,6 @@ frappe.ui.form.on('BMGA Purchase Order', {
 							}
 						}
 					}
-
 					refresh_field('items');
 					frm.save();
 				}

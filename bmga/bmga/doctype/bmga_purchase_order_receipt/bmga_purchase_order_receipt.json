@@ -6,22 +6,31 @@
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
-  "purchase_receipt"
+  "purchase_receipt",
+  "status"
  ],
  "fields": [
   {
-   "columns": 10,
+   "allow_on_submit": 1,
+   "columns": 5,
    "fieldname": "purchase_receipt",
    "fieldtype": "Link",
    "in_list_view": 1,
    "label": "Name",
    "options": "Purchase Receipt"
+  },
+  {
+   "columns": 5,
+   "fieldname": "status",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Status"
   }
  ],
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2022-07-04 16:37:24.042612",
+ "modified": "2022-07-07 18:24:42.386787",
  "modified_by": "Administrator",
  "module": "Bmga",
  "name": "BMGA Purchase Order Receipt",
