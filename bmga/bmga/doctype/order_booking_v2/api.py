@@ -1139,10 +1139,11 @@ def check_customer_state(customer, company):
     for a in address:
         doc = frappe.get_doc('Address', a['name']).as_dict()
         try:
+            if doc.address_type == 'Shipping': continue
             if doc.get('links')[0].get('link_name') == customer: customer_code = doc.gst_state_number
             if doc.get('links')[0].get('link_name') == company: company_code = doc.gst_state_number
         except:
-            pass
+            continue
 
     print('/*-+'*50)
     print(customer_code, company_code)
