@@ -1148,7 +1148,7 @@ def check_customer_state(customer, company):
     print(customer_code, company_code)
     print('/*-+'*50)
     
-    return company_code == customer_code
+    return dict(valid = company_code == customer_code, customer_code = customer_code, company_code = company_code)
     
 
 
@@ -1158,7 +1158,7 @@ def sales_order_container(customer, order_list, company, customer_type, free_pro
 
     gst_detail = fetch_gst_detail(company)
     customer_in_state = check_customer_state(customer, company)
-    if customer_in_state:
+    if customer_in_state.get('valid'):
         tax = gst_detail['gst_in_state']
     else:
         tax = gst_detail['gst_out_state']
@@ -1263,4 +1263,4 @@ def sales_order_container(customer, order_list, company, customer_type, free_pro
         doc_qo.save()
         qo_name = doc_qo.name
 
-    return dict(so_name = so_name, qo_name = qo_name, outerJson_qo = outerJson_qo, outerJson_so = outerJson_so, outerJson = outerJson_so)
+    return dict(customer_in_state = customer_in_state, so_name = so_name, qo_name = qo_name, outerJson_qo = outerJson_qo, outerJson_so = outerJson_so, outerJson = outerJson_so)
