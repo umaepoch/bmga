@@ -1,4 +1,3 @@
-from dataclasses import asdict
 import json
 import frappe
 import datetime
@@ -123,11 +122,3 @@ def generate_prestock_transfer(items, name):
 	items = json.loads(items)
 	n = create_prestock_transfer(items, name)
 	return n
-
-@frappe.whitelist()
-def fetch_address():
-	a = frappe.db.sql(
-		"""select * from `tabAddress`""", as_dict=1
-	)
-	
-	return dict(tabAddress = a)

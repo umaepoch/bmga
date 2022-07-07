@@ -1117,9 +1117,49 @@ def item_qty_container(company, item_code, customer_type, customer):
     # sales_promo = fetch_sales_promos(item_code)
     return dict(available_qty = handled_stock["available_qty"], price_details = price_details, stock_detail = stock_detail, qty_detail = handled_stock) 
 
+
+def fetch_gst_detail(company):
+    d = frappe.db.sql(
+        f"""select fsd.gst_out_state, fsd.gst_in_state
+        from `tabFulfillment Settings Details V1` as fsd
+            join `tabFulfillment Settings V1` as fs on (fs.name = fsd.parent)
+        where fs.company = '{company}'""",
+        as_dict=1
+    )
+
+    if len(d) > 0: return d[0]
+    else: frappe.throw('ADD GST detail to Fulfillement Settings!!!')
+
+
+def check_customer_state(customer, company):
+    company_code = -1
+    customer_code = -2
+
+    address = frappe.db.get_list('Address', fields=['name'])
+    for a in address:
+        doc = frappe.get_doc('Address', a['name']).as_dict()
+        if doc.get('links')[0].get('link_name') == customer: customer_code = doc.gst_state_number
+        if doc.get('links')[0].get('link_name') == company: company_code = doc.gst_state_number
+
+    print('/*-+'*50)
+    print(customer_code, company_code)
+    print('/*-+'*50)
+    
+    return company_code == customer_code
+    
+
+
 @frappe.whitelist()
 def sales_order_container(customer, order_list, company, customer_type, free_promos, promo_dis, sales_order):
     print("ORDER.......",sales_order)
+
+    gst_detail = fetch_gst_detail(company)
+    customer_in_state = check_customer_state(customer, company)
+    if customer_in_state:
+        tax = gst_detail['gst_in_state']
+    else:
+        tax = gst_detail['gst_out_state']
+
     
     delivery_warehouse = ""
     fulfillment_settings = fetch_fulfillment_settings(company)
@@ -1137,6 +1177,7 @@ def sales_order_container(customer, order_list, company, customer_type, free_pro
     delivery_date = datetime.datetime.today()
     sales_order = json.loads(sales_order)
     delivery_date = delivery_date + datetime.timedelta(2)
+    
     outerJson_so = {
         "doctype": "Sales Order",
         "naming_series": "SO-DL-",
@@ -1145,6 +1186,7 @@ def sales_order_container(customer, order_list, company, customer_type, free_pro
         "pch_picking_status": "Ready for Picking",
         "pch_sales_order_purpose": "Delivery",
         "set_warehouse": delivery_warehouse,
+        'taxes_and_charges': tax,
         "items": [],
         "ignore_pricing_rule" : 1,
     }
