@@ -47,12 +47,18 @@ frappe.ui.form.on('BMGA Purchase Order', {
 		}
 	},
 
+	on_submit: function(frm) {
+		frm.doc.status = 'In Progress';
+	},
+
 	refresh: function(frm) {
 		let items = frm.doc.items;
 		let supplier = frm.doc.supplier;
+		let workflow = frm.doc.workflow_state;
+		let docstatus = frm.doc.docstatus;
 		console.log(frm.doc);
 
-		if(items && supplier) {
+		if(items && supplier && workflow != 'Closed' && docstatus < 2) {
 			if(items.length > 0) {
 				frm.add_custom_button('Make Purchase Receipt', function() {
 					frappe.call({

@@ -169,6 +169,24 @@ def fetch_batchless_detail(item_code):
     if len(p) > 0 and p[0].get('price') is not None: return dict(price = p[0].get('price'), rate_contract_check = 0)
     else : return dict(price = 0, rate_contract_check = 0)
 
+
+def rate_fetch_mrp_batch(batch, item_code):
+    p = frappe.db.get_value('Batch', {'batch_id': batch, 'item': item_code}, 'pch_mrp', as_dict=1)
+    return dict(price = p.get('pch_mrp', 0))
+
+def rate_fetch_mrp_batchless(item_code):
+    p = frappe.db.sql(
+        f"""select rci.mrp
+        from `tabRate Contract Item` as rci
+            join `tabRate Contract` as rc on (rci.parent = rc.name)
+        where rc.selling_price = 1 rci.item = '{item_code}'""",
+        as_dict=1
+    )
+
+    if len(p) > 0:
+        return dict(price = p.get('mrp', 0))
+    else: return dict(price = 0)
+
 def fetch_rate_contract_detail(batch, item_code, rate_contract_name):
     today = datetime.date.today()
     p = frappe.db.sql(
@@ -188,11 +206,11 @@ def fetch_rate_contract_detail(batch, item_code, rate_contract_name):
                 print("/*-"*25)
                 print(p[0].get('batched_item'), discount)
                 if p[0].get('batched_item') == "Yes":
-                    b = fetch_batch_detail(batch, item_code)
+                    b = rate_fetch_mrp_batch(batch, item_code)
                     print(b)
                     return dict(price = b['price'] * discount, rate_contract_check = 1)
                 else:
-                    b = fetch_batchless_detail(item_code)
+                    b = rate_fetch_mrp_batchless(item_code)
                     return dict(price = b['price'] * discount, rate_contract_check = 1)
             else: return dict(price = 0)
         elif batch != "" : return fetch_batch_detail(batch, item_code)

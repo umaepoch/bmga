@@ -27,7 +27,7 @@ def fetch_last30_sales(item_code, start_date, end_date):
 
 def fetch_warehouse():
     f = frappe.db.sql(
-        """select retail_primary_warehouse as retail, retail_bulk_warehouse as bulk, hospital_warehouse as hospital, institutional_warehouse as institutional, free_warehouse as free
+        """select  retail_primary_warehouse as retail, retail_bulk_warehouse as bulk, hospital_warehouse as hospital, institutional_warehouse as institutional, free_warehouse as free
         from `tabFulfillment Settings Details V1`""",
         as_dict=1
     )
@@ -58,11 +58,13 @@ def fetch_available_stock(item_code):
 
 
 def fetch_purchase_promo_detail(item_code):
+    today = datetime.date.today()
+
     p = frappe.db.sql(
         f"""select pp.name, pp.start_date, pp.end_date, pp.promo_type, pt1.quantity_bought as bought_qty, pt1.discount_percentage as discount
         from `tabPurchase Promos` as pp
             join `tabPromo Type 1` as pt1 on (pt1.parent = pp.name)
-        where pt1.bought_item = '{item_code}'""",
+        where pt1.bought_item = '{item_code}' and pp.start_date <= '{today}' and pp.end_date >= '{today}'""",
         as_dict=1
     )
     if len(p) > 0: return dict(valid = True, detail = p[0])
@@ -71,7 +73,7 @@ def fetch_purchase_promo_detail(item_code):
         f"""select pp.name, pp.start_date, pp.end_date, pp.promo_type, pt2.bought_item as free_item, pt2.for_every_quantity_that_is_bought as bought_qty, pt2.quantity_of_free_items_thats_given as free_qty
         from `tabPurchase Promos` as pp
             join `tabPromo Type 2` as pt2 on (pt2.parent = pp.name)
-        where pt2.bought_item = '{item_code}'""",
+        where pt2.bought_item = '{item_code}' and pp.start_date <= '{today}' and pp.end_date >= '{today}'""",
         as_dict=1
     )
     if len(p) > 0: return dict(valid = True, detail = p[0])
@@ -80,7 +82,7 @@ def fetch_purchase_promo_detail(item_code):
         f"""select pp.name, pp.start_date, pp.end_date, pp.promo_type, pt3.free_item, pt3.for_every_quantity_that_is_bought as bought_qty, pt3.quantity_of_free_items_thats_given as free_qty
         from `tabPurchase Promos` as pp
             join `tabPromo Type 3` as pt3 on (pt3.parent = pp.name)
-        where pt3.bought_item = '{item_code}'""",
+        where pt3.bought_item = '{item_code}' and pp.start_date <= '{today}' and pp.end_date >= '{today}'""",
         as_dict=1
     )
     if len(p) > 0: return dict(valid = True, detail = p[0])
@@ -89,7 +91,7 @@ def fetch_purchase_promo_detail(item_code):
         f"""select pp.name, pp.start_date, pp.end_date, pp.promo_type, pt5.for_every_quantity_that_is_bought as bought_qty, pt5.quantity_of_free_items_thats_given as free_qty, pt5.discount 
         from `tabPurchase Promos` as pp
             join `tabPromo Type 5` as pt5 on (pt5.parent = pp.name)
-        where pt5.bought_item = '{item_code}'""",
+        where pt5.bought_item = '{item_code}' and pp.start_date <= '{today}' and pp.end_date >= '{today}'""",
         as_dict=1
     )
     if len(p) > 0: return dict(valid = True, detail = p[0])
@@ -98,11 +100,13 @@ def fetch_purchase_promo_detail(item_code):
 
 
 def fetch_sales_promo_detail(item_code):
+    today = datetime.date.today()
+
     p = frappe.db.sql(
         f"""select pp.name, pp.start_date, pp.end_date, pp.promo_type, pt1.quantity_bought as bought_qty, pt1.discount_percentage as discount
         from `tabSales Promos` as pp
             join `tabPromo Type 1` as pt1 on (pt1.parent = pp.name)
-        where pt1.bought_item = '{item_code}'""",
+        where pt1.bought_item = '{item_code}' and pp.start_date <= '{today}' and pp.end_date >= '{today}'""",
         as_dict=1
     )
     if len(p) > 0: return dict(valid = True, detail = p[0])
@@ -111,7 +115,7 @@ def fetch_sales_promo_detail(item_code):
         f"""select pp.name, pp.start_date, pp.end_date, pp.promo_type, pt2.bought_item as free_item, pt2.for_every_quantity_that_is_bought as bought_qty, pt2.quantity_of_free_items_thats_given as free_qty
         from `tabSales Promos` as pp
             join `tabPromo Type 2` as pt2 on (pt2.parent = pp.name)
-        where pt2.bought_item = '{item_code}'""",
+        where pt2.bought_item = '{item_code}' and pp.start_date <= '{today}' and pp.end_date >= '{today}'""",
         as_dict=1
     )
     if len(p) > 0: return dict(valid = True, detail = p[0])
@@ -120,7 +124,7 @@ def fetch_sales_promo_detail(item_code):
         f"""select pp.name, pp.start_date, pp.end_date, pp.promo_type, pt3.free_item, pt3.for_every_quantity_that_is_bought as bought_qty, pt3.quantity_of_free_items_thats_given as free_qty
         from `tabSales Promos` as pp
             join `tabPromo Type 3` as pt3 on (pt3.parent = pp.name)
-        where pt3.bought_item = '{item_code}'""",
+        where pt3.bought_item = '{item_code}' and pp.start_date <= '{today}' and pp.end_date >= '{today}'""",
         as_dict=1
     )
     if len(p) > 0: return dict(valid = True, detail = p[0])
@@ -129,7 +133,7 @@ def fetch_sales_promo_detail(item_code):
         f"""select pp.name, pp.start_date, pp.end_date, pp.promo_type, pt5.for_every_quantity_that_is_bought as bought_qty, pt5.quantity_of_free_items_thats_given as free_qty, pt5.discount 
         from `tabSales Promos` as pp
             join `tabPromo Type 5` as pt5 on (pt5.parent = pp.name)
-        where pt5.bought_item = '{item_code}'""",
+        where pt5.bought_item = '{item_code}' and pp.start_date <= '{today}' and pp.end_date >= '{today}'""",
         as_dict=1
     )
     if len(p) > 0: return dict(valid = True, detail = p[0])
@@ -180,8 +184,8 @@ def fetch_item_for_division(brand, division):
                     'uom': i.get('stock_uom'),
                     'last30_qty': last30_qty.get('qty'),
                     'stock_in_hand': stock_in_hand.get('qty'),
-                    'start_date': purchase_promo_detail['detail'].get('start_date'),
-                    'end_date': purchase_promo_detail['detail'].get('end_date'),
+                    'start_date': purchase_promo_detail['detail'].get('start_date', ''),
+                    'end_date': purchase_promo_detail['detail'].get('end_date', ''),
                     'purchase_promo': handle_purchase_promo.get('text', ''),
                     'sales_promo': handle_sales_promo.get('text', ''),
                     'item_code': i.get('item_code')
@@ -214,16 +218,19 @@ def generate_json(supplier, data):
         'supplier': supplier,
         'naming_series': 'BMGAPR-',
         'set_warehouse': warehouse,
+        'pch_bmga_purchase_order': data[0].get('parent'),
         'items': []
     }
     
     for x in data:
         if not x.get('qty_ordered', 0) > 0: continue
-        print("innerjson")
+        if not x.get('pending_qty', 0) > 0: qty = 1
+        else: qty = x.get('pending_qty')
+
         innerJson = {
             'doctype': 'Purchase Receipt Item',
             'item_code': x.get('item_code'),
-            'qty': x.get('qty_ordered')
+            'qty': qty
         }
         outerJson['items'].append(innerJson)
 
@@ -235,7 +242,6 @@ def generate_json(supplier, data):
         name = doc.name
     
     return name
-
 
 
 @frappe.whitelist()

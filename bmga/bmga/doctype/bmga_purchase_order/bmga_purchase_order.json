@@ -13,9 +13,10 @@
   "section_break_4",
   "division",
   "section_break_6",
-  "purchase_receipt",
+  "items",
   "section_break_8",
-  "items"
+  "purchase_receipt",
+  "amended_from"
  ],
  "fields": [
   {
@@ -65,15 +66,27 @@
    "fieldtype": "Section Break"
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "purchase_receipt",
    "fieldtype": "Table",
    "label": "Purchase Receipt",
-   "options": "BMGA Purchase Order Receipt"
+   "options": "BMGA Purchase Order Receipt",
+   "read_only": 1
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "BMGA Purchase Order",
+   "print_hide": 1,
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
+ "is_submittable": 1,
  "links": [],
- "modified": "2022-07-04 16:38:27.952668",
+ "modified": "2022-07-06 23:48:39.893182",
  "modified_by": "Administrator",
  "module": "Bmga",
  "name": "BMGA Purchase Order",
