@@ -124,18 +124,12 @@ def generate_prestock_transfer(items, name):
 	return n
 
 @frappe.whitelist()
-def check_customer_state_test(customer, company):
-    company_code = -1
-    customer_code = -2
+def check_customer_state_test():
+    l = []
 
-    address = frappe.db.get_list('Address', fields=['name'])
+    address = frappe.db.get_list('Address')
     for a in address:
         doc = frappe.get_doc('Address', a['name']).as_dict()
-        if doc.get('links')[0].get('link_name') == customer: customer_code = doc.gst_state_number
-        if doc.get('links')[0].get('link_name') == company: company_code = doc.gst_state_number
-
-    print('/*-+'*50)
-    print(customer_code, company_code)
-    print('/*-+'*50)
+        l.append(doc)
     
-    return company_code == customer_code
+    return l
