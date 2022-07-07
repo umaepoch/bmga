@@ -58,7 +58,7 @@ frappe.ui.form.on('BMGA Purchase Order', {
 		let docstatus = frm.doc.docstatus;
 		console.log(frm.doc);
 
-		if(items && supplier && workflow != 'Closed' && docstatus < 2) {
+		if(items && supplier && workflow != 'Closed' && docstatus == 1) {
 			if(items.length > 0) {
 				frm.add_custom_button('Make Purchase Receipt', function() {
 					frappe.call({
