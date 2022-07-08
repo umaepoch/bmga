@@ -81,10 +81,6 @@ frappe.ui.form.on('BMGA Purchase Order', {
 			}
 		}
 
-		if(frm.workflow_state != 'Draft') {
-			frm.set_df_property('items', 'read_only', 1);
-		}
-
 		let purchase_receipt = frm.doc.purchase_receipt;
 		if(purchase_receipt.length > 0) {
 			frappe.call({
