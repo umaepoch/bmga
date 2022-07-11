@@ -1152,6 +1152,19 @@ def check_customer_state(customer, company):
     return dict(valid = company_code == customer_code, customer_code = customer_code, company_code = company_code)
     
 
+def fetch_tax_detail(name):
+    d = frappe.db.sql(
+        f"""select charge_type, account_head, rate, description
+        from `tabSales Taxes and Charges` where parent = '{name}'
+        order by modified DESC""",
+        as_dict=1
+    )
+
+    if len(d) > 0:
+        return d[0]
+    else:
+        frappe.throw(f'Sales Taxes and Charges detail not found for {name}')
+
 
 @frappe.whitelist()
 def sales_order_container(customer, order_list, company, customer_type, free_promos, promo_dis, sales_order):
@@ -1161,8 +1174,10 @@ def sales_order_container(customer, order_list, company, customer_type, free_pro
     customer_in_state = check_customer_state(customer, company)
     if customer_in_state.get('valid'):
         tax = gst_detail['gst_in_state']
+        tax_detail = fetch_tax_detail(gst_detail['gst_in_state'])
     else:
         tax = gst_detail['gst_out_state']
+        tax_detail = fetch_tax_detail(gst_detail['gst_out_state'])
 
     
     delivery_warehouse = ""
@@ -1192,8 +1207,19 @@ def sales_order_container(customer, order_list, company, customer_type, free_pro
         "set_warehouse": delivery_warehouse,
         'taxes_and_charges': tax,
         "items": [],
+        "taxes": [],
         "ignore_pricing_rule" : 1,
     }
+
+    tax_innerJson = {
+        "doctype": "Sales Taxes and Charges",
+        "charge_type": tax_detail["charge_type"],
+        "account_head": tax_detail["account_head"],
+        "rate": tax_detail["rate"],
+        "description": tax_detail["description"]
+    }
+
+    outerJson_so["taxes"].append(tax_innerJson)
 
     outerJson_qo = {
         "doctype": "Quotation",

@@ -100,8 +100,11 @@ frappe.ui.form.on('BMGA Purchase Order', {
 					while(i--) {
 						for(var j=0; j<update_status.length; j++) {
 							if(tbl[i].purchase_receipt == update_status[j].name) {
-								// cur_frm.get_field("purchase_receipt").grid.grid_rows[i].remove();
-								tbl[i].status = update_status[j].status;
+								if(update_status[j].status == "Cancelled") {
+									cur_frm.get_field("purchase_receipt").grid.grid_rows[i].remove();
+								} else {
+									tbl[i].status = update_status[j].status;
+								}
 							}
 						}
 					}
