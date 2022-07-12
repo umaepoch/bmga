@@ -21,7 +21,7 @@ def handle_claim(data):
 		if d.get('invoice_rate') is not None and d.get('invoice_rate') > 0:
 			to_add = d
 
-			to_add["division"] = "-"
+			# to_add["division"] = "-"
 			to_add["approval_status"] = ""
 			to_add["reason"] = ""
 			to_add["pharmacy_name"] = d["customer_name"]
@@ -117,7 +117,7 @@ def get_sales_invoice(filters):
 	from_date = datetime.date.fromisoformat(filters["from_date"])
 
 	invoices = frappe.db.sql(
-		f"""select i.brand, i.pch_item_code as pch_item_code, si.customer_name, sii.rate as invoice_rate, sii.item_name, sii.item_code, sum(sii.qty) as qty, sii.parent as invoice_no, si.due_date as invoice_date, sii.batch_no
+		f"""select i.brand, i.pch_division as division, i.pch_item_code as pch_item_code, si.customer_name, sii.rate as invoice_rate, sii.item_name, sii.item_code, sum(sii.qty) as qty, sii.parent as invoice_no, si.due_date as invoice_date, sii.batch_no
 		from `tabSales Invoice Item` as sii
 			join `tabSales Invoice` as si on (si.name = sii.parent)
 			join `tabItem` as i on (sii.item_name = i.item_name)
@@ -143,7 +143,7 @@ def get_columns():
 		{"label": _("SPDL Purchase Receipt No."), "fieldname": "purchase_no", "fieldtype": "Link", "options": "Purchase Receipt", "width": 150},
 		{"label": _("Purchase Date"), "fieldname": "purchase_date", "fieldtype": "Date", "width": 100},
 		{"label": _("Brand"), "fieldname": "brand", "fieldtype": "Link", "options": "Brand", "width": 100},
-		{"label": _("Division"), "fieldname": "division", "fieldtype": "Data", "width": 100},
+		{"label": _("Division"), "fieldname": "division", "fieldtype": "Link", "options": "Division", "width": 100},
 		{"label": _("Supplied to Institution/Hospital"), "fieldname": "customer_name", "fieldtype": "Data", "width": 150},
 		{"label": _("Pharmacy Name"), "fieldname": "pharmacy_name", "fieldtype": "Data", "width": 150},
 		{"label": _("MRP"), "fieldname": "mrp", "fieldtype": "Currency", "width": 100},
