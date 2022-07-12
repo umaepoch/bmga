@@ -38,19 +38,21 @@ def handle_claim(data):
 			except:
 				to_add["diff_amount"] = 0
 
-			to_add["supply_margin"] = 1 - to_add["pts"]/to_add["ptr"]
+			to_add["supply_margin"] = (1 - to_add["pts"]/to_add["ptr"])*100
 
 			try:
 				to_add["supplier_margin"] = to_add["landed_price"] * (to_add["supply_margin"])/100
 			except:
 				to_add["supplier_margin"] = 0
 
-			if to_add["supplier_margin"] + to_add["diff_amount"] > 0:
-				to_add["claim_amount"] = to_add["supplier_margin"] + to_add["diff_amount"]
-			else:
-				to_add["claim_amount"] = 0
+			to_add["total_reimbursement"] = (-to_add['diff_amount'] + to_add['supplier_margin']) * (d["qty"] + d["free_qty"]) # + (to_add['supply_rate'] * (d["qty"] + d["free_qty"]))
 
-			to_add["total_reimbursement"] = to_add["claim_amount"] * to_add["qty"]
+			if to_add['total_reimbursement'] < 0:
+				to_add['total_reimbursement'] = 0
+				to_add["claim_amount"] = 0
+			else:
+				to_add["claim_amount"] = to_add['total_reimbursement'] / (d["qty"] + d["free_qty"])
+
 			hd.append(to_add)
 	
 	return hd
@@ -64,6 +66,8 @@ def fetch_purchase_batch(i):
 		order by pr.posting_date DESC""",
 		as_dict=1
 	)
+	print(p)
+	print("*"*100)
 	if len(p) > 0:
 		for x in p:
 			try:
@@ -130,7 +134,7 @@ def get_columns():
 
 	columns = [
 		{"label": _("Item Name"), "fieldname": "item_name", "fieldtype": "Data", "width": 100},
-		{"label": _("Product Code"), "fieldname": "pch_item_code", "fieldtype": "Data", "width": 100},
+		{"label": _("Suppliers' Product Code"), "fieldname": "pch_item_code", "fieldtype": "Data", "width": 100},
 		{"label": _("Quantity"), "fieldname": "qty", "fieldtype": "Int", "width": 100},
 		{"label": _("Free Quantity"), "fieldname": "free_qty", "fieldtype": "Int", "width": 100},
 		{"label": _("Batch"), "fieldname": "batch_no", "fieldtype": "Link", "options": "Batch", "width": 100},
@@ -146,11 +150,11 @@ def get_columns():
 		{"label": _("Rate Contract Disount on MRP"), "fieldname": "rc_discount", "fieldtype": "Currency", "width": 100},
 		{"label": _("PTS"), "fieldname": "pts", "fieldtype": "Currency", "width": 100},
 		{"label": _("PTR"), "fieldname": "ptr", "fieldtype": "Currency", "width": 100},
-		{"label": _("To Customer Supply Rate"), "fieldname": "supply_rate", "fieldtype": "Currency", "width": 100},
+		{"label": _("Sold Rate"), "fieldname": "supply_rate", "fieldtype": "Currency", "width": 100},
 		{"label": _("INST Landed NDP (Per Unit)"), "fieldname": "landed_price", "fieldtype": "Currency", "width": 100},
-		{"label": _("Difference Amount"), "fieldname": "diff_amount", "fieldtype": "Currency", "width": 100},
+		{"label": _("Sold - NDP"), "fieldname": "diff_amount", "fieldtype": "Currency", "width": 100},
 		{"label": _("Margin on Supply Rate"), "fieldname": "supply_margin", "fieldtype": "Percent", "width": 100},
-		{"label": _("Supplier Margin"), "fieldname": "supplier_margin", "fieldtype": "Currency", "width": 100},
+		{"label": _("Margin VAL on Supply Rate"), "fieldname": "supplier_margin", "fieldtype": "Currency", "width": 100},
 		{"label": _("Claim Amount Per Unit"), "fieldname": "claim_amount", "fieldtype": "Currency", "width": 100},
 		{"label": _("Total Reimbursement"), "fieldname": "total_reimbursement", "fieldtype": "Currency", "width": 150},
 		{"label": _("Approval Status"), "fieldname": "approval_status", "fieldtype": "Data", "width": 100},
