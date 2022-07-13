@@ -582,6 +582,11 @@ def generate_sales_invoice_json(customer, customer_type, so_name, sales_order, c
                 else:
                     rate = rate_fetch_mrp_batchless(item['item'])
                     rate['price'] = rate['price'] * discount
+            else:
+                if batch:
+                    rate = fetch_batch_price(batch, item["item"], rate_contract["name"])
+                else:
+                    rate = fetch_batchless_price(item["item"], rate_contract["name"])
         else:
             if item["warehouse"] == settings["free_warehouse"]:
                 rate = {"price": 0}
@@ -788,6 +793,12 @@ def update_average_price(item_list, sales_order, customer_type, settings, custom
                 else:
                     rate = rate_fetch_mrp_batchless(item['item'])
                     rate['price'] = rate['price'] * discount
+            else:
+                if batch:
+                    rate = fetch_batch_price(batch, item["item"], rate_contract["name"])
+                else:
+                    rate = fetch_batchless_price(item["item"], rate_contract["name"])
+
         else:
             if item["warehouse"] == settings["free_warehouse"]:
                 rate = {"price": 0}
@@ -889,6 +900,11 @@ def update_sales_order_for_invoice(sales_doc, customer, customer_type, so_name, 
                 else:
                     rate = rate_fetch_mrp_batchless(item['item'])
                     rate['price'] = rate['price'] * discount
+            else:
+                if batch:
+                    rate = fetch_batch_price(batch, item["item"], rate_contract["name"])
+                else:
+                    rate = fetch_batchless_price(item["item"], rate_contract["name"])
         else:
             if item["warehouse"] == settings["free_warehouse"]:
                 rate = {"price": 0}
