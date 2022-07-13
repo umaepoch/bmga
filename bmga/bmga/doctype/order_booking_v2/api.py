@@ -1,3 +1,4 @@
+from cProfile import label
 import json
 import frappe
 import datetime
@@ -1160,18 +1161,51 @@ def fetch_tax_detail(name):
         as_dict=1
     )
 
+    h = {}
+    list(map(lambda x: h.update({x['account_head']: x['rate']}), d))
+
     if len(d) > 0:
-        return d[0]
+        return dict(detail = d, tax = h)
     else:
         frappe.throw(f'Sales Taxes and Charges detail not found for {name}')
+
+
+
+def fetch_item_tax(item_code):
+    today = datetime.date.today()
+
+    r = frappe.db.sql(
+        f"""select ittd.tax_rate, ittd.tax_type
+        from `tabItem Tax Template Detail` as ittd
+            join `tabItem Tax Template` as itt on (itt.name = ittd.parent)
+                join `tabItem Tax` as it on (it.item_tax_template = itt.name)
+        where it.parent = '{item_code}' and (valid_from is null or valid_from = '' or valid_from <= '{today}')
+        order by valid_from DESC""",
+        as_dict=1
+    )
+
+    handled = {}
+    list(map(lambda x: handled.update({x['tax_type']: x['tax_rate']}), r))
+
+    if len(r) > 0: return dict(valid = True, tax_rate = handled)
+    else: return dict(valid = False, tax_rate = None)
+
+
+def fetch_company_abbr(company):
+    a = frappe.db.get_value('Company', {'name': company}, 'abbr', as_dict=1)
+    return a.get('abbr')
 
 
 @frappe.whitelist()
 def sales_order_container(customer, order_list, company, customer_type, free_promos, promo_dis, sales_order):
     print("ORDER.......",sales_order)
 
+    abbr = fetch_company_abbr(company)
+    print(abbr)
+
     gst_detail = fetch_gst_detail(company)
     customer_in_state = check_customer_state(customer, company)
+    print(customer_in_state)
     if customer_in_state.get('valid'):
         tax = gst_detail['gst_in_state']
         tax_detail = fetch_tax_detail(gst_detail['gst_in_state'])
@@ -1205,21 +1239,11 @@ def sales_order_container(customer, order_list, company, customer_type, free_pro
         "pch_picking_status": "Ready for Picking",
         "pch_sales_order_purpose": "Delivery",
         "set_warehouse": delivery_warehouse,
-        'taxes_and_charges': tax,
+        # 'taxes_and_charges': tax,
         "items": [],
         "taxes": [],
         "ignore_pricing_rule" : 1,
     }
-
-    tax_innerJson = {
-        "doctype": "Sales Taxes and Charges",
-        "charge_type": tax_detail["charge_type"],
-        "account_head": tax_detail["account_head"],
-        "rate": tax_detail["rate"],
-        "description": tax_detail["description"]
-    }
-
-    outerJson_so["taxes"].append(tax_innerJson)
 
     outerJson_qo = {
         "doctype": "Quotation",
@@ -1228,19 +1252,35 @@ def sales_order_container(customer, order_list, company, customer_type, free_pro
         "set_warehouse": delivery_warehouse,
         "items": []
     }
+
+    igst = 0
+    cgst = 0
+    sgst = 0
+
     for data in sales_order:
-        print(data["promo_type"] == "None")
-        print(data["quantity"] > data["quantity_available"])
-        
         if data["quantity"] > data["quantity_available"]:
             if data["promo_type"] == "None" or data["promo_type"] == "Quantity based discount" or data["promo_type"] == "Buy x get same and discount for ineligible qty":
                 if data["quantity_available"] > 0:
+                    item_tax = fetch_item_tax(data['item_code'])
+                    if item_tax.get('valid'):
+                        if customer_in_state.get('valid'):
+                            cgst += (data['average'] * item_tax['tax_rate'].get(f'Input Tax CGST - {abbr}')/100) * data['quantity']
+                            sgst += (data['average'] * item_tax['tax_rate'].get(f'Input Tax SGST - {abbr}')/100) * data['quantity']
+                        else:
+                            igst += (data['average'] * item_tax['tax_rate'].get(f'Input Tax IGST - {abbr}')/100) * data['quantity']
+                    else:
+                        if customer_in_state.get('valid'):
+                            pass
+                        else:
+                            igst += (data['average'] * tax_detail['tax'].get(f'Output Tax IGST - {abbr}')/100) * data['quantity']
+
                     innerJson_so = {
                         "doctype": "Sales Order Item",
                         "item_code": data["item_code"],
                         "qty": data["quantity_available"],
                         "rate": data["average"],
                     }
+
                     innerJson_qo = {
                         "doctype": "Quotation Item",
                         "item_code": data["item_code"],
@@ -1255,6 +1295,23 @@ def sales_order_container(customer, order_list, company, customer_type, free_pro
                         "rate": data["average"],
                     }
         else:
+            item_tax = fetch_item_tax(data['item_code'])
+            if item_tax.get('valid'):
+                if customer_in_state.get('valid'):
+                    cgst += (data['average'] * item_tax['tax_rate'].get(f'Input Tax CGST - {abbr}')/100) * data['quantity']
+                    sgst += (data['average'] * item_tax['tax_rate'].get(f'Input Tax SGST - {abbr}')/100) * data['quantity']
+                else:
+                    igst += (data['average'] * item_tax['tax_rate'].get(f'Input Tax IGST - {abbr}')/100) * data['quantity']
+            else:
+                if customer_in_state.get('valid'):
+                    pass
+                else:
+                    igst += (data['average'] * tax_detail['tax'].get(f'Output Tax IGST - {abbr}')/100) * data['quantity']
+            
+            # print('igst', igst)
+            print('sgst', sgst)
+            print('cgst', cgst)
+
             innerJson_so = {
                 "doctype": "Sales Order Item",
                 "item_code": data["item_code"],
@@ -1263,7 +1320,6 @@ def sales_order_container(customer, order_list, company, customer_type, free_pro
                 "promo_type" : data["promo_type"],
                 "warehouse": data["warehouse"],
             }
-            
         try:
             outerJson_so["items"].append(innerJson_so)
         except:
@@ -1272,10 +1328,36 @@ def sales_order_container(customer, order_list, company, customer_type, free_pro
             outerJson_qo["items"].append(innerJson_qo)
         except:
             pass
+    
+    innerJson_tax_list = []
+    if customer_in_state.get('valid'):
+        for x in tax_detail['detail']:
+            if x.get('account_head') == f'Output Tax SGST - {abbr}':
+                print('SGST', x.get('description'))
+                innerJson_tax_list.append({
+                    "doctype": "Sales Taxes and Charges",
+                    "charge_type": x["charge_type"],
+                    "account_head": x["account_head"],
+                    "description": x["description"],
+                })
+            else:
+                innerJson_tax_list.append({
+                    "doctype": "Sales Taxes and Charges",
+                    "charge_type": x["charge_type"],
+                    "account_head": x["account_head"],
+                    "description": x["description"],
+                })
+    else:
+        innerJson_tax_list.append({
+            "doctype": "Sales Taxes and Charges",
+            "charge_type": tax_detail['detail'][0]["charge_type"],
+            "account_head": tax_detail['detail'][0]["account_head"],
+            "description": tax_detail['detail'][0]["description"],
+        })
 
+    outerJson_so['taxes'].extend(innerJson_tax_list)
+    print(outerJson_so['taxes'])
 
-
-    print(outerJson_qo)
     so_name = ""
     qo_name = ""
     if len(outerJson_so["items"]) > 0:
