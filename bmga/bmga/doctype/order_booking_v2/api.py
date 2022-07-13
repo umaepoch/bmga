@@ -1261,18 +1261,18 @@ def sales_order_container(customer, order_list, company, customer_type, free_pro
         if data["quantity"] > data["quantity_available"]:
             if data["promo_type"] == "None" or data["promo_type"] == "Quantity based discount" or data["promo_type"] == "Buy x get same and discount for ineligible qty":
                 if data["quantity_available"] > 0:
-                    item_tax = fetch_item_tax(data['item_code'])
-                    if item_tax.get('valid'):
-                        if customer_in_state.get('valid'):
-                            cgst += (data['average'] * item_tax['tax_rate'].get(f'Input Tax CGST - {abbr}')/100) * data['quantity']
-                            sgst += (data['average'] * item_tax['tax_rate'].get(f'Input Tax SGST - {abbr}')/100) * data['quantity']
-                        else:
-                            igst += (data['average'] * item_tax['tax_rate'].get(f'Input Tax IGST - {abbr}')/100) * data['quantity']
-                    else:
-                        if customer_in_state.get('valid'):
-                            pass
-                        else:
-                            igst += (data['average'] * tax_detail['tax'].get(f'Output Tax IGST - {abbr}')/100) * data['quantity']
+                    # item_tax = fetch_item_tax(data['item_code'])
+                    # if item_tax.get('valid'):
+                    #     if customer_in_state.get('valid'):
+                    #         cgst += (data['average'] * item_tax['tax_rate'].get(f'Input Tax CGST - {abbr}')/100) * data['quantity']
+                    #         sgst += (data['average'] * item_tax['tax_rate'].get(f'Input Tax SGST - {abbr}')/100) * data['quantity']
+                    #     else:
+                    #         igst += (data['average'] * item_tax['tax_rate'].get(f'Input Tax IGST - {abbr}')/100) * data['quantity']
+                    # else:
+                    #     if customer_in_state.get('valid'):
+                    #         pass
+                    #     else:
+                    #         igst += (data['average'] * tax_detail['tax'].get(f'Output Tax IGST - {abbr}')/100) * data['quantity']
 
                     innerJson_so = {
                         "doctype": "Sales Order Item",
@@ -1295,22 +1295,22 @@ def sales_order_container(customer, order_list, company, customer_type, free_pro
                         "rate": data["average"],
                     }
         else:
-            item_tax = fetch_item_tax(data['item_code'])
-            if item_tax.get('valid'):
-                if customer_in_state.get('valid'):
-                    cgst += (data['average'] * item_tax['tax_rate'].get(f'Input Tax CGST - {abbr}')/100) * data['quantity']
-                    sgst += (data['average'] * item_tax['tax_rate'].get(f'Input Tax SGST - {abbr}')/100) * data['quantity']
-                else:
-                    igst += (data['average'] * item_tax['tax_rate'].get(f'Input Tax IGST - {abbr}')/100) * data['quantity']
-            else:
-                if customer_in_state.get('valid'):
-                    pass
-                else:
-                    igst += (data['average'] * tax_detail['tax'].get(f'Output Tax IGST - {abbr}')/100) * data['quantity']
+            # item_tax = fetch_item_tax(data['item_code'])
+            # if item_tax.get('valid'):
+            #     if customer_in_state.get('valid'):
+            #         cgst += (data['average'] * item_tax['tax_rate'].get(f'Input Tax CGST - {abbr}')/100) * data['quantity']
+            #         sgst += (data['average'] * item_tax['tax_rate'].get(f'Input Tax SGST - {abbr}')/100) * data['quantity']
+            #     else:
+            #         igst += (data['average'] * item_tax['tax_rate'].get(f'Input Tax IGST - {abbr}')/100) * data['quantity']
+            # else:
+            #     if customer_in_state.get('valid'):
+            #         pass
+            #     else:
+            #         igst += (data['average'] * tax_detail['tax'].get(f'Output Tax IGST - {abbr}')/100) * data['quantity']
             
             # print('igst', igst)
-            print('sgst', sgst)
-            print('cgst', cgst)
+            # print('sgst', sgst)
+            # print('cgst', cgst)
 
             innerJson_so = {
                 "doctype": "Sales Order Item",
