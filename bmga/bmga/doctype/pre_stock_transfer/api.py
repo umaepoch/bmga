@@ -1,3 +1,4 @@
+import datetime
 import json
 import frappe
 
@@ -20,8 +21,9 @@ def validate_user_input_qty(data):
     return dict(valid = True, index = None)
 
 
-def fetch_wbs_location(warehouse):
-    wbs_settings_id = frappe.db.get_list('WBS Settings', {'warehouse': warehouse}, ['name', 'start_date'], order_by = 'start_date desc')
+def fetch_wbs_location_id(warehouse):
+    today = datetime.date.today()
+    wbs_settings_id = frappe.db.get_list('WBS Settings', filters=[{'warehouse': warehouse}, {'start_date': ['<', today]}], fields=['name', 'start_date'], order_by='start_date desc')
     
     if len(wbs_settings_id) == 0: return dict(valid = False, name = None)
     return dict(valid = True, name = wbs_settings_id[0]['name'], start_date = wbs_settings_id[0].get('start_date'))
@@ -35,7 +37,7 @@ def check_if_wbs_location_is_needed(details, settings):
     user_input = []
     valid_wbs_id = False
 
-    wbs_id = fetch_wbs_location(settings.get('retail'))
+    wbs_id = fetch_wbs_location_id(settings.get('retail'))
     if not wbs_id['valid']: return dict(valid_wbs_id = valid_wbs_id, wbs_loc_list = None)
 
     for x in details:
@@ -127,6 +129,7 @@ def generate_material_issue(data, warehouse):
     doc = frappe.new_doc('Stock Entry')
     doc.update(outerJson)
     doc.save()
+    doc.submit()
     name = doc.name
 
     return dict(issue_name = name)
@@ -217,10 +220,10 @@ def generate_material_receipt(data, wbs_data):
     doc = frappe.new_doc('Stock Entry')
     doc.update(outerJson)
     doc.save()
+    doc.submit()
     name = doc.name
 
     return dict(receipt_name = name)
-
 
 
 def generate_stock_entries(data, wbs_data, s_warehouse):
@@ -230,6 +233,100 @@ def generate_stock_entries(data, wbs_data, s_warehouse):
     return {**i_name, **r_name}
 
 
+def fetch_company(po):
+    c = frappe.db.get_value('Purchase Receipt', {'name': po}, 'company', as_dict=1)
+    return c.get('company')
+
+
+def fetch_item_uom(item_code):
+    u = frappe.db.get_value('Item', {'name': item_code}, 'stock_uom', as_dict=1)
+    return u.get('stock_uom')
+
+
+def fetch_wbs_location(item_code, wbs_id):
+    wbs_location = frappe.db.sql(
+            f"""select wsl.name_of_attribute_id as id, wsl.name
+            from `tabWBS Stored Items` as wsi
+                join `tabWBS Storage Location` as wsl on (wsi.parent = wsl.name)
+            where wsi.item_code = '{item_code}' and wsl.wbs_settings_id = '{wbs_id}'""",
+            as_dict=1
+        )
+    print("specific", wbs_location)
+    if len(wbs_location) > 0: return wbs_location[0]['id']
+
+    wbs_location_anyitem = frappe.db.sql(
+        f"""select sed.creation, wsl.name_of_attribute_id as id, wsl.name
+        from `tabStock Entry Detail` as sed
+            join `tabWBS Storage Location` as wsl on (sed.target_warehouse_storage_location = wsl.name)
+        where item_code = '{item_code}' and sed.target_warehouse_storage_location is not null
+        and sed.docstatus = 1 and sed.creation > {wbs_id['start_date']}""",
+        as_dict=1
+    )
+    print("any", wbs_location_anyitem)
+    if len(wbs_location) > 0: return wbs_location_anyitem[0]['id']
+
+
+def put_json(x, wbs_data, warehouse, qty):
+    uom = fetch_item_uom(x.get('item_code'))
+    wbs_id = fetch_wbs_location_id(warehouse)
+    if wbs_id.get('valid'):
+        if x.get('item_code') in wbs_data:
+            location = wbs_data['item_code']
+        else:
+            location = fetch_wbs_location(x.get('item_code'), wbs_id.get('name'))
+    else:
+        location = ''
+    
+    print(wbs_id)
+    print('location', location)
+    print('uom', uom)
+
+    innerJson = {
+        'doctype': 'Put List Item',
+        'item_code': x.get('item_code'),
+        'uom': uom,
+        'batch': x.get('batch'),
+        'wbs_storage_location': location,
+        'warehouse': warehouse,
+        'quantity': qty
+    }
+
+    return innerJson
+
+
+def generate_put_list(data, wbs_data, purchase_no):
+    name = None
+    settings = fetch_fulfillment_settings()
+    company = fetch_company(purchase_no)
+
+    outerJson = {
+        'doctype': 'Pick Put List',
+        'company': company,
+        'type': 'Put',
+        'put_list': []
+    }
+
+    for x in data:
+        if validate_qty(x.get('retail')):
+            outerJson['put_list'].append(put_json(x, wbs_data, settings.get('retail'), x.get('retail')))
+        if validate_qty(x.get('bulk')):
+            outerJson['put_list'].append(put_json(x, wbs_data, settings.get('bulk'), x.get('bulk')))
+        if validate_qty(x.get('free')):
+            outerJson['put_list'].append(put_json(x, wbs_data, settings.get('free'), x.get('free')))
+        if validate_qty(x.get('hospital')):
+            outerJson['put_list'].append(put_json(x, wbs_data, settings.get('hospital'), x.get('hospital')))
+        if validate_qty(x.get('institutional')):
+            outerJson['put_list'].append(put_json(x, wbs_data, settings.get('institutional'), x.get('institutional')))
+    
+    if len(outerJson['put_list']) > 0:
+        doc = frappe.new_doc('Pick Put List')
+        doc.update(outerJson)
+        doc.save()
+        name = doc.name
+    
+    return dict(put_name = name)
+        
+
 @frappe.whitelist()
 def generate_stock_transfer(details, wbs_locations, purchase_no):
     details = json.loads(details)
@@ -238,9 +335,8 @@ def generate_stock_transfer(details, wbs_locations, purchase_no):
 
     s_warehouse = fetch_source_warehouse(purchase_no)
     wbs_handled = handle_wbs_locations(wbs_locations)
-    print(s_warehouse)
-    print(wbs_handled)
 
     names = generate_stock_entries(details, wbs_handled, s_warehouse)
+    put_name = generate_put_list(details, wbs_handled, purchase_no)
 
-    return dict(details = details, wbs_locations = wbs_locations, purchase_no = purchase_no, names = names)
+    return dict(details = details, wbs_locations = wbs_locations, purchase_no = purchase_no, names = {**names, **put_name})

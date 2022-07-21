@@ -16,6 +16,8 @@
   "material_receipt",
   "material_issue",
   "section_break_10",
+  "put_list",
+  "section_break_11",
   "item_list"
  ],
  "fields": [
@@ -23,7 +25,7 @@
    "fieldname": "type",
    "fieldtype": "Select",
    "label": "Type",
-   "options": "Pick\nPut",
+   "options": "\nPick\nPut",
    "read_only": 1
   },
   {
@@ -48,7 +50,8 @@
    "fieldname": "company",
    "fieldtype": "Link",
    "label": "Company",
-   "options": "Company"
+   "options": "Company",
+   "read_only": 1
   },
   {
    "fieldname": "sales_invoice",
@@ -81,11 +84,22 @@
    "label": "Material Issue",
    "options": "Stock Entry",
    "read_only": 1
+  },
+  {
+   "fieldname": "put_list",
+   "fieldtype": "Table",
+   "label": "Put List",
+   "options": "Put List Item",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_break_11",
+   "fieldtype": "Section Break"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2022-06-21 10:32:53.623233",
+ "modified": "2022-07-21 12:18:31.381020",
  "modified_by": "Administrator",
  "module": "Bmga",
  "name": "Pick Put List",
