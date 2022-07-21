@@ -11,6 +11,7 @@
   "type",
   "pick_list_stage",
   "sales_order",
+  "pre_stock_transfer",
   "column_break_5",
   "sales_invoice",
   "material_receipt",
@@ -95,11 +96,17 @@
   {
    "fieldname": "section_break_11",
    "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "pre_stock_transfer",
+   "fieldtype": "Data",
+   "label": "Pre Stock Transfer",
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2022-07-21 12:18:31.381020",
+ "modified": "2022-07-21 12:33:15.785124",
  "modified_by": "Administrator",
  "module": "Bmga",
  "name": "Pick Put List",

@@ -303,10 +303,12 @@ def generate_put_list(data, wbs_data, purchase_no):
         'doctype': 'Pick Put List',
         'company': company,
         'type': 'Put',
+        'pre_stock_transfer': data[0].get('parent'),
         'put_list': []
     }
 
     for x in data:
+        print(x)
         if validate_qty(x.get('retail')):
             outerJson['put_list'].append(put_json(x, wbs_data, settings.get('retail'), x.get('retail')))
         if validate_qty(x.get('bulk')):
