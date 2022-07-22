@@ -248,7 +248,7 @@ def fetch_wbs_location(item_code, wbs_id):
             f"""select wsl.name_of_attribute_id as id, wsl.name
             from `tabWBS Stored Items` as wsi
                 join `tabWBS Storage Location` as wsl on (wsi.parent = wsl.name)
-            where wsi.item_code = '{item_code}' and wsl.wbs_settings_id = '{wbs_id}'""",
+            where wsi.item_code = '{item_code}' and wsl.wbs_settings_id = '{wbs_id['name']}'""",
             as_dict=1
         )
     print("specific", wbs_location)
@@ -273,7 +273,7 @@ def put_json(x, wbs_data, warehouse, qty):
         if x.get('item_code') in wbs_data:
             location = wbs_data['item_code']
         else:
-            location = fetch_wbs_location(x.get('item_code'), wbs_id.get('name'))
+            location = fetch_wbs_location(x.get('item_code'), wbs_id)
     else:
         location = ''
     
