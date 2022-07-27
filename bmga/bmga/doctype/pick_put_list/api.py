@@ -705,8 +705,11 @@ def generate_sales_invoice_json(customer, customer_type, so_name, sales_order, c
         if qty <= 0: continue
         so_detail = get_so_detail(so_name, item['item'], item['warehouse'], batch, qty)
         if item.get("wbs_storage_location") != '' and item.get('warehouse') != settings['free_warehouse']:
-            storage_id = item["wbs_storage_location"]
-            storage_location = fetch_storage_location_from_id(storage_id)
+            storage_id = item.get("wbs_storage_location", '')
+            if storage_id != '':
+                storage_location = fetch_storage_location_from_id(storage_id)
+            else:
+                storage_location = {'name': ''}
             print("*" * 50)
             print("location", storage_location["name"], storage_id)
             innerJson = {
