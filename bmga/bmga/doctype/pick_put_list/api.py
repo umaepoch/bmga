@@ -543,9 +543,79 @@ def rate_fetch_mrp_batchless(item_code):
         return dict(price = p.get('mrp', 0))
     else: return dict(price = 0)
 
+
+def fetch_gst_detail(company):
+    d = frappe.db.sql(
+        f"""select fsd.gst_out_state, fsd.gst_in_state
+        from `tabFulfillment Settings Details V1` as fsd
+            join `tabFulfillment Settings V1` as fs on (fs.name = fsd.parent)
+        where fs.company = '{company}'""",
+        as_dict=1
+    )
+
+    if len(d) > 0: return d[0]
+    else: frappe.throw('ADD GST detail to Fulfillement Settings!!!')
+
+
+def check_customer_state(customer, company):
+    company_code = -1
+    customer_code = -2
+
+    address = frappe.db.get_list('Address', fields=['name'])
+    for a in address:
+        doc = frappe.get_doc('Address', a['name']).as_dict()
+        try:
+            if doc.address_type == 'Shipping': continue
+            if doc.get('links')[0].get('link_name') == customer: customer_code = doc.gst_state_number
+            if doc.get('links')[0].get('link_name') == company: company_code = doc.gst_state_number
+        except:
+            continue
+
+    print('/*-+'*50)
+    print(customer_code, company_code)
+    print('/*-+'*50)
+    
+    return dict(valid = company_code == customer_code, customer_code = customer_code, company_code = company_code)
+
+
+def fetch_company_abbr(company):
+    a = frappe.db.get_value('Company', {'name': company}, 'abbr', as_dict=1)
+    return a.get('abbr')
+
+
+def fetch_tax_detail(name):
+    d = frappe.db.sql(
+        f"""select charge_type, account_head, rate, description
+        from `tabSales Taxes and Charges` where parent = '{name}'
+        order by modified DESC""",
+        as_dict=1
+    )
+
+    h = {}
+    list(map(lambda x: h.update({x['account_head']: x['rate']}), d))
+
+    if len(d) > 0:
+        return dict(detail = d, tax = h)
+    else:
+        frappe.throw(f'Sales Taxes and Charges detail not found for {name}')
+
+
 def generate_sales_invoice_json(customer, customer_type, so_name, sales_order, company, item_list, settings):
     due_date = datetime.datetime.today()
     # due_date = due_date + datetime.timedelta(2)
+
+    abbr = fetch_company_abbr(company)
+    print(abbr)
+
+    gst_detail = fetch_gst_detail(company)
+    customer_in_state = check_customer_state(customer, company)
+    print(customer_in_state)
+    if customer_in_state.get('valid'):
+        tax = gst_detail['gst_in_state']
+        tax_detail = fetch_tax_detail(gst_detail['gst_in_state'])
+    else:
+        tax = gst_detail['gst_out_state']
+        tax_detail = fetch_tax_detail(gst_detail['gst_out_state'])
 
     outerJson = {
         "doctype": "Sales Invoice",
@@ -554,10 +624,40 @@ def generate_sales_invoice_json(customer, customer_type, so_name, sales_order, c
         "customer": customer,
         "due_date": due_date,
         "update_stock": 1,
-        "items": []
+        "items": [],
+        "taxes": []
     }
     print("*"*150)
     print("SALES INVOICE")
+
+    innerJson_tax_list = []
+    if customer_in_state.get('valid'):
+        for x in tax_detail['detail']:
+            if x.get('account_head') == f'Output Tax SGST - {abbr}':
+                print('SGST', x.get('description'))
+                innerJson_tax_list.append({
+                    "doctype": "Sales Taxes and Charges",
+                    "charge_type": x["charge_type"],
+                    "account_head": x["account_head"],
+                    "description": x["description"],
+                })
+            else:
+                innerJson_tax_list.append({
+                    "doctype": "Sales Taxes and Charges",
+                    "charge_type": x["charge_type"],
+                    "account_head": x["account_head"],
+                    "description": x["description"],
+                })
+    else:
+        innerJson_tax_list.append({
+            "doctype": "Sales Taxes and Charges",
+            "charge_type": tax_detail['detail'][0]["charge_type"],
+            "account_head": tax_detail['detail'][0]["account_head"],
+            "description": tax_detail['detail'][0]["description"],
+        })
+
+    outerJson['taxes'].extend(innerJson_tax_list)
+
     for item in item_list:
         print(item)
         
@@ -605,8 +705,11 @@ def generate_sales_invoice_json(customer, customer_type, so_name, sales_order, c
         if qty <= 0: continue
         so_detail = get_so_detail(so_name, item['item'], item['warehouse'], batch, qty)
         if item.get("wbs_storage_location") != '' and item.get('warehouse') != settings['free_warehouse']:
-            storage_id = item["wbs_storage_location"]
-            storage_location = fetch_storage_location_from_id(storage_id)
+            storage_id = item.get("wbs_storage_location", '')
+            if storage_id != '':
+                storage_location = fetch_storage_location_from_id(storage_id)
+            else:
+                storage_location = {'name': ''}
             print("*" * 50)
             print("location", storage_location["name"], storage_id)
             innerJson = {
@@ -638,9 +741,6 @@ def generate_sales_invoice_json(customer, customer_type, so_name, sales_order, c
             }
 
         outerJson["items"].append(innerJson)
-
-    """ for d in outerJson["items"]:
-        print(d["item_code"], d["sales_order"], d["warehouse"], d["so_detail"], d["delivered_qty"], d["rate"]) """
     return outerJson
 
 def ppli_qty_and_batch(item):

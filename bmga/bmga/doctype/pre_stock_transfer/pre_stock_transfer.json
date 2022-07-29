@@ -14,6 +14,7 @@
   "validate_transfer",
   "material_receipt",
   "material_issue",
+  "put_list",
   "section_break_5",
   "items",
   "section_break_7",
@@ -79,11 +80,18 @@
    "label": "Material Issue",
    "options": "Stock Entry",
    "read_only": 1
+  },
+  {
+   "fieldname": "put_list",
+   "fieldtype": "Link",
+   "label": "Put List",
+   "options": "Pick Put List",
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2022-06-23 23:32:08.461650",
+ "modified": "2022-07-21 11:45:20.741274",
  "modified_by": "Administrator",
  "module": "Bmga",
  "name": "Pre_Stock Transfer",

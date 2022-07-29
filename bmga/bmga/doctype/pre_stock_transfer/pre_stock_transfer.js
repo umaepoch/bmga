@@ -52,34 +52,38 @@ frappe.ui.form.on('Pre_Stock Transfer', {
 			}
 		});
 
-		frm.add_custom_button('Stock Transfer', function() {
-			if(frm.doc.validate_transfer == "Done") {
-				console.log('we can do a transfer!');
-				let name = frm.doc.purchase_receipt_no;
-				let wbs_list = frm.doc.wbs_locations;
+		if(!(frm.doc.material_issue && frm.doc.material_receipt && frm.doc.put_list)) {
+			frm.add_custom_button('Stock Transfer', function() {
+				if(frm.doc.validate_transfer == "Done") {
+					console.log('we can do a transfer!');
+					let name = frm.doc.purchase_receipt_no;
+					let wbs_list = frm.doc.wbs_locations;
 
-				if(name) {
-					frappe.call({
-						method: "bmga.bmga.doctype.pre_stock_transfer.api.generate_stock_transfer",
-						args: {
-							details: frm.doc.items,
-							wbs_locations: wbs_list,
-							purchase_no: name
-						}
-					}).done(r => {
-						console.log(r)
-						frm.doc.material_issue = r.message.names.issue_name;
-						frm.doc.material_receipt = r.message.names.receipt_name;
-						refresh_field('material_issue');
-						refresh_field('material_receipt');
-						frappe.msgprint('Stock Transfers Done');
-						frm.save();
-					})
+					if(name) {
+						frappe.call({
+							method: "bmga.bmga.doctype.pre_stock_transfer.api.generate_stock_transfer",
+							args: {
+								details: frm.doc.items,
+								wbs_locations: wbs_list,
+								purchase_no: name
+							}
+						}).done(r => {
+							console.log(r)
+							frm.set_value('material_issue', r.message.names.issue_name);
+							frm.set_value('material_receipt', r.message.names.receipt_name);
+							frm.set_value('put_list', r.message.names.put_name);
+							refresh_field('material_issue');
+							refresh_field('material_receipt');
+							refresh_field('put_list');
+							frappe.msgprint('Stock Transfers Done');
+							frm.save();
+						})
+					}
+				} else {
+					frappe.msgprint('First Validate the Transfer');
 				}
-			} else {
-				frappe.msgprint('First Validate the Transfer');
-			}
-		});
+			});
+		}
 	}
 });
 
