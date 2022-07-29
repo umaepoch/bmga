@@ -252,9 +252,9 @@ def fetch_average_price_v2(customer, item_code):
     rate_contract = customer_rate_contract(customer)
     return fetch_rate_contract_price(item_code, rate_contract["name"])
 
-def item_brand(item_code):
+def fetch_item_brand(item_code):
     brand = frappe.db.sql(
-        f"""select it.item_name as brand
+        f"""select it.brand as brand
         from `tabItem` as it
        where it.item_code = '{item_code}'""",
         as_dict=1
@@ -1124,7 +1124,7 @@ def item_qty_container(company, item_code, customer_type, customer):
     stock_detail = fetch_item_details(item_code, customer_type, fulfillment_settings[0])
     handled_stock = available_stock_details(item_code, customer_type, fulfillment_settings[0])
     price_details = fetch_average_price_v2(customer, item_code)
-    brand_name =  item_brand(item_code)
+    brand_name =  fetch_item_brand(item_code)
     # sales_promo = fetch_sales_promos(item_code)
     return dict(available_qty = handled_stock["available_qty"], price_details = price_details, stock_detail = stock_detail, qty_detail = handled_stock, brand_name = brand_name) 
 
