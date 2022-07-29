@@ -153,22 +153,22 @@ def customer_rate_contract(customer):
 
 def fetch_batch_detail(batch, item_code):
     p = frappe.db.sql(
-        f"""select pch_ptr as price from `tabBatch` where batch_id = '{batch}' and item = '{item_code}'""",
+        f"""select pch_mrp, pch_ptr as price from `tabBatch` where batch_id = '{batch}' and item = '{item_code}'""",
         as_dict=1
     )
-    if len(p) > 0 and p[0].get('price') is not None: return dict(price = p[0].get('price'), rate_contract_check = 0)
-    else : return dict(price = 0, rate_contract_check = 0)
+    if len(p) > 0 and p[0].get('price') is not None: return dict(price = p[0].get('price'), rate_contract_check = 0, mrp = p[0].get('pch_mrp') )
+    else : return dict(price = 0, rate_contract_check = 0, mrp = 0)
 
 def fetch_batchless_detail(item_code):
     p = frappe.db.sql(
-        f"""select rci.selling_price_for_customer as price
+        f"""select rci.selling_price_for_customer as price, rci.mrp as mrp
         from `tabRate Contract Item` as rci
             join `tabRate Contract` as rc on (rc.name = rci.parent)
         where rc.selling_price = 1 and rci.item = '{item_code}'""",
         as_dict=1
     )
-    if len(p) > 0 and p[0].get('price') is not None: return dict(price = p[0].get('price'), rate_contract_check = 0)
-    else : return dict(price = 0, rate_contract_check = 0)
+    if len(p) > 0 and p[0].get('price') is not None: return dict(price = p[0].get('price'), rate_contract_check = 0, mrp= p[0].get('mrp'))
+    else : return dict(price = 0, rate_contract_check = 0, mrp=0)
 
 
 def rate_fetch_mrp_batch(batch, item_code):
@@ -251,6 +251,15 @@ def fetch_rate_contract_price(item_code, rate_contract_name):
 def fetch_average_price_v2(customer, item_code):
     rate_contract = customer_rate_contract(customer)
     return fetch_rate_contract_price(item_code, rate_contract["name"])
+
+def item_brand(item_code):
+    brand = frappe.db.sql(
+        f"""select it.item_name as brand
+        from `tabItem` as it
+       where it.item_code = '{item_code}'""",
+        as_dict=1
+    )
+    return dict(brand_name = brand[0].get('brand'))
 
 def fetch_average_price(stock_data, customer, item_code):
     average_price_list = []
@@ -1115,8 +1124,9 @@ def item_qty_container(company, item_code, customer_type, customer):
     stock_detail = fetch_item_details(item_code, customer_type, fulfillment_settings[0])
     handled_stock = available_stock_details(item_code, customer_type, fulfillment_settings[0])
     price_details = fetch_average_price_v2(customer, item_code)
+    brand_name =  item_brand(item_code)
     # sales_promo = fetch_sales_promos(item_code)
-    return dict(available_qty = handled_stock["available_qty"], price_details = price_details, stock_detail = stock_detail, qty_detail = handled_stock) 
+    return dict(available_qty = handled_stock["available_qty"], price_details = price_details, stock_detail = stock_detail, qty_detail = handled_stock, brand_name = brand_name) 
 
 
 def fetch_gst_detail(company):

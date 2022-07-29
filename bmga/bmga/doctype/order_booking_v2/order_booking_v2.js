@@ -187,6 +187,7 @@ frappe.ui.form.on('Order Booking Items V2', {
 			if(frm.check_duplicate(frm)) {
 				frappe.msgprint("Can not re-select chosen item!");
 				frappe.model.set_value(cdt, cdn, "item_code", null);
+				frappe.model.set_value(cdt, cdn, "brand_name", null);
 				frappe.model.set_value(cdt, cdn, "quantity_available", null);
 				frappe.model.set_value(cdt, cdn, "quantity_booked", null);
 				frappe.model.set_value(cdt, cdn, "average_price", null);
@@ -208,6 +209,8 @@ frappe.ui.form.on('Order Booking Items V2', {
 					frappe.model.set_value(cdt, cdn, "quantity_available", response.message.available_qty);
 					frappe.model.set_value(cdt, cdn, "average_price", response.message.price_details.price);
 					frappe.model.set_value(cdt, cdn, "rate_contract_check", response.message.price_details.rate_contract_check);
+					frappe.model.set_value(cdt, cdn, "amount_after_gst", response.message.price_details.mrp);
+					frappe.model.set_value(cdt, cdn, "brand_name", response.message.brand_name.brand_name);
 					refresh_field("order_booking_items_v2");
 				})
 			}
@@ -223,7 +226,7 @@ frappe.ui.form.on('Order Booking Items V2', {
 			if(quantity_booked) {
 				let amount = average_price * quantity_booked;
 				frappe.model.set_value(cdt, cdn, "amount", amount);
-				frappe.model.set_value(cdt, cdn, "amount_after_gst", amount * gst);
+				
 				refresh_field("order_booking_items_v2");
 			}
 		} else {
@@ -233,4 +236,3 @@ frappe.ui.form.on('Order Booking Items V2', {
 		}
 	}
 });
-
