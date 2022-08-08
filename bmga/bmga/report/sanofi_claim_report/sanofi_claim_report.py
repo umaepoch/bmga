@@ -34,11 +34,11 @@ def handle_claim(data):
 				to_add["supply_rate"] = 0
 
 			try:
-				to_add["diff_amount"] = to_add["landed_price"] - to_add["pts"]
+				to_add["diff_amount"] = to_add["landed_price"] - to_add.get("pts", 0)
 			except:
 				to_add["diff_amount"] = 0
 
-			to_add["supply_margin"] = (1 - to_add["pts"]/to_add["ptr"])*100
+			to_add["supply_margin"] = (1 - to_add.get("pts", 0)/to_add["ptr"])*100
 
 			try:
 				to_add["supplier_margin"] = to_add["landed_price"] * (to_add["supply_margin"])/100
