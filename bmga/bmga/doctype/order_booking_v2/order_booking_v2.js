@@ -91,7 +91,9 @@ frappe.ui.form.on('Order Booking V2', {
 				}
 			})
 			frm.add_custom_button("Apply Promo", function(){
-				var order_list = frm.doc.order_booking_items_v2
+				var order_list = frm.doc.order_booking_items_v2.map(function(d) {
+					return {item_code: d.item_code, quantity_booked: d.quantity_booked, average_price:d.average_price, amount:d.amount, quantity_available:d.quantity_available, rate_contract_check:d.rate_contract_check}
+				})
 				var customer = frm.doc.customer
 				let item_code_list = frm.doc.order_booking_items_v2.map(function(d) {
 					return {item_code: d.item_code, quantity_booked: d.quantity_booked, average_price:d.average_price, amount:d.amount, quantity_available:d.quantity_available}
@@ -187,6 +189,7 @@ frappe.ui.form.on('Order Booking Items V2', {
 			if(frm.check_duplicate(frm)) {
 				frappe.msgprint("Can not re-select chosen item!");
 				frappe.model.set_value(cdt, cdn, "item_code", null);
+				frappe.model.set_value(cdt, cdn, "brand_name", null);
 				frappe.model.set_value(cdt, cdn, "quantity_available", null);
 				frappe.model.set_value(cdt, cdn, "quantity_booked", null);
 				frappe.model.set_value(cdt, cdn, "average_price", null);
@@ -208,6 +211,8 @@ frappe.ui.form.on('Order Booking Items V2', {
 					frappe.model.set_value(cdt, cdn, "quantity_available", response.message.available_qty);
 					frappe.model.set_value(cdt, cdn, "average_price", response.message.price_details.price);
 					frappe.model.set_value(cdt, cdn, "rate_contract_check", response.message.price_details.rate_contract_check);
+					frappe.model.set_value(cdt, cdn, "amount_after_gst", response.message.price_details.mrp);
+					frappe.model.set_value(cdt, cdn, "brand_name", response.message.brand_name.brand_name);
 					refresh_field("order_booking_items_v2");
 				})
 			}
@@ -223,7 +228,7 @@ frappe.ui.form.on('Order Booking Items V2', {
 			if(quantity_booked) {
 				let amount = average_price * quantity_booked;
 				frappe.model.set_value(cdt, cdn, "amount", amount);
-				frappe.model.set_value(cdt, cdn, "amount_after_gst", amount * gst);
+				
 				refresh_field("order_booking_items_v2");
 			}
 		} else {
@@ -233,4 +238,3 @@ frappe.ui.form.on('Order Booking Items V2', {
 		}
 	}
 });
-
