@@ -1101,7 +1101,7 @@ def customer_type_container(customer):
     return customer_type
 
 @frappe.whitelist()
-def sales_promos(item_code=None , customer_type=None, company=None, order_list=None, customer=None):
+def sales_promos(item_code , customer_type, company, order_list, customer):
     item_code = json.loads(item_code)
     order_list= json.loads(order_list)
 
