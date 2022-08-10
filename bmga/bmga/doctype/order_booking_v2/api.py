@@ -1102,8 +1102,9 @@ def customer_type_container(customer):
 
 @frappe.whitelist()
 def sales_promos(item_code=None , customer_type=None, company=None, order_list=None, customer=None):
-    """ item_code = json.loads(item_code)
-    order_list= json.loads(order_list) """
+    item_code = json.loads(item_code)
+    order_list= json.loads(order_list)
+
     print("Orderlist.....",order_list)
     # rate_contract = fetch_rate_contract(customer, item_code)
     settings = fetch_fulfillment_settings(company)

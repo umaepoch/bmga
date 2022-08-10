@@ -127,7 +127,7 @@ frappe.ui.form.on('Order Booking V2', {
 					frappe.call({
 						method : "bmga.bmga.doctype.order_booking_v2.api.sales_promos",
 						args :{
-							item_code: 	JSON.stringify(item_code_list),
+							item_code: item_code_list,
 							customer_type: customer_type,
 							company : company,
 							order_list: order_list,
