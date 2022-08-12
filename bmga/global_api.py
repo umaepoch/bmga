@@ -2,6 +2,31 @@ import json
 import frappe
 import datetime
 
+# Print Format
+@frappe.whitelist()
+def check_promo(item_code, qty):
+	today = datetime.date.today()
+	promo_1 = frappe.db.sql(
+		f"""select p1.discount_percentage as discount
+		from `tabPromo Type 1` as p1
+			join `tabSales Promos` as p on (p.name = p1.parent)
+		where p1.bought_item = '{item_code}' and p1.quantity_bought <= '{qty}' and p.start_date <= '{today}' and p.end_date >= '{today}'
+		order by p1.quantity_bought DESC""", as_dict=1
+	)
+	print('type 1', promo_1)
+	if len(promo_1) > 0: return promo_1[0]['discount']
+	else:
+		promo_5 = frappe.db.sql(
+			f"""select p5.discount
+			from `tabPromo Type 5` as p5
+				join `tabSales Promos` as p on (p.name = p5.parent)
+			where p5.bought_item = '{item_code}' and p5.for_every_quantity_that_is_bought <= '{qty}' and p.start_date <= '{today}' and p.end_date >= '{today}'
+			order by p5.for_every_quantity_that_is_bought DESC""", as_dict=1
+		)
+		print('type 5', promo_5)
+		if len(promo_5) > 0: return promo_5[0]['discount']
+	return 0
+
 # Custom button sales order -> process order
 @frappe.whitelist()
 def pick_put_list_container(so_name):

@@ -971,12 +971,6 @@ def fetch_sales_promos_qty_based_discount(customer , item_code, customer_type, f
 
 def sales_order_calculation(sales_promo_discounted_amount, sales_promos_items, order_list,customer_type, settings, free_warehouse):
     promo_sales_order= []
-    # print("......salesdis", sales_promo_discounted_amount)
-    # print(".........lendi", len(sales_promo_discounted_amount))
-    # print("........salesamt", sales_promos_items)
-    # print(".........lensales", len(sales_promos_items))
-    # print(".....orderbookin", order_list)
-    # print("........lenor", len(order_list))
     if customer_type == "Retail":
         warehouse = settings[0]["retail_primary_warehouse"]
     elif customer_type == "Hospital":
@@ -1042,10 +1036,6 @@ def sales_order_calculation(sales_promo_discounted_amount, sales_promos_items, o
             #         promo_sales_order.append({"promo_type": "None"  , "qty":order_list[o]["quantity_booked"] , "item_code":order_list[o]["item_code"], "dic": "0", "average_price": order_list[o]["average_price"] , "warehouse" : warehouse , "w_qty" : order_list[o]["quantity_available"]})
 
 
-
-
-    
-    
     for j in range (len(sales_promo_discounted_amount)):
         for o in range (len(order_list)):
             if order_list[o]["rate_contract_check"] == 0 and order_list[o]["item_code"] == sales_promo_discounted_amount[j]["promo_item"]:
@@ -1058,8 +1048,6 @@ def sales_order_calculation(sales_promo_discounted_amount, sales_promos_items, o
                         promo_sales_order.append({"item_code":sales_promo_discounted_amount[j]["promo_item"], "qty": sales_promo_discounted_amount[j]["dic_qty"], "average_price": sales_promo_discounted_amount[j]["dic"], "warehouse" : warehouse , "promo_type": sales_promo_discounted_amount[j]["promo_type"], "qty_available": order_list[o]["quantity_available"]})
                     
     
-    
-    
     if (len(sales_promo_discounted_amount)) == 0 and len(sales_promos_items) == 0:
         # for j in range (len(sales_promo_discounted_amount)):
         for i in range (len(order_list)):
@@ -1067,7 +1055,6 @@ def sales_order_calculation(sales_promo_discounted_amount, sales_promos_items, o
                 promo_sales_order.append({"promo_type": "None" ,"qty":order_list[i]["quantity_booked"] , "item_code":order_list[i]["item_code"], "dic": "0", "average_price": order_list[i]["average_price"] , "warehouse" : warehouse , "qty_available" : order_list[i]["quantity_available"]})
 
     
-
     print(".........",promo_sales_order)
 
     return dict({"sales_order" : promo_sales_order})

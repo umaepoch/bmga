@@ -147,6 +147,11 @@ app_license = "MIT"
 #
 # auto_cancel_exempted_doctypes = ["Auto Repeat"]
 
+jenv = {
+	"methods": [
+		"check_promo:bmga.global_api.check_promo"
+	]
+}
 
 # User Data Protection
 # --------------------
