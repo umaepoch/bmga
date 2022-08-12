@@ -4,13 +4,18 @@ import datetime
 
 # Print Format
 @frappe.whitelist()
-def check_promo(item_code, qty):
+def check_promo(item_code, invoice):
 	today = datetime.date.today()
+	qty = frappe.db.sql(
+		f"""select sum(qty) as total from `tabSales Invoice Item` where name = '{invoice[0].name}'""", as_dict=1
+	)
+	print('qty', qty)
+
 	promo_1 = frappe.db.sql(
 		f"""select p1.discount_percentage as discount
 		from `tabPromo Type 1` as p1
 			join `tabSales Promos` as p on (p.name = p1.parent)
-		where p1.bought_item = '{item_code}' and p1.quantity_bought <= '{qty}' and p.start_date <= '{today}' and p.end_date >= '{today}'
+		where p1.bought_item = '{item_code}' and p1.quantity_bought <= '{qty[0]['total']}' and p.start_date <= '{today}' and p.end_date >= '{today}'
 		order by p1.quantity_bought DESC""", as_dict=1
 	)
 	print('type 1', promo_1)
@@ -20,7 +25,7 @@ def check_promo(item_code, qty):
 			f"""select p5.discount
 			from `tabPromo Type 5` as p5
 				join `tabSales Promos` as p on (p.name = p5.parent)
-			where p5.bought_item = '{item_code}' and p5.for_every_quantity_that_is_bought <= '{qty}' and p.start_date <= '{today}' and p.end_date >= '{today}'
+			where p5.bought_item = '{item_code}' and p5.for_every_quantity_that_is_bought <= '{qty[0]['total']}' and p.start_date <= '{today}' and p.end_date >= '{today}'
 			order by p5.for_every_quantity_that_is_bought DESC""", as_dict=1
 		)
 		print('type 5', promo_5)
