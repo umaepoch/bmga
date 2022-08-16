@@ -34,9 +34,9 @@ def check_promo(item_code, invoice):
 
 @frappe.whitelist()
 def get_dl_no(customer):
-	dl = frappe.db.get_list('Customer', filters={'name': customer}, fields=['drug_license'])
+	dl = frappe.db.get_list('Customer', filters={'name': customer}, fields=['drug_licenses'])
 	try:
-		s = ", ".join(x['drug_license'] for x in dl)
+		s = ", ".join(x['drug_licenses'] for x in dl)
 	except:
 		s = ""
 	return s
