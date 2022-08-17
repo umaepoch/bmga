@@ -1,6 +1,7 @@
 import json
 import frappe
 import datetime
+from erpnext.accounts.utils import get_balance_on
 
 # Print Format
 @frappe.whitelist()
@@ -11,16 +12,6 @@ def check_promo(item_code, invoice):
 	)
 	print('qty', qty)
 
-	# promo_1 = frappe.db.sql(
-	# 	f"""select p1.discount_percentage as discount
-	# 	from `tabPromo Type 1` as p1
-	# 		join `tabSales Promos` as p on (p.name = p1.parent)
-	# 	where p1.bought_item = '{item_code}' and p1.quantity_bought <= '{qty[0]['total']}' and p.start_date <= '{today}' and p.end_date >= '{today}'
-	# 	order by p1.quantity_bought DESC""", as_dict=1
-	# )
-
-	# if len(promo_1) > 0: return promo_1[0]['discount']
-	# else:
 	promo_5 = frappe.db.sql(
 		f"""select p5.discount
 		from `tabPromo Type 5` as p5
@@ -40,6 +31,11 @@ def get_dl_no(customer):
 	except:
 		s = ""
 	return s
+
+@frappe.whitelist()
+def get_unpaid_amount(customer):
+	response = get_balance_on(party_type='Customer', party=customer)
+	return response
 
 # Custom button sales order -> process order
 @frappe.whitelist()

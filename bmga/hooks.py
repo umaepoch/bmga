@@ -150,7 +150,8 @@ app_license = "MIT"
 jenv = {
 	"methods": [
 		"check_promo:bmga.global_api.check_promo",
-		"get_dl_no:bmga.global_api.get_dl_no"
+		"get_dl_no:bmga.global_api.get_dl_no",
+		"get_unpaid_amount:bmga.global_api.get_unpaid_amount"
 	]
 }
 

@@ -837,8 +837,6 @@ def fetch_sales_promos_qty_based_discount(customer , item_code, customer_type, f
     promos = []
     sales_data = None
     data = []
-
-
     
     today = datetime.date.today()
     # if customer_type == "Retail":
@@ -989,7 +987,7 @@ def sales_order_calculation(sales_promo_discounted_amount, sales_promos_items, o
             if order_list[j]["rate_contract_check"] == 0 and order_list[j]["item_code"] == sales_promos_items[i]["promo_item"]:
                 if sales_promos_items[i]["promo_type"] == "Buy x get same x" and sales_promos_items[i]["promo_item"] == order_list[j]["item_code"]:
                     promo_sales_order.append({"item_code":order_list[j]["item_code"], "qty": order_list[j]["quantity_booked"], "average_price": order_list[j]["average_price"], "warehouse" : warehouse, "qty_available":order_list[j]["quantity_available"], "promo_type" : "None"})
-               
+    
     for i in range (len(sales_promos_items)):
         for j in range (len(order_list)):
             # print("RATE>...........********", sales_promos_items[i]["promo_type"])
@@ -1001,9 +999,6 @@ def sales_order_calculation(sales_promo_discounted_amount, sales_promos_items, o
             # else:
             #     if order_list[o]["rate_contract_check"] == 1 and order_list[o]["item_code"] == sales_promos_items[i]["promo_item"]:
             #         promo_sales_order.append({"promo_type": "None"  , "qty":order_list[o]["quantity_booked"] , "item_code":order_list[o]["item_code"], "dic": "0", "average_price": order_list[o]["average_price"] , "warehouse" : warehouse , "w_qty" : order_list[o]["quantity_available"]}) 
-
-    
-    
     
     for o in range (len(order_list)):
         for j in range (len(sales_promo_discounted_amount)):
@@ -1053,7 +1048,6 @@ def sales_order_calculation(sales_promo_discounted_amount, sales_promos_items, o
         for i in range (len(order_list)):
             if order_list[i]["rate_contract_check"] == 0:
                 promo_sales_order.append({"promo_type": "None" ,"qty":order_list[i]["quantity_booked"] , "item_code":order_list[i]["item_code"], "dic": "0", "average_price": order_list[i]["average_price"] , "warehouse" : warehouse , "qty_available" : order_list[i]["quantity_available"]})
-
     
     print(".........",promo_sales_order)
 
