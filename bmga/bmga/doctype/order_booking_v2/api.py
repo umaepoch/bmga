@@ -3,6 +3,7 @@ import json
 import frappe
 import datetime
 import re
+from erpnext.accounts.utils import get_balance_on
 
 from pymysql import NULL
 
@@ -24,6 +25,8 @@ def fetch_stock_details(item_code, customer_type, settings):
         warehouse = [settings["hospital_warehouse"]]
     elif customer_type == "Institutional":
         warehouse = [settings["institutional_warehouse"]]
+    
+    print('warehouse', warehouse)
     
     warehouse = re.sub(r',\)$', ')', str(tuple(warehouse)))
 
@@ -465,6 +468,7 @@ def fetch_sales_promos_get_same_item(customer, item_code, customer_type, free_wa
             for p in range (len(promos)):
                 print("RATECONTRACT....", order_list[t]["rate_contract_check"], order_list[t]["item_code"], promos[p]["bought_item"])
                 if order_list[t]["rate_contract_check"] == 0 and order_list[t]["item_code"] == promos[p]["bought_item"]:
+                    print('x -> x inside if')
                     if len(promos) > 0:
                         for i in range ((len(promos) -1), -1, -1):
                             print()
@@ -513,7 +517,8 @@ def fetch_sales_promos_get_same_item(customer, item_code, customer_type, free_wa
                                             else:
                                                 #print("HAI***************************", order_list[t]["rate_contract_check"], order_list[t]["item_code"], promos[i]["bought_item"])
                                                 continue
-                else:                   
+                else:        
+                    print('x -> x inside else')           
                     if len(promos) > 0:
                         for i in range ((len(promos) -1), -1, -1):
                             print()
@@ -554,10 +559,15 @@ def fetch_sales_promos_get_same_item(customer, item_code, customer_type, free_wa
                                         except:
                                             qty = promo_qty[promos[i]["bought_item"]]
                                         
-                                        # if qty > 0:
-                                        #     if order_list[t]["item_code"] == promos[i]["bought_item"]:
-                                        #         # print("HAI***************************")
-                                        #         promos_sale.append({"promo_type": promo_type  , "qty":sales_promos_quantity, "bought_item":promos[i]["bought_item"], "dic": "0", "rate": 0.0 , "promo_item": promos[i]["bought_item"], "w_qty" : qty})
+                                        
+                                        if qty > 0:
+                                            if order_list[t]["item_code"] == promos[i]["bought_item"]:
+                                                # print("HAI***************************")
+                                                promos_sale.append({"promo_type": promo_type  , "qty":sales_promos_quantity, "bought_item":promos[i]["bought_item"], "dic": "0", "rate": 0.0 , "promo_item": promos[i]["bought_item"], "w_qty" : qty})
+
+                                            else:
+                                                #print("HAI***************************", order_list[t]["rate_contract_check"], order_list[t]["item_code"], promos[i]["bought_item"])
+                                                continue
 
     else:
         print("HAI.....")
@@ -692,6 +702,15 @@ def fetch_sales_promos_get_diff_item(customer, item_code, customer_type, free_wa
 
                                         except:
                                             qty = promo_qty[promos[i]["free_item"]]
+                                        
+                                        frappe.msgprint(f"qty {qty}")
+                                        print("...............................................................", qty)
+                                        if qty > 0:
+                                            if order_list[t]["item_code"] == promos[i]["bought_item"]:
+                                                promos_sale.append({"promo_type": promo_type, "qty" : sales_promos_quantity, "bought_item":promos[i]["bought_item"], "dic": "0", "rate": 0.0 ,"promo_item" : promos[i]["free_item"], "w_qty" : qty})
+                                            else:
+                                                print("sales qunt diif", sales_promos_quantity)
+                                                continue
     else:
         print("Hai")                                         
     print(".......2", promos_sale)
@@ -727,7 +746,10 @@ def fetch_sales_promos_get_same_item_discout(customer, item_code, customer_type,
     if sales_check == True:
         for t in range (len(order_list)):
             for p in range (len(promos)):
+                print('rate contract', order_list[t]["rate_contract_check"])
+                print('o_l b_i', order_list[t]["item_code"], promos[p]["bought_item"])
                 if order_list[t]["rate_contract_check"] == 0 and order_list[t]["item_code"] == promos[p]["bought_item"]:
+                    print('inside if')
                     if len(promos) > 0:
                         for i in range ((len(promos) -1), -1, -1):
                             print()
@@ -779,6 +801,7 @@ def fetch_sales_promos_get_same_item_discout(customer, item_code, customer_type,
                                                 else:
                                                     promos_sale.append({ "promo_type": promo_type,"qty":sales_promos_quantity, "dic_qty": sales_promos_dic, "dic":sales_promo_discount,"rate": 0.0 , "bought_item":promos[i]["bought_item"], "promo_item": promos[i]["bought_item"], "w_qty" : qty, "amount":sales_promo_amount })        
                 else:
+                    print('inside else')
                     if len(promos) > 0:
                         for i in range ((len(promos) -1), -1, -1):
                             print()
@@ -821,7 +844,13 @@ def fetch_sales_promos_get_same_item_discout(customer, item_code, customer_type,
 
                                         except:
                                             qty = promo_qty[promos[i]["bought_item"]]
+                                        
+                                        if qty > 0:
+                                            if sales_promos_dic == 0:
+                                                promos_sale.append({"promo_type": promo_type, "qty" : sales_promos_quantity, "bought_item":promos[i]["bought_item"], "dic": "0", "rate": 0.0 ,"promo_item" : promos[i]["bought_item"], "w_qty" : qty})
 
+                                            else:
+                                                promos_sale.append({ "promo_type": promo_type,"qty":sales_promos_quantity, "dic_qty": sales_promos_dic, "dic":sales_promo_discount,"rate": 0.0 , "bought_item":promos[i]["bought_item"], "promo_item": promos[i]["bought_item"], "w_qty" : qty, "amount":sales_promo_amount })        
     else:
         print("Hai")      
     print("..........3", promos_sale)
@@ -961,7 +990,14 @@ def fetch_sales_promos_qty_based_discount(customer , item_code, customer_type, f
                                             else:
                                                 sales_promos_quantity = qty
                                         except:
-                                            qty = promo_qty[promos[i]["bought_item"]]                           
+                                            qty = promo_qty[promos[i]["bought_item"]]     
+
+                                        if qty > 0:
+                                            
+                                            if order_list[t]["item_code"] == promos[p]["bought_item"]:
+                                                promos_sale.append({"promo_type": promo_type, "qty": 0 , "dic":sales_promo_discount, "dic_qty": j["quantity_booked"], "rate": 0.0 , "bought_item":promos[i]["bought_item"], "promo_item": promos[i]["bought_item"] , "w_qty" : qty})
+                                            else:
+                                                continue                      
     else:
         print("Hai")                                            
     
@@ -1067,6 +1103,16 @@ def sales_promo_checked(customer):
     else:
         return False
 
+
+def get_unpaid_amount(customer):
+	response = get_balance_on(party_type='Customer', party=customer)
+	return response
+
+def get_credit_limit(customer):
+    cl = frappe.get_list('Customer Credit Limit', filters = [{'parent': customer}], fields = ['credit_limit'])
+    if len(cl) > 0: return cl[0]['credit_limit']
+    else: return 0
+
 @frappe.whitelist(allow_guest= True)
 def hello():
     return dict(msg = "Hello")
@@ -1079,7 +1125,9 @@ def fulfillment_settings_container(company):
 @frappe.whitelist()
 def customer_type_container(customer):
     customer_type = fetch_customer_type(customer)
-    return customer_type
+    unpaid_amount = get_unpaid_amount(customer)
+    credit_limit = get_credit_limit(customer)
+    return dict(customer_type = customer_type, unpaid_amount = unpaid_amount, credit_limit = credit_limit)
 
 @frappe.whitelist()
 def sales_promos(item_code , customer_type, company, order_list, customer):
@@ -1103,6 +1151,7 @@ def sales_promos(item_code , customer_type, company, order_list, customer):
 @frappe.whitelist()
 def item_qty_container(company, item_code, customer_type, customer):
     fulfillment_settings = fetch_fulfillment_settings(company)
+    print('customer type ***', customer_type)
     stock_detail = fetch_item_details(item_code, customer_type, fulfillment_settings[0])
     handled_stock = available_stock_details(item_code, customer_type, fulfillment_settings[0])
     price_details = fetch_average_price_v2(customer, item_code)
@@ -1189,7 +1238,7 @@ def fetch_company_abbr(company):
 
 
 @frappe.whitelist()
-def sales_order_container(customer, order_list, company, customer_type, free_promos, promo_dis, sales_order):
+def sales_order_container(customer, company, customer_type, sales_order):
     print("ORDER.......",sales_order)
 
     abbr = fetch_company_abbr(company)
@@ -1216,9 +1265,7 @@ def sales_order_container(customer, order_list, company, customer_type, free_pro
         delivery_warehouse = fulfillment_settings[0]["hospital_warehouse"]
     elif customer == "Institutional":
         delivery_warehouse = fulfillment_settings[0]["institutional_warehouse"]
-    free_promos = json.loads(free_promos)
-    promo_dis = json.loads(promo_dis)
-    order_list = json.loads(order_list)
+
     delivery_date = datetime.datetime.today()
     sales_order = json.loads(sales_order)
     delivery_date = delivery_date + datetime.timedelta(2)

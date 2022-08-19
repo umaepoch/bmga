@@ -13,13 +13,16 @@
   "column_break_4",
   "spacing",
   "customer_name",
+  "unpaid_amount",
+  "credit_limit",
   "section_break_4",
   "order_booking_items_v2",
   "sales_order_preview",
   "promos",
   "promos_discount",
   "order_booking_so",
-  "hunting_quotation"
+  "hunting_quotation",
+  "amended_from"
  ],
  "fields": [
   {
@@ -39,6 +42,7 @@
    "read_only": 1
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "order_booking_so",
    "fieldtype": "Link",
    "label": "Order Booking SO",
@@ -46,6 +50,7 @@
    "read_only": 1
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "hunting_quotation",
    "fieldtype": "Link",
    "label": "Hunting Quotation",
@@ -109,11 +114,34 @@
    "label": "Sales Order Preview ",
    "options": "Order booking V2 Sales Order Preview",
    "read_only": 1
+  },
+  {
+   "fieldname": "unpaid_amount",
+   "fieldtype": "Currency",
+   "label": "Unpaid Amount",
+   "read_only": 1
+  },
+  {
+   "fieldname": "credit_limit",
+   "fieldtype": "Currency",
+   "hidden": 1,
+   "label": "Credit Limit",
+   "read_only": 1
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Order Booking V2",
+   "print_hide": 1,
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
+ "is_submittable": 1,
  "links": [],
- "modified": "2022-06-06 17:28:30.583657",
+ "modified": "2022-08-19 10:12:28.781132",
  "modified_by": "Administrator",
  "module": "Bmga",
  "name": "Order Booking V2",
