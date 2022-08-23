@@ -1,4 +1,5 @@
 from cProfile import label
+from dataclasses import fields
 import json
 import frappe
 import datetime
@@ -1104,6 +1105,27 @@ def sales_promo_checked(customer):
         return False
 
 
+def fetch_customer_sales_invoice(customer, template):
+    today = datetime.date.today()
+
+    s = frappe.db.get_list('Sales Invoice', filters = [{'customer': customer}], fields = ['status', 'due_date'])
+    if len(s) > 0: 
+        for x in s:
+            if x['status'] != 'Paid':
+                delta_day = today - x.get('due_date', 0)
+                print(delta_day.days, template['credit_days'])
+                if delta_day.days > int(template['credit_days']): return True
+    return False
+
+def verify_credit_limit(customer):
+    template_name = frappe.db.get_list('Customer', filters = [{'name': customer}], fields = ['payment_terms'])
+    if len(template_name) > 0:
+        template = frappe.db.get_list('Payment Terms Template Detail', filters=[{'parent': template_name[0]['payment_terms']}], fields = ['credit_days', 'invoice_portion'])
+        if len(template) > 0:
+            if fetch_customer_sales_invoice(customer, template[0]): return True
+    return False              
+
+
 def get_unpaid_amount(customer):
 	response = get_balance_on(party_type='Customer', party=customer)
 	return response
@@ -1127,7 +1149,9 @@ def customer_type_container(customer):
     customer_type = fetch_customer_type(customer)
     unpaid_amount = get_unpaid_amount(customer)
     credit_limit = get_credit_limit(customer)
-    return dict(customer_type = customer_type, unpaid_amount = unpaid_amount, credit_limit = credit_limit)
+    print('credit limit backend', credit_limit)
+    v = verify_credit_limit(customer)
+    return dict(customer_type = customer_type, unpaid_amount = unpaid_amount, credit_limit = credit_limit, verification = v)
 
 @frappe.whitelist()
 def sales_promos(item_code , customer_type, company, order_list, customer):

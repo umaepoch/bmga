@@ -1,6 +1,7 @@
 // Copyright (c) 2022, Karthik Raman and contributors
 // For license information, please see license.txt
 var customer_type = null;
+var credit_days = false;
 
 frappe.ui.form.on('Order Booking V2', {
 	setup: function(frm) {
@@ -34,15 +35,21 @@ frappe.ui.form.on('Order Booking V2', {
 				frm.set_value("customer_type", response.message.customer_type.pch_customer_type);
 				frm.set_value("unpaid_amount", response.message.unpaid_amount);
 				frm.set_value("credit_limit", response.message.credit_limit);
+				console.log('credit limit frontend', response.message.credit_limit);
 				refresh_field("customer_type");
 				refresh_field("unpaid_amount");
 				refresh_field("credit_limit");
+
+				if(response.message.verification) {
+					frm.set_value('pending_reason', 'Credit days exceeded');
+					refresh_field('pending_reason');
+					credit_days = true;
+				}
 			})
 		}
 	},
 
 	validate: function(frm) {
-		console.log('hello!!!!')
 		console.log(frm.docstatus)
 		var order_list = frm.doc.order_booking_items_v2.map(function(d) {
 			return {item_code: d.item_code, quantity_booked: d.quantity_booked, average_price:d.average_price, amount:d.amount, quantity_available:d.quantity_available, rate_contract_check:d.rate_contract_check}
@@ -90,6 +97,7 @@ frappe.ui.form.on('Order Booking V2', {
 				console.log(respose)
 				console.log(respose.message.sales_promo_discounted_amount)
 				console.log(respose.message.sales_promos_items)
+				let total_amount = 0;
 				$.each(respose.message.sales_order.sales_order, function(_i, e) {
 					let entry = frm.add_child("sales_order_preview");
 					entry.item_code = e.item_code;
@@ -98,8 +106,21 @@ frappe.ui.form.on('Order Booking V2', {
 					entry.average = e.average_price;
 					entry.promo_type = e.promo_type;
 					entry.warehouse = e.warehouse;
+					total_amount = total_amount + (e.qty * e.average_price);
 				}),
+				frm.set_value('total_amount', total_amount);
 				refresh_field("sales_order_preview")
+				refresh_field("total_amount")
+
+				if(total_amount + frm.doc.unpaid_amount > frm.doc.credit_limit) {
+					frm.set_value('pending_reason', 'Credit limit exceeded');
+					refresh_field('pending_reason');
+				}	
+				
+				if(credit_days) {
+					frm.set_value('pending_reason', 'Credit days exceeded');
+					refresh_field('pending_reason');
+				}	
 
 				$.each(respose.message.sales_promos_items, function(_i, e) {
 					let entry = frm.add_child("promos");
@@ -130,6 +151,7 @@ frappe.ui.form.on('Order Booking V2', {
 	},
 
 	refresh: function(frm) {
+		console.log(frm.doc);
 		if(!frm.doc.order_booking_so) {
 			if(frm.doc.docstatus == 1 && frm.doc.workflow_state == 'Approved' && !frm.doc.order_booking_so) {
 				let order_list = frm.doc.order_booking_items_v2;

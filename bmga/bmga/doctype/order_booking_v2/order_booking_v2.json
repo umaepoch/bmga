@@ -10,6 +10,7 @@
   "company",
   "customer",
   "customer_type",
+  "pending_reason",
   "column_break_4",
   "spacing",
   "customer_name",
@@ -17,7 +18,13 @@
   "credit_limit",
   "section_break_4",
   "order_booking_items_v2",
+  "section_break_11",
   "sales_order_preview",
+  "section_break_13",
+  "hiden_space",
+  "column_break_14",
+  "total_amount",
+  "section_break_15",
   "promos",
   "promos_discount",
   "order_booking_so",
@@ -124,7 +131,6 @@
   {
    "fieldname": "credit_limit",
    "fieldtype": "Currency",
-   "hidden": 1,
    "label": "Credit Limit",
    "read_only": 1
   },
@@ -136,12 +142,46 @@
    "options": "Order Booking V2",
    "print_hide": 1,
    "read_only": 1
+  },
+  {
+   "fieldname": "total_amount",
+   "fieldtype": "Currency",
+   "label": "Total Amount",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_break_11",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "section_break_13",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "section_break_15",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "column_break_14",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "hiden_space",
+   "fieldtype": "Data",
+   "label": "Hiden Space",
+   "read_only": 1
+  },
+  {
+   "fieldname": "pending_reason",
+   "fieldtype": "Data",
+   "label": "Pending Reason",
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2022-08-19 10:12:28.781132",
+ "modified": "2022-08-23 09:44:00.854025",
  "modified_by": "Administrator",
  "module": "Bmga",
  "name": "Order Booking V2",
