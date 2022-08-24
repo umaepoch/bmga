@@ -32,17 +32,22 @@ def fetch_customer_type(so_name):
     )
     return customer_type[0]["pch_customer_type"]
 
-def fetch_fulfillment_settings(company):
+def fetch_fulfillment_settings(company, customer):
     fs_name = frappe.db.sql(
         f"""SELECT name, expiry_date_limit FROM `tabFulfillment Settings V1` WHERE company = '{company}'""",
         as_dict=True
     )
+
+    customer_expiry = frappe.db.get_value('Customer', customer, 'pch_expiry_date_limit', as_dict=1)
+
     if fs_name:
         settings = frappe.db.sql(
             f"""SELECT retail_primary_warehouse, retail_bulk_warehouse, hospital_warehouse, institutional_warehouse, qc_and_dispatch, free_warehouse
             FROM `tabFulfillment Settings Details V1` WHERE parent = '{fs_name[0]["name"]}'""", as_dict=True
         )
-        settings[0]["expiry_date_limit"] = fs_name[0]["expiry_date_limit"]
+
+        if customer_expiry.get('pch_expiry_date_limit', 0) > 0: settings[0]["expiry_date_limit"] = customer_expiry["pch_expiry_date_limit"]
+        else: settings[0]["expiry_date_limit"] = fs_name[0]["expiry_date_limit"]
     else:
         settings = [None]
     return settings[0]
@@ -403,9 +408,10 @@ def fetch_free_stock_detail(free_list, free_warehouse):
 
 @frappe.whitelist()
 def item_list_container(so_name, company):
-    fulfillment_settings = fetch_fulfillment_settings(company)
-    print("Settings", fulfillment_settings)
+    customer = get_customer(so_name)
     customer_type = fetch_customer_type(so_name)
+    fulfillment_settings = fetch_fulfillment_settings(company, customer)
+    print("Settings", fulfillment_settings)
 
     if customer_type == "Retail":
         warehouse = fulfillment_settings["retail_primary_warehouse"]
@@ -600,9 +606,22 @@ def fetch_tax_detail(name):
         frappe.throw(f'Sales Taxes and Charges detail not found for {name}')
 
 
+def fetch_due_date(customer):
+    template_name = frappe.db.get_value('Customer', customer, 'payment_terms', as_dict=1)
+    print('template', template_name)
+    if template_name.get('payment_terms'):
+        due_date = frappe.db.get_list('Payment Terms Template Detail', filters=[{'parent': template_name['payment_terms']}], fields = ['credit_days'])
+        print('fetch due date', due_date)
+        if len(due_date) > 0:
+            return due_date[0].get('credit_days', 1)
+    return 1
+
 def generate_sales_invoice_json(customer, customer_type, so_name, sales_order, company, item_list, settings):
-    due_date = datetime.datetime.today()
-    # due_date = due_date + datetime.timedelta(2)
+    today = datetime.datetime.today()
+    credit_days = fetch_due_date(customer)
+    print('CREDIT DAYS -----------------', credit_days)
+    due_date = today + datetime.timedelta(credit_days)
+    print('DUE DATE +++++++++', due_date)
 
     abbr = fetch_company_abbr(company)
     print(abbr)
@@ -1224,11 +1243,12 @@ def pick_status(item_list, so_name, company, stage_index, stage_list):
     stage_list = json.loads(stage_list)
     stage_index = json.loads(stage_index)
     next_stage = stage_list[stage_index + 1]
-    settings = fetch_fulfillment_settings(company)
     sales_order = fetch_item_list(so_name)
 
     customer = get_customer(so_name)
     customer_type = fetch_customer_type(so_name)
+
+    settings = fetch_fulfillment_settings(company, customer)
 
     average_price = update_average_price(item_list, sales_order, customer_type, settings, customer)
     print("average price", average_price)
