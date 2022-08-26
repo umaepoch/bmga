@@ -19,7 +19,8 @@
   "section_break_10",
   "put_list",
   "section_break_11",
-  "item_list"
+  "item_list",
+  "amended_from"
  ],
  "fields": [
   {
@@ -102,11 +103,20 @@
    "fieldtype": "Data",
    "label": "Pre Stock Transfer",
    "read_only": 1
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Pick Put List",
+   "print_hide": 1,
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2022-07-21 12:33:15.785124",
+ "modified": "2022-08-23 14:33:09.612602",
  "modified_by": "Administrator",
  "module": "Bmga",
  "name": "Pick Put List",

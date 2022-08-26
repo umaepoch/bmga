@@ -1121,10 +1121,6 @@ def sales_order_container(customer, company, customer_type, sales_order):
         "items": []
     }
 
-    igst = 0
-    cgst = 0
-    sgst = 0
-
     for data in sales_order:
         if data["quantity"] > data["quantity_available"]:
             if data["promo_type"] == "None" or data["promo_type"] == "Quantity based discount" or data["promo_type"] == "Buy x get same and discount for ineligible qty":

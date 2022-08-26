@@ -23,6 +23,7 @@ def check_promo(item_code, invoice):
 	if len(promo_5) > 0: return promo_5[0]['discount']
 	return 0
 
+
 @frappe.whitelist()
 def get_dl_no(customer):
 	dl = frappe.db.get_list('Drug License', filters=[{'parent': customer}], fields=['drug_license_no'])
