@@ -630,10 +630,8 @@ def generate_sales_invoice_json(customer, customer_type, so_name, sales_order, c
     customer_in_state = check_customer_state(customer, company)
     print(customer_in_state)
     if customer_in_state.get('valid'):
-        tax = gst_detail['gst_in_state']
         tax_detail = fetch_tax_detail(gst_detail['gst_in_state'])
     else:
-        tax = gst_detail['gst_out_state']
         tax_detail = fetch_tax_detail(gst_detail['gst_out_state'])
 
     outerJson = {
@@ -649,34 +647,6 @@ def generate_sales_invoice_json(customer, customer_type, so_name, sales_order, c
     print("*"*150)
     print("SALES INVOICE")
 
-    innerJson_tax_list = []
-    if customer_in_state.get('valid'):
-        for x in tax_detail['detail']:
-            if x.get('account_head') == f'Output Tax SGST - {abbr}':
-                print('SGST', x.get('description'))
-                innerJson_tax_list.append({
-                    "doctype": "Sales Taxes and Charges",
-                    "charge_type": x["charge_type"],
-                    "account_head": x["account_head"],
-                    "description": x["description"],
-                })
-            else:
-                innerJson_tax_list.append({
-                    "doctype": "Sales Taxes and Charges",
-                    "charge_type": x["charge_type"],
-                    "account_head": x["account_head"],
-                    "description": x["description"],
-                })
-    else:
-        innerJson_tax_list.append({
-            "doctype": "Sales Taxes and Charges",
-            "charge_type": tax_detail['detail'][0]["charge_type"],
-            "account_head": tax_detail['detail'][0]["account_head"],
-            "description": tax_detail['detail'][0]["description"],
-        })
-
-    outerJson['taxes'].extend(innerJson_tax_list)
-
     for item in item_list:
         print(item)
         
@@ -684,6 +654,7 @@ def generate_sales_invoice_json(customer, customer_type, so_name, sales_order, c
         if qty == 0: continue
 
         rate_contract = customer_rate_contract(customer, item.get('item')) 
+        
         if not rate_contract["valid"]:
             if item.get("promo_type") == "Buy x get same and discount for ineligible qty":
                 discount = fetch_promo_type_5(item, sales_order, customer_type, settings)
@@ -760,6 +731,35 @@ def generate_sales_invoice_json(customer, customer_type, so_name, sales_order, c
             }
 
         outerJson["items"].append(innerJson)
+
+    innerJson_tax_list = []
+    if customer_in_state.get('valid'):
+        for x in tax_detail['detail']:
+            if x.get('account_head') == f'Output Tax SGST - {abbr}':
+                print('SGST', x.get('description'))
+                innerJson_tax_list.append({
+                    "doctype": "Sales Taxes and Charges",
+                    "charge_type": x["charge_type"],
+                    "account_head": x["account_head"],
+                    "description": x["description"],
+                })
+            else:
+                innerJson_tax_list.append({
+                    "doctype": "Sales Taxes and Charges",
+                    "charge_type": x["charge_type"],
+                    "account_head": x["account_head"],
+                    "description": x["description"],
+                })
+    else:
+        innerJson_tax_list.append({
+            "doctype": "Sales Taxes and Charges",
+            "charge_type": tax_detail['detail'][0]["charge_type"],
+            "account_head": tax_detail['detail'][0]["account_head"],
+            "description": tax_detail['detail'][0]["description"],
+        })
+
+    outerJson['taxes'].extend(innerJson_tax_list)
+
     return outerJson
 
 def ppli_qty_and_batch(item):
