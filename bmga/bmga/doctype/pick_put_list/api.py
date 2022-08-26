@@ -654,9 +654,11 @@ def generate_sales_invoice_json(customer, customer_type, so_name, sales_order, c
         if qty == 0: continue
 
         rate_contract = customer_rate_contract(customer, item.get('item')) 
-        
+
         if not rate_contract["valid"]:
-            if item.get("promo_type") == "Buy x get same and discount for ineligible qty":
+            if item['warehouse'] == settings['free_warehouse']:
+                rate = {'price': 0}
+            elif item.get("promo_type") == "Buy x get same and discount for ineligible qty":
                 discount = fetch_promo_type_5(item, sales_order, customer_type, settings)
                 if batch:
                     rate = rate_fetch_mrp_batch(batch, item['item'])
