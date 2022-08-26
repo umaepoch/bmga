@@ -977,15 +977,8 @@ def update_sales_order(sales_doc, average_price, free_warehouse):
     for child in sales_doc.get_all_children():
             if child.doctype != "Sales Order Item": continue
             sales_item_doc = frappe.get_doc(child.doctype, child.name)
-            print(sales_item_doc.warehouse)
-            print(free_warehouse)
-            print(sales_item_doc.promo_type)
-            print(sales_item_doc.warehouse == free_warehouse)
-            print(sales_item_doc.promo_type == "None" or sales_item_doc.promo_type is None)
             if sales_item_doc.warehouse == free_warehouse:
-                print("free price", sales_item_doc.rate)
                 sales_item_doc.rate = 0
-                print("free price", sales_item_doc.rate)
             elif sales_item_doc.promo_type == "None" or sales_item_doc.promo_type is None:
                 sales_item_doc.rate = average_price[sales_item_doc.item_code]["normal"]["average"]
             else:
@@ -1005,7 +998,9 @@ def update_sales_order_for_invoice(sales_doc, customer, customer_type, so_name, 
 
         rate_contract = customer_rate_contract(customer, item.get('item'))  
         if not rate_contract["valid"]:
-            if item.get("promo_type") == "Buy x get same and discount for ineligible qty":
+            if item['warehouse'] == settings['free_warehouse']:
+                rate = {'price': 0}
+            elif item.get("promo_type") == "Buy x get same and discount for ineligible qty":
                 discount = fetch_promo_type_5(item, sales_order, customer_type, settings)
                 if batch:
                     rate = rate_fetch_mrp_batch(batch, item['item'])
