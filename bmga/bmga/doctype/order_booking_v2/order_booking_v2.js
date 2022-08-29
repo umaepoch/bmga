@@ -157,7 +157,6 @@ frappe.ui.form.on('Order Booking V2', {
 				let order_list = frm.doc.order_booking_items_v2;
 				let customer = frm.doc.customer;
 				let company = frm.doc.company;
-				let customer_type = frm.doc.customer_type;
 				var free_promos = frm.doc.promos;
 				var promo_dis = frm.doc.promos_discount;
 				var sales_order = frm.doc.sales_order_preview
