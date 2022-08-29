@@ -852,8 +852,16 @@ def sales_order_calculation(sales_promo_discounted_amount, sales_promos_items, o
                         if sales_promo_discounted_amount[j].get("dic_qty") is not None:
                             order_list[o]["quantity_booked"] = order_list[o]["quantity_booked"] - sales_promo_discounted_amount[j]["dic_qty"]
                             # print("order......", order_list[o]["quantity_booked"])
+                            print('finding index ...', promo_sales_order)
+                            for i, x in enumerate(promo_sales_order):
+                                if x['item_code'] == order_list[o]["item_code"] and x['warehouse'] == warehouse and x['average_price'] == order_list[o]["average_price"] and x["promo_type"] == "None":
+                                    promo_sales_order.pop(i)
                             promo_sales_order.append({"item_code":order_list[o]["item_code"], "qty": order_list[o]["quantity_booked"], "average_price": order_list[o]["average_price"], "warehouse" : warehouse, "qty_available":order_list[o]["quantity_available"], "promo_type" : "None"})
                         else:
+                            print('finding index ...', promo_sales_order)
+                            for i, x in enumerate(promo_sales_order):
+                                if x['item_code'] == order_list[o]["item_code"] and x['warehouse'] == warehouse and x['average_price'] == order_list[o]["average_price"] and x["promo_type"] == "None":
+                                    promo_sales_order.pop(i)
                             promo_sales_order.append({"promo_type": "None"  , "qty":order_list[o]["quantity_booked"] , "item_code":order_list[o]["item_code"], "dic": "0", "average_price": order_list[o]["average_price"] , "warehouse" : warehouse , "qty_available" : order_list[o]["quantity_available"]})      
     
 
@@ -974,7 +982,11 @@ def sales_promos(item_code , customer_type, company, order_list, customer):
     sales_promo_discounted_amount = sales_promo_discount["Promo_sales"] + sales_promo_quantity_discount["Promo_sales"]
     sales_promos_items = sales_promos_same_item["Promo_sales"] + sales_promo_diff_items["Promo_sales"] + sales_promo_discount["Promo_sales"]
     sales_order = sales_order_calculation(sales_promo_discounted_amount, sales_promos_items, order_list, customer_type, settings, settings[0]["free_warehouse"])
-  
+    
+    print("Sales order", '*'*50)
+    for s in sales_order['sales_order']:
+        print(s)
+
     return dict(sales_order = sales_order,sales_promos_items= sales_promos_items, bought_item = item_code, sales_promos_same_item = sales_promos_same_item, sales_promo_diff_items = sales_promo_diff_items, sales_promo_discount= sales_promo_discount, promos_qty = promos_qty, sales_promo_discounted_amount = sales_promo_discounted_amount )
 
 @frappe.whitelist()
