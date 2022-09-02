@@ -71,8 +71,6 @@ frappe.ui.form.on('Order Booking V2', {
 		let company = frm.doc.company;
 		let sales_check = false
 
-
-
 		if (item_code_list) {
 			frappe.call({
 				method: "bmga.bmga.doctype.order_booking_v2.api.sales_promo_checked",
@@ -84,6 +82,8 @@ frappe.ui.form.on('Order Booking V2', {
 				console.log(sales_check)
 			})
 
+			console.log('fetching sales preview');
+
 			frappe.call({
 				method : "bmga.bmga.doctype.order_booking_v2.api.sales_promos",
 				args :{
@@ -94,10 +94,9 @@ frappe.ui.form.on('Order Booking V2', {
 					customer: customer,
 				}
 			}).done((respose) =>{
-				console.log(respose)
-				console.log(respose.message.sales_promo_discounted_amount)
-				console.log(respose.message.sales_promos_items)
+				console.log('received sales preview', respose.message);
 				let total_amount = 0;
+				console.log('sales order', respose.message.sales_order.sales_order);
 				$.each(respose.message.sales_order.sales_order, function(_i, e) {
 					let entry = frm.add_child("sales_order_preview");
 					entry.item_code = e.item_code;
@@ -107,9 +106,13 @@ frappe.ui.form.on('Order Booking V2', {
 					entry.promo_type = e.promo_type;
 					entry.warehouse = e.warehouse;
 					total_amount = total_amount + (e.qty * e.average_price);
-				}),
+					console.log('added to sales preview', e);
+				});
+				console.log('updated sales preview', frm.doc.sales_order_preview);
+				refresh_field("sales_order_preview");
+				console.log('updated sales preview', frm.doc.sales_order_preview);
+
 				frm.set_value('total_amount', total_amount);
-				refresh_field("sales_order_preview")
 				refresh_field("total_amount")
 
 				if(total_amount + frm.doc.unpaid_amount > frm.doc.credit_limit) {
@@ -130,8 +133,9 @@ frappe.ui.form.on('Order Booking V2', {
 					entry.quantity = e.qty;
 					entry.warehouse_quantity = e.w_qty;
 					entry.promo_type = e.promo_type;
-				}),
+				});
 				refresh_field("promos")
+
 				$.each(respose.message.sales_promo_discounted_amount, function(_i, e){
 						if (e.dic !== "0"){
 							let entry = frm.add_child("promos_discount");
@@ -145,7 +149,6 @@ frappe.ui.form.on('Order Booking V2', {
 					})
 
 					refresh_field("promos_discount")
-					frappe.msgprint("Promos Applied")
 			})
 		}	
 	},
