@@ -989,6 +989,82 @@ def sales_promos(item_code , customer_type, company, order_list, customer):
 
     return dict(sales_order = sales_order,sales_promos_items= sales_promos_items, bought_item = item_code, sales_promos_same_item = sales_promos_same_item, sales_promo_diff_items = sales_promo_diff_items, sales_promo_discount= sales_promo_discount, promos_qty = promos_qty, sales_promo_discounted_amount = sales_promo_discounted_amount )
 
+
+def check_promo_type_1(item_code):
+    today = datetime.date.today()
+
+    p = frappe.db.sql(
+        f"""select p1.bought_item
+            from `tabPromo Type 1` as p1
+                join `tabSales Promos` as p on (p.name = p1.parent)
+            where p1.bought_item = '{item_code}' and p.start_date <= '{today}' and p.end_date >= '{today}'""",
+            as_dict=1
+    )
+
+    if len(p) > 0: return 1
+    return 0
+
+
+def check_promo_type_2(item_code):
+    today = datetime.date.today()
+
+    p = frappe.db.sql(
+        f"""select p2.bought_item
+            from `tabPromo Type 2` as p2
+                join `tabSales Promos` as p on (p.name = p2.parent)
+            where p2.bought_item = '{item_code}' and p.start_date <= '{today}' and p.end_date >= '{today}'""",
+            as_dict=1
+    )
+
+    if len(p) > 0: return 1
+    return 0
+
+
+def check_promo_type_3(item_code):
+    today = datetime.date.today()
+
+    p = frappe.db.sql(
+        f"""select p3.bought_item
+            from `tabPromo Type 3` as p3
+                join `tabSales Promos` as p on (p.name = p3.parent)
+            where p3.bought_item = '{item_code}' and p.start_date <= '{today}' and p.end_date >= '{today}'""",
+            as_dict=1
+    )
+
+    if len(p) > 0: return 1
+    return 0
+
+
+def check_promo_type_5(item_code):
+    today = datetime.date.today()
+
+    p = frappe.db.sql(
+        f"""select p5.bought_item
+            from `tabPromo Type 5` as p5
+                join `tabSales Promos` as p on (p.name = p5.parent)
+            where p5.bought_item = '{item_code}' and p.start_date <= '{today}' and p.end_date >= '{today}'""",
+            as_dict=1
+    )
+
+    if len(p) > 0: return 1
+    return 0
+
+
+def check_item_promo(item_code):
+    type_1 = check_promo_type_1(item_code)
+    type_2 = check_promo_type_2(item_code)
+    type_3 = check_promo_type_3(item_code)
+    type_5 = check_promo_type_5(item_code)
+
+    if type_1 == 1 or type_2 == 1 or type_3 == 1 or type_5 == 1: return 1
+    return 0
+
+def check_sales_promo(customer, item_code):
+    c = frappe.db.get_value('Customer', {'name': customer}, 'pch_sales_promo', as_dict=1)
+    i = check_item_promo(item_code)
+    if c.get('pch_sales_promo', 0) == 1 and i == 1: return 1
+    return 0
+
 @frappe.whitelist()
 def item_qty_container(company, item_code, customer_type, customer):
     fulfillment_settings = fetch_fulfillment_settings(company, customer)
@@ -997,8 +1073,11 @@ def item_qty_container(company, item_code, customer_type, customer):
     handled_stock = available_stock_details(item_code, customer_type, fulfillment_settings[0])
     price_details = fetch_average_price_v2(customer, item_code)
     brand_name =  fetch_item_brand(item_code)
+    print('*************', price_details)
+    sales_check = check_sales_promo(customer, item_code)
+    print('Salse check *********', sales_check)
     # sales_promo = fetch_sales_promos(item_code)
-    return dict(available_qty = handled_stock["available_qty"], price_details = price_details, stock_detail = stock_detail, qty_detail = handled_stock, brand_name = brand_name) 
+    return dict(promo_check = sales_check, available_qty = handled_stock["available_qty"], price_details = price_details, stock_detail = stock_detail, qty_detail = handled_stock, brand_name = brand_name) 
 
 
 def fetch_gst_detail(company):

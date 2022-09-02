@@ -224,6 +224,7 @@ frappe.ui.form.on('Order Booking Items V2', {
 				frappe.model.set_value(cdt, cdn, "amount", null);
 				frappe.model.set_value(cdt, cdn, "amount_after_gst", null);
 				frappe.model.set_value(cdt, cdn, "rate_contract_check", 0)
+				frappe.model.set_value(cdt, cdn, "sales_promo", 0)
 				refresh_field("order_booking_items_v2");
 			} else {
 				frappe.call({
@@ -241,6 +242,7 @@ frappe.ui.form.on('Order Booking Items V2', {
 					frappe.model.set_value(cdt, cdn, "rate_contract_check", response.message.price_details.rate_contract_check);
 					frappe.model.set_value(cdt, cdn, "amount_after_gst", response.message.price_details.mrp);
 					frappe.model.set_value(cdt, cdn, "brand_name", response.message.brand_name.brand_name);
+					frappe.model.set_value(cdt, cdn, "sales_promo", response.message.promo_check);
 					refresh_field("order_booking_items_v2");
 				})
 			}
