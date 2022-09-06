@@ -33,6 +33,7 @@
   {
    "fieldname": "sales_order",
    "fieldtype": "Data",
+   "in_list_view": 1,
    "label": "Sales Order",
    "read_only": 1
   },
@@ -40,17 +41,20 @@
    "fieldname": "item_list",
    "fieldtype": "Table",
    "label": "Item List",
-   "options": "Pick Put List Items"
+   "options": "Pick Put List Items",
+   "read_only": 1
   },
   {
    "fieldname": "pick_list_stage",
    "fieldtype": "Data",
+   "in_list_view": 1,
    "label": "Pick List Stage",
    "read_only": 1
   },
   {
    "fieldname": "company",
    "fieldtype": "Link",
+   "in_list_view": 1,
    "label": "Company",
    "options": "Company",
    "read_only": 1
@@ -116,7 +120,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2022-08-23 14:33:09.612602",
+ "modified": "2022-09-06 14:14:14.955562",
  "modified_by": "Administrator",
  "module": "Bmga",
  "name": "Pick Put List",

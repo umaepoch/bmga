@@ -75,37 +75,37 @@ frappe.ui.form.on('Pick Put List', {
 				})
 			}
 
-			let pick_stage = frm.doc.pick_list_stage;
+			// let pick_stage = frm.doc.pick_list_stage;
 
-			if (pick_stage == "Ready for Picking") {
-				let so_name = frm.doc.sales_order;
-				let company = frm.doc.company;
-				let pick_stage = frm.doc.pick_list_stage;
-				if(so_name && pick_stage == 'Ready for Picking') {
-					frappe.call({
-						method: "bmga.bmga.doctype.pick_put_list.api.item_list_container",
-						args: {
-							so_name: so_name,
-							company: company,
-						}
-					}).done((response) => {
-						console.log(response.message)
-						frm.doc.item_list = []
-						$.each(response.message.pick_put_list, function(_i, e) {
-							let entry = frm.add_child("item_list");
-							entry.item = e.item_code;
-							entry.uom = e.stock_uom;
-							entry.batch = e.batch_no;
-							entry.wbs_storage_location = e.wbs_storage_location_id;
-							entry.warehouse = e.warehouse;
-							entry.quantity_to_be_picked = e.qty;
-							entry.promo_type = e.promo_type;
-							entry.so_detail = e.so_detail;
-						})
-						refresh_field("item_list")
-					})
-				}
-			}
+			// if (pick_stage == "Ready for Picking") {
+			// 	let so_name = frm.doc.sales_order;
+			// 	let company = frm.doc.company;
+			// 	let pick_stage = frm.doc.pick_list_stage;
+			// 	if(so_name && pick_stage == 'Ready for Picking') {
+			// 		frappe.call({
+			// 			method: "bmga.bmga.doctype.pick_put_list.api.item_list_container",
+			// 			args: {
+			// 				so_name: so_name,
+			// 				company: company,
+			// 			}
+			// 		}).done((response) => {
+			// 			console.log(response.message)
+			// 			frm.doc.item_list = []
+			// 			$.each(response.message.pick_put_list, function(_i, e) {
+			// 				let entry = frm.add_child("item_list");
+			// 				entry.item = e.item_code;
+			// 				entry.uom = e.stock_uom;
+			// 				entry.batch = e.batch_no;
+			// 				entry.wbs_storage_location = e.wbs_storage_location_id;
+			// 				entry.warehouse = e.warehouse;
+			// 				entry.quantity_to_be_picked = e.qty;
+			// 				entry.promo_type = e.promo_type;
+			// 				entry.so_detail = e.so_detail;
+			// 			})
+			// 			refresh_field("item_list")
+			// 		})
+			// 	}
+			// }
 		}
 	}
 });

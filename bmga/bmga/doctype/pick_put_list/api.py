@@ -52,403 +52,390 @@ def fetch_fulfillment_settings(company, customer):
         settings = [None]
     return settings[0]
 
-def fetch_pick_put_list_data(customer_type, sales_list, settings):
-    items = [data["item_code"] for data in sales_list]
-    items = re.sub(r',\)$', ')', str(tuple(items)))
+# def fetch_pick_put_list_data(customer_type, sales_list, settings):
+#     items = [data["item_code"] for data in sales_list]
+#     items = re.sub(r',\)$', ')', str(tuple(items)))
 
-    if customer_type == "Retail":
-        warehouse = [settings["retail_primary_warehouse"], settings["retail_bulk_warehouse"], settings["free_warehouse"]]
-    elif customer_type == "Hospital":
-        warehouse = [settings["hospital_warehouse"], settings["free_warehouse"]]
-    elif customer_type == "Institutional":
-        warehouse = [settings["institutional_warehouse"], settings["free_warehouse"]]
+#     if customer_type == "Retail":
+#         warehouse = [settings["retail_primary_warehouse"], settings["retail_bulk_warehouse"], settings["free_warehouse"]]
+#     elif customer_type == "Hospital":
+#         warehouse = [settings["hospital_warehouse"], settings["free_warehouse"]]
+#     elif customer_type == "Institutional":
+#         warehouse = [settings["institutional_warehouse"], settings["free_warehouse"]]
     
-    warehouse = re.sub(r',\)$', ')', str(tuple(warehouse)))
+#     warehouse = re.sub(r',\)$', ')', str(tuple(warehouse)))
 
-    pick_put_list_stock = frappe.db.sql(
-        f"""select ppli.item as item_code, ppli.batch, ppli.batch_picked, ppli.warehouse, ppli.quantity_to_be_picked, ppli.quantity_picked, ppli.warehouse
-        from `tabPick Put List Items` as ppli
-            join `tabPick Put List` as ppl on (ppli.parent = ppl.name)
-        where ppli.item in {items} and ppl.pick_list_stage != 'Invoiced' and ppl.pick_list_stage != 'Ready for Picking' and ppl.docstatus < 2 and ppli.warehouse in {warehouse}""",
-        as_dict=1
-    )
+#     pick_put_list_stock = frappe.db.sql(
+#         f"""select ppli.item as item_code, ppli.batch, ppli.batch_picked, ppli.warehouse, ppli.quantity_to_be_picked, ppli.quantity_picked, ppli.warehouse
+#         from `tabPick Put List Items` as ppli
+#             join `tabPick Put List` as ppl on (ppli.parent = ppl.name)
+#         where ppli.item in {items} and ppl.pick_list_stage != 'Invoiced' and ppl.pick_list_stage != 'Ready for Picking' and ppl.docstatus < 2 and ppli.warehouse in {warehouse}""",
+#         as_dict=1
+#     )
 
-    return pick_put_list_stock
+#     return pick_put_list_stock
 
-def update_stock_detail_with_picked_stock(stock_data, free_data, picked_data):
-    print("*"*100)
-    for s in stock_data:
-        print(s)
+# def update_stock_detail_with_picked_stock(stock_data, free_data, picked_data):
+#     print("*"*100)
+#     for s in stock_data:
+#         print(s)
 
-    struct_pick = {}
+#     struct_pick = {}
 
-    print("-"*100)
-    for p in picked_data:
-        print(p)
-        if p["quantity_picked"] is not None:
-            p_qty = p["quantity_picked"]
-        elif p["quantity_to_be_picked"] is not None:
-            p_qty = p["quantity_to_be_picked"]
-        else:
-            p_qty = 0
+#     print("-"*100)
+#     for p in picked_data:
+#         print(p)
+#         if p["quantity_picked"] is not None:
+#             p_qty = p["quantity_picked"]
+#         elif p["quantity_to_be_picked"] is not None:
+#             p_qty = p["quantity_to_be_picked"]
+#         else:
+#             p_qty = 0
         
-        if p["batch_picked"] is not None:
-            p_batch = p["batch_picked"]
-        elif p["batch"] is not None:
-            p_batch = p["batch"]
-        else:
-            p_batch = ''
-        if p["warehouse"] not in struct_pick:  
-            struct_pick[p["warehouse"]] = {}
-            struct_pick[p["warehouse"]][p["item_code"]] = {}
-            struct_pick[p["warehouse"]][p["item_code"]][p_batch] = p_qty  
-            if p["item_code"] not in struct_pick[p["warehouse"]]:
-                struct_pick[p["warehouse"]][p["item_code"]] = {}
-                struct_pick[p["warehouse"]][p["item_code"]][p_batch] = p_qty
-            else:
-                struct_pick[p["warehouse"]][p["item_code"]][p_batch] = p_qty
-        else:
-            if p["item_code"] not in struct_pick[p["warehouse"]]:
-                struct_pick[p["warehouse"]][p["item_code"]] = {}
-                struct_pick[p["warehouse"]][p["item_code"]][p_batch] = p_qty
-            else:
-                struct_pick[p["warehouse"]][p["item_code"]][p_batch] = p_qty
+#         if p["batch_picked"] is not None:
+#             p_batch = p["batch_picked"]
+#         elif p["batch"] is not None:
+#             p_batch = p["batch"]
+#         else:
+#             p_batch = ''
+#         if p["warehouse"] not in struct_pick:  
+#             struct_pick[p["warehouse"]] = {}
+#             struct_pick[p["warehouse"]][p["item_code"]] = {}
+#             struct_pick[p["warehouse"]][p["item_code"]][p_batch] = p_qty  
+#             if p["item_code"] not in struct_pick[p["warehouse"]]:
+#                 struct_pick[p["warehouse"]][p["item_code"]] = {}
+#                 struct_pick[p["warehouse"]][p["item_code"]][p_batch] = p_qty
+#             else:
+#                 struct_pick[p["warehouse"]][p["item_code"]][p_batch] = p_qty
+#         else:
+#             if p["item_code"] not in struct_pick[p["warehouse"]]:
+#                 struct_pick[p["warehouse"]][p["item_code"]] = {}
+#                 struct_pick[p["warehouse"]][p["item_code"]][p_batch] = p_qty
+#             else:
+#                 struct_pick[p["warehouse"]][p["item_code"]][p_batch] = p_qty
     
-    print("Struct pick")
-    print(struct_pick)     
-    for s in stock_data:
-        try:
-            if s["actual_qty"] > struct_pick[s["warehouse"]][s["item_code"]][s["batch_id"]]:
-                s["actual_qty"] -= struct_pick[s["warehouse"]][s["item_code"]][s["batch_id"]]
-            else:
-                s["actual_qty"] = 0
-        except:
-            pass
+#     print("Struct pick")
+#     print(struct_pick)     
+#     for s in stock_data:
+#         try:
+#             if s["actual_qty"] > struct_pick[s["warehouse"]][s["item_code"]][s["batch_id"]]:
+#                 s["actual_qty"] -= struct_pick[s["warehouse"]][s["item_code"]][s["batch_id"]]
+#             else:
+#                 s["actual_qty"] = 0
+#         except:
+#             pass
     
-    for f in free_data:
-        try:
-            if f["actual_qty"] > struct_pick[f["warehouse"]][f["item_code"]][f["batch_id"]]:
-                f["actual_qty"] -= struct_pick[f["warehouse"]][f["item_code"]][f["batch_id"]]
-            else:
-                f["actual_qty"] = 0
-        except:
-            pass
+#     for f in free_data:
+#         try:
+#             if f["actual_qty"] > struct_pick[f["warehouse"]][f["item_code"]][f["batch_id"]]:
+#                 f["actual_qty"] -= struct_pick[f["warehouse"]][f["item_code"]][f["batch_id"]]
+#             else:
+#                 f["actual_qty"] = 0
+#         except:
+#             pass
     
-    print("stock after pick -")
-    for s in stock_data:
-        print(s)
+#     print("stock after pick -")
+#     for s in stock_data:
+#         print(s)
     
-    print("free after pick -")
-    for f in free_data:
-        print(f)
+#     print("free after pick -")
+#     for f in free_data:
+#         print(f)
     
-    return stock_data, free_data
+#     return stock_data, free_data
         
 
-def fetch_stock_details(customer_type, sales_list, settings):
-    items = [data["item_code"] for data in sales_list]
-    items = re.sub(r',\)$', ')', str(tuple(items)))
+# def fetch_stock_details(customer_type, sales_list, settings):
+#     items = [data["item_code"] for data in sales_list]
+#     items = re.sub(r',\)$', ')', str(tuple(items)))
 
-    if customer_type == "Retail":
-        warehouse = [settings["retail_primary_warehouse"], settings["retail_bulk_warehouse"]]
-    elif customer_type == "Hospital":
-        warehouse = [settings["hospital_warehouse"]]
-    elif customer_type == "Institutional":
-        warehouse = [settings["institutional_warehouse"]]
+#     if customer_type == "Retail":
+#         warehouse = [settings["retail_primary_warehouse"], settings["retail_bulk_warehouse"]]
+#     elif customer_type == "Hospital":
+#         warehouse = [settings["hospital_warehouse"]]
+#     elif customer_type == "Institutional":
+#         warehouse = [settings["institutional_warehouse"]]
 
-    warehouse = re.sub(r',\)$', ')', str(tuple(warehouse)))
+#     warehouse = re.sub(r',\)$', ')', str(tuple(warehouse)))
     
-    if settings["retail_primary_warehouse"] >= settings["retail_bulk_warehouse"] :
-        warehouse_order = "DESC"
-    else:
-        warehouse_order = "ASC"
+#     if settings["retail_primary_warehouse"] >= settings["retail_bulk_warehouse"] :
+#         warehouse_order = "DESC"
+#     else:
+#         warehouse_order = "ASC"
     
-    print("QUERY", 
-    f"""
-        select batch_id , `tabBatch`.stock_uom, item as item_code, expiry_date, `tabStock Ledger Entry`.warehouse as warehouse, sum(`tabStock Ledger Entry`.actual_qty) as actual_qty
-        from `tabBatch`
-            join `tabStock Ledger Entry` ignore index (item_code, warehouse)
-                on (`tabBatch`.batch_id = `tabStock Ledger Entry`.batch_no )
-        where `tabStock Ledger Entry`.item_code in {items} AND warehouse in {warehouse}
-            and `tabStock Ledger Entry`.is_cancelled = 0
-        group by batch_id, warehouse
-        order by warehouse {warehouse_order}, expiry_date ASC
-    """)
+#     print("QUERY", 
+#     f"""
+#         select batch_id , `tabBatch`.stock_uom, item as item_code, expiry_date, `tabStock Ledger Entry`.warehouse as warehouse, sum(`tabStock Ledger Entry`.actual_qty) as actual_qty
+#         from `tabBatch`
+#             join `tabStock Ledger Entry` ignore index (item_code, warehouse)
+#                 on (`tabBatch`.batch_id = `tabStock Ledger Entry`.batch_no )
+#         where `tabStock Ledger Entry`.item_code in {items} AND warehouse in {warehouse}
+#             and `tabStock Ledger Entry`.is_cancelled = 0
+#         group by batch_id, warehouse
+#         order by warehouse {warehouse_order}, expiry_date ASC
+#     """)
 
-    stock_data_batch = frappe.db.sql(f"""
-        select batch_id , `tabBatch`.stock_uom, item as item_code, expiry_date, `tabStock Ledger Entry`.warehouse as warehouse, sum(`tabStock Ledger Entry`.actual_qty) as actual_qty
-        from `tabBatch`
-            join `tabStock Ledger Entry` ignore index (item_code, warehouse)
-                on (`tabBatch`.batch_id = `tabStock Ledger Entry`.batch_no )
-        where `tabStock Ledger Entry`.item_code in {items} AND warehouse in {warehouse}
-            and `tabStock Ledger Entry`.is_cancelled = 0
-        group by batch_id, warehouse
-        order by warehouse {warehouse_order}, expiry_date ASC
-    """, as_dict=True)
+#     stock_data_batch = frappe.db.sql(f"""
+#         select batch_id , `tabBatch`.stock_uom, item as item_code, expiry_date, `tabStock Ledger Entry`.warehouse as warehouse, sum(`tabStock Ledger Entry`.actual_qty) as actual_qty
+#         from `tabBatch`
+#             join `tabStock Ledger Entry` ignore index (item_code, warehouse)
+#                 on (`tabBatch`.batch_id = `tabStock Ledger Entry`.batch_no )
+#         where `tabStock Ledger Entry`.item_code in {items} AND warehouse in {warehouse}
+#             and `tabStock Ledger Entry`.is_cancelled = 0
+#         group by batch_id, warehouse
+#         order by warehouse {warehouse_order}, expiry_date ASC
+#     """, as_dict=True)
 
-    stock_data_batchless = frappe.db.sql(
-        f"""select batch_no as batch_id, item_code, warehouse, stock_uom, sum(actual_qty) as actual_qty from `tabStock Ledger Entry`
-        where item_code in {items} and warehouse in {warehouse} and (batch_no is null or batch_no = '')
-        group by item_code, warehouse
-        order by warehouse {warehouse_order}""",
-        as_dict=True
-    )
+#     stock_data_batchless = frappe.db.sql(
+#         f"""select batch_no as batch_id, item_code, warehouse, stock_uom, sum(actual_qty) as actual_qty from `tabStock Ledger Entry`
+#         where item_code in {items} and warehouse in {warehouse} and (batch_no is null or batch_no = '')
+#         group by item_code, warehouse
+#         order by warehouse {warehouse_order}""",
+#         as_dict=True
+#     )
     
-    for data in stock_data_batchless:
-        if data.get("actual_qty") is None: continue
-        stock_data_batch.append(data)
+#     for data in stock_data_batchless:
+#         if data.get("actual_qty") is None: continue
+#         stock_data_batch.append(data)
 
-    return stock_data_batch
+#     return stock_data_batch
 
-def handle_stock_data(stock_data):
-    stock_map = {}
-    for data in stock_data:
-        if data["item_code"] not in stock_map:
-            stock_map[data["item_code"]] = []
-        batch = {}
-        batch["batch_no"] = data["batch_id"]
-        batch["warehouse"] = data["warehouse"]
-        batch["stock_uom"] = data["stock_uom"]
-        try:
-            batch["expiry_date"] = data["expiry_date"]
-        except:
-            pass
-        batch["actual_qty"] = data["actual_qty"]
-        stock_map[data["item_code"]].append(batch) 
-    return stock_map
+# def handle_stock_data(stock_data):
+#     stock_map = {}
+#     for data in stock_data:
+#         if data["item_code"] not in stock_map:
+#             stock_map[data["item_code"]] = []
+#         batch = {}
+#         batch["batch_no"] = data["batch_id"]
+#         batch["warehouse"] = data["warehouse"]
+#         batch["stock_uom"] = data["stock_uom"]
+#         try:
+#             batch["expiry_date"] = data["expiry_date"]
+#         except:
+#             pass
+#         batch["actual_qty"] = data["actual_qty"]
+#         stock_map[data["item_code"]].append(batch) 
+#     return stock_map
 
-def handle_free_data(free_data):
-    stock_map = {}
-    for data in free_data:
-        if data["item_code"] not in stock_map:
-            stock_map[data["item_code"]] = []
-        batch = {}
-        batch["batch_no"] = data["batch_id"]
-        batch["warehouse"] = data["warehouse"]
-        batch["stock_uom"] = data["stock_uom"]
-        try:
-            batch["expiry_date"] = data["expiry_date"]
-        except:
-            pass
-        batch["actual_qty"] = data["actual_qty"]
-        stock_map[data["item_code"]].append(batch) 
-    return stock_map
+# def handle_free_data(free_data):
+#     stock_map = {}
+#     for data in free_data:
+#         if data["item_code"] not in stock_map:
+#             stock_map[data["item_code"]] = []
+#         batch = {}
+#         batch["batch_no"] = data["batch_id"]
+#         batch["warehouse"] = data["warehouse"]
+#         batch["stock_uom"] = data["stock_uom"]
+#         try:
+#             batch["expiry_date"] = data["expiry_date"]
+#         except:
+#             pass
+#         batch["actual_qty"] = data["actual_qty"]
+#         stock_map[data["item_code"]].append(batch) 
+#     return stock_map
 
-def fetch_wbs_location(customer_type, sales_list, settings):
-    print('*'*50)
-    print(sales_list)
-    items = [data["item_code"] for data in sales_list]
-    # print(items)
-    if customer_type == "Retail":
-        warehouse = settings["retail_primary_warehouse"]
-    elif customer_type == "Hospital":
-        warehouse = settings["hospital_warehouse"]
-    elif customer_type == "Institutional":
-        warehouse = settings["institutional_warehouse"]
+# def fetch_wbs_location(customer_type, sales_list, settings):
+#     print('*'*50)
+#     print(sales_list)
+#     items = [data["item_code"] for data in sales_list]
+#     # print(items)
+#     if customer_type == "Retail":
+#         warehouse = settings["retail_primary_warehouse"]
+#     elif customer_type == "Hospital":
+#         warehouse = settings["hospital_warehouse"]
+#     elif customer_type == "Institutional":
+#         warehouse = settings["institutional_warehouse"]
 
-    wbs_setting_id = frappe.db.sql(
-        f"""select name, start_date from `tabWBS Settings` where warehouse = '{warehouse}' order by start_date DESC""", as_dict=True
-    )
-    if len(wbs_setting_id) == 0:
-        return {}
-    wbs_location_list = []
-    for item in items:
-        wbs_location = frappe.db.sql(
-            f"""select item_code, `tabWBS Storage Location`.name_of_attribute_id, `tabWBS Storage Location`.name, `tabWBS Storage Location`.rarb_warehouse
-            from `tabWBS Stored Items`
-                join `tabWBS Storage Location`
-                    on (`tabWBS Stored Items`.parent = `tabWBS Storage Location`.name)
-            where item_code = '{item}' and wbs_settings_id = '{wbs_setting_id[0]["name"]}'""", as_dict=True
-        )
-        if len(wbs_location) > 0:
-            # print("SPCIFIC")
-            # print(wbs_location)
-            wbs_location_list.append(wbs_location[0])
-        else:
-            # fetch from wbs stock balance report
-            wbs_location_anyitem = frappe.db.sql(
-                f"""select item_code, `tabStock Entry Detail`.creation, `tabWBS Storage Location`.name_of_attribute_id, `tabWBS Storage Location`.name, `tabWBS Storage Location`.rarb_warehouse 
-                from `tabStock Entry Detail`
-                    join `tabWBS Storage Location`
-                        on (target_warehouse_storage_location = `tabWBS Storage Location`.name)
-                where item_code = '{item}' and target_warehouse_storage_location is not null and `tabStock Entry Detail`.docstatus = 1
-                order by `tabStock Entry Detail`.creation DESC""",
-                as_dict=True
-            )
-            if len(wbs_location_anyitem) > 0:
-                wbs_location_list.append(wbs_location_anyitem[0])
+#     wbs_setting_id = frappe.db.sql(
+#         f"""select name, start_date from `tabWBS Settings` where warehouse = '{warehouse}' order by start_date DESC""", as_dict=True
+#     )
+#     if len(wbs_setting_id) == 0:
+#         return {}
+#     wbs_location_list = []
+#     for item in items:
+#         wbs_location = frappe.db.sql(
+#             f"""select item_code, `tabWBS Storage Location`.name_of_attribute_id, `tabWBS Storage Location`.name, `tabWBS Storage Location`.rarb_warehouse
+#             from `tabWBS Stored Items`
+#                 join `tabWBS Storage Location`
+#                     on (`tabWBS Stored Items`.parent = `tabWBS Storage Location`.name)
+#             where item_code = '{item}' and wbs_settings_id = '{wbs_setting_id[0]["name"]}'""", as_dict=True
+#         )
+#         if len(wbs_location) > 0:
+#             # print("SPCIFIC")
+#             # print(wbs_location)
+#             wbs_location_list.append(wbs_location[0])
+#         else:
+#             # fetch from wbs stock balance report
+#             wbs_location_anyitem = frappe.db.sql(
+#                 f"""select item_code, `tabStock Entry Detail`.creation, `tabWBS Storage Location`.name_of_attribute_id, `tabWBS Storage Location`.name, `tabWBS Storage Location`.rarb_warehouse 
+#                 from `tabStock Entry Detail`
+#                     join `tabWBS Storage Location`
+#                         on (target_warehouse_storage_location = `tabWBS Storage Location`.name)
+#                 where item_code = '{item}' and target_warehouse_storage_location is not null and `tabStock Entry Detail`.docstatus = 1
+#                 order by `tabStock Entry Detail`.creation DESC""",
+#                 as_dict=True
+#             )
+#             if len(wbs_location_anyitem) > 0:
+#                 wbs_location_list.append(wbs_location_anyitem[0])
             
 
-    wbs_structured = {}
-    for data in wbs_location_list:
-        if data["rarb_warehouse"] not in wbs_structured:
-            wbs_structured[data["rarb_warehouse"]] = {}
-        if data["item_code"] not in wbs_structured[data["rarb_warehouse"]]:
-            wbs_structured[data["rarb_warehouse"]][data["item_code"]] = {}
-        wbs_structured[data["rarb_warehouse"]][data["item_code"]]["wbs_storage_location_id"] = data["name_of_attribute_id"]
-        wbs_structured[data["rarb_warehouse"]][data["item_code"]]["wbs_storage_location"] = data["name"]
-    print("+"*100)
-    print(wbs_structured)
-    return wbs_structured
+#     wbs_structured = {}
+#     for data in wbs_location_list:
+#         if data["rarb_warehouse"] not in wbs_structured:
+#             wbs_structured[data["rarb_warehouse"]] = {}
+#         if data["item_code"] not in wbs_structured[data["rarb_warehouse"]]:
+#             wbs_structured[data["rarb_warehouse"]][data["item_code"]] = {}
+#         wbs_structured[data["rarb_warehouse"]][data["item_code"]]["wbs_storage_location_id"] = data["name_of_attribute_id"]
+#         wbs_structured[data["rarb_warehouse"]][data["item_code"]]["wbs_storage_location"] = data["name"]
+#     print("+"*100)
+#     print(wbs_structured)
+#     return wbs_structured
 
-def sales_order_handle(sales_list, stock_data, free_data, wbs_details, settings):
-    today = datetime.date.today()
-    pick_up_list = []
-    free_pick_list = []
+# def sales_order_handle(sales_list, stock_data, free_data, wbs_details, settings):
+#     today = datetime.date.today()
+#     pick_up_list = []
+#     free_pick_list = []
 
-    for sales in sales_list:
-        to_pickup = sales["qty"]
-        print("SALES LIST", sales)
-        if sales["warehouse"] != settings['free_warehouse']:
-            print("Normal Data")
-            if stock_data.get(sales["item_code"]) is None: continue
-            for stock in stock_data[sales["item_code"]]:
-                if stock["actual_qty"] == 0: continue
-                try:
-                    date_delta = stock["expiry_date"] - today
-                    if date_delta.days < settings['expiry_date']: continue
-                except:
-                    pass
-                pick_up = {}
-                pick_up["item_code"] = sales["item_code"]
-                pick_up["stock_uom"] = stock["stock_uom"]
-                pick_up["warehouse"] = stock["warehouse"]
-                pick_up["promo_type"] = sales["promo_type"]
-                pick_up["so_detail"] = sales["so_detail"]
-                try:
-                    pick_up["wbs_storage_location_id"] = wbs_details[stock["warehouse"]][sales["item_code"]]["wbs_storage_location_id"]
-                    pick_up["wbs_storage_location"] = wbs_details[stock["warehouse"]][sales["item_code"]]["wbs_storage_location"]
-                except:
-                    pick_up["wbs_storage_location_id"] = ''
-                    pick_up["wbs_storage_location"] = ''
-                if stock["actual_qty"] >= to_pickup:
-                    pick_up["batch_no"] = stock["batch_no"]
-                    pick_up["qty"] = to_pickup
-                    stock["actual_qty"] -= to_pickup
-                    to_pickup = 0
-                else:
-                    pick_up["batch_no"] = stock["batch_no"]
-                    pick_up["qty"] = stock["actual_qty"]
-                    to_pickup -= stock["actual_qty"]
-                    stock["actual_qty"] = 0
-                pick_up_list.append(pick_up)
-                if to_pickup == 0: break
-        else:
-            print("Free Data")
-            if free_data.get(sales["item_code"]) is None: continue
-            for stock in free_data[sales["item_code"]]:
-                if stock["actual_qty"] == 0: continue
-                try:
-                    date_delta = stock["expiry_date"] - today
-                    if date_delta.days < settings['expiry_date']: continue
-                except:
-                    pass
-                pick_up = {}
-                pick_up["item_code"] = sales["item_code"]
-                pick_up["stock_uom"] = stock["stock_uom"]
-                pick_up["warehouse"] = stock["warehouse"]
-                pick_up["promo_type"] = sales["promo_type"]
-                pick_up["so_detail"] = sales["so_detail"]
-                try:
-                    pick_up["wbs_storage_location_id"] = wbs_details[settings["retail_primary_warehouse"]][sales["item_code"]]["wbs_storage_location_id"]
-                    pick_up["wbs_storage_location"] = wbs_details[settings["retail_primary_warehouse"]][sales["item_code"]]["wbs_storage_location"]
-                except:
-                    pick_up["wbs_storage_location_id"] = ''
-                    pick_up["wbs_storage_location"] = ''
-                if stock["actual_qty"] >= to_pickup:
-                    pick_up["batch_no"] = stock["batch_no"]
-                    pick_up["qty"] = to_pickup
-                    stock["actual_qty"] -= to_pickup
-                    to_pickup = 0
-                else:
-                    pick_up["batch_no"] = stock["batch_no"]
-                    pick_up["qty"] = stock["actual_qty"]
-                    to_pickup -= stock["actual_qty"]
-                    stock["actual_qty"] = 0
-                free_pick_list.append(pick_up)
-                if to_pickup == 0: break
+#     for sales in sales_list:
+#         to_pickup = sales["qty"]
+#         print("SALES LIST", sales)
+#         if sales["warehouse"] != settings['free_warehouse']:
+#             print("Normal Data")
+#             if stock_data.get(sales["item_code"]) is None: continue
+#             for stock in stock_data[sales["item_code"]]:
+#                 if stock["actual_qty"] == 0: continue
+#                 try:
+#                     date_delta = stock["expiry_date"] - today
+#                     if date_delta.days < settings['expiry_date']: continue
+#                 except:
+#                     pass
+#                 pick_up = {}
+#                 pick_up["item_code"] = sales["item_code"]
+#                 pick_up["stock_uom"] = stock["stock_uom"]
+#                 pick_up["warehouse"] = stock["warehouse"]
+#                 pick_up["promo_type"] = sales["promo_type"]
+#                 pick_up["so_detail"] = sales["so_detail"]
+#                 try:
+#                     pick_up["wbs_storage_location_id"] = wbs_details[stock["warehouse"]][sales["item_code"]]["wbs_storage_location_id"]
+#                     pick_up["wbs_storage_location"] = wbs_details[stock["warehouse"]][sales["item_code"]]["wbs_storage_location"]
+#                 except:
+#                     pick_up["wbs_storage_location_id"] = ''
+#                     pick_up["wbs_storage_location"] = ''
+#                 if stock["actual_qty"] >= to_pickup:
+#                     pick_up["batch_no"] = stock["batch_no"]
+#                     pick_up["qty"] = to_pickup
+#                     stock["actual_qty"] -= to_pickup
+#                     to_pickup = 0
+#                 else:
+#                     pick_up["batch_no"] = stock["batch_no"]
+#                     pick_up["qty"] = stock["actual_qty"]
+#                     to_pickup -= stock["actual_qty"]
+#                     stock["actual_qty"] = 0
+#                 pick_up_list.append(pick_up)
+#                 if to_pickup == 0: break
+#         else:
+#             print("Free Data")
+#             if free_data.get(sales["item_code"]) is None: continue
+#             for stock in free_data[sales["item_code"]]:
+#                 if stock["actual_qty"] == 0: continue
+#                 try:
+#                     date_delta = stock["expiry_date"] - today
+#                     if date_delta.days < settings['expiry_date']: continue
+#                 except:
+#                     pass
+#                 pick_up = {}
+#                 pick_up["item_code"] = sales["item_code"]
+#                 pick_up["stock_uom"] = stock["stock_uom"]
+#                 pick_up["warehouse"] = stock["warehouse"]
+#                 pick_up["promo_type"] = sales["promo_type"]
+#                 pick_up["so_detail"] = sales["so_detail"]
+#                 try:
+#                     pick_up["wbs_storage_location_id"] = wbs_details[settings["retail_primary_warehouse"]][sales["item_code"]]["wbs_storage_location_id"]
+#                     pick_up["wbs_storage_location"] = wbs_details[settings["retail_primary_warehouse"]][sales["item_code"]]["wbs_storage_location"]
+#                 except:
+#                     pick_up["wbs_storage_location_id"] = ''
+#                     pick_up["wbs_storage_location"] = ''
+#                 if stock["actual_qty"] >= to_pickup:
+#                     pick_up["batch_no"] = stock["batch_no"]
+#                     pick_up["qty"] = to_pickup
+#                     stock["actual_qty"] -= to_pickup
+#                     to_pickup = 0
+#                 else:
+#                     pick_up["batch_no"] = stock["batch_no"]
+#                     pick_up["qty"] = stock["actual_qty"]
+#                     to_pickup -= stock["actual_qty"]
+#                     stock["actual_qty"] = 0
+#                 free_pick_list.append(pick_up)
+#                 if to_pickup == 0: break
         
-    return pick_up_list + free_pick_list
+#     return pick_up_list + free_pick_list
 
-def fetch_free_stock_detail(free_list, free_warehouse):
-    print("Free warehouse fetch!")
-    items = [data["item_code"] for data in free_list]
+# def fetch_free_stock_detail(free_list, free_warehouse):
+#     print("Free warehouse fetch!")
+#     items = [data["item_code"] for data in free_list]
 
-    if not (len(items) > 0): return []
+#     if not (len(items) > 0): return []
 
-    items = re.sub(r',\)$', ')', str(tuple(items)))
+#     items = re.sub(r',\)$', ')', str(tuple(items)))
 
-    stock_data_batch = frappe.db.sql(f"""
-        select batch_id, `tabBatch`.stock_uom, item as item_code, expiry_date, `tabStock Ledger Entry`.warehouse as warehouse, sum(`tabStock Ledger Entry`.actual_qty) as actual_qty
-        from `tabBatch`
-            join `tabStock Ledger Entry` ignore index (item_code, warehouse)
-                on (`tabBatch`.batch_id = `tabStock Ledger Entry`.batch_no )
-        where `tabStock Ledger Entry`.item_code in {items} and warehouse = '{free_warehouse}'
-            and `tabStock Ledger Entry`.is_cancelled = 0
-        group by batch_id, warehouse
-        order by expiry_date ASC
-    """, as_dict=True)
-    stock_data_batchless = frappe.db.sql(
-        f"""select batch_no as batch_id, item_code, warehouse, stock_uom, sum(actual_qty) as actual_qty from `tabStock Ledger Entry`
-        where item_code in {items} and warehouse = '{free_warehouse}' and (batch_no is null or batch_no = '')
-        group by item_code, warehouse
-        """,
-        as_dict=True
-    )
+#     stock_data_batch = frappe.db.sql(f"""
+#         select batch_id, `tabBatch`.stock_uom, item as item_code, expiry_date, `tabStock Ledger Entry`.warehouse as warehouse, sum(`tabStock Ledger Entry`.actual_qty) as actual_qty
+#         from `tabBatch`
+#             join `tabStock Ledger Entry` ignore index (item_code, warehouse)
+#                 on (`tabBatch`.batch_id = `tabStock Ledger Entry`.batch_no )
+#         where `tabStock Ledger Entry`.item_code in {items} and warehouse = '{free_warehouse}'
+#             and `tabStock Ledger Entry`.is_cancelled = 0
+#         group by batch_id, warehouse
+#         order by expiry_date ASC
+#     """, as_dict=True)
+#     stock_data_batchless = frappe.db.sql(
+#         f"""select batch_no as batch_id, item_code, warehouse, stock_uom, sum(actual_qty) as actual_qty from `tabStock Ledger Entry`
+#         where item_code in {items} and warehouse = '{free_warehouse}' and (batch_no is null or batch_no = '')
+#         group by item_code, warehouse
+#         """,
+#         as_dict=True
+#     )
     
-    for data in stock_data_batchless:
-        if data.get("actual_qty") is None: continue
-        stock_data_batch.append(data)
+#     for data in stock_data_batchless:
+#         if data.get("actual_qty") is None: continue
+#         stock_data_batch.append(data)
     
-    print("*-/"*50)
-    for data in stock_data_batch:
-        print(data)
+#     print("*-/"*50)
+#     for data in stock_data_batch:
+#         print(data)
     
-    return stock_data_batch
+#     return stock_data_batch
 
-@frappe.whitelist()
-def item_list_container(so_name, company):
-    customer = get_customer(so_name)
-    customer_type = fetch_customer_type(so_name)
-    fulfillment_settings = fetch_fulfillment_settings(company, customer)
-    print("Settings", fulfillment_settings)
+# @frappe.whitelist()
+# def item_list_container(so_name, company):
+#     customer = get_customer(so_name)
+#     customer_type = fetch_customer_type(so_name)
+#     fulfillment_settings = fetch_fulfillment_settings(company, customer)
+#     print("Settings", fulfillment_settings)
 
-    if customer_type == "Retail":
-        warehouse = fulfillment_settings["retail_primary_warehouse"]
-    elif customer_type == "Hospital":
-        warehouse = fulfillment_settings["hospital_warehouse"]
-    elif customer_type == "Institutional":
-        warehouse = fulfillment_settings["institutional_warehouse"]
+#     if customer_type == "Retail":
+#         warehouse = fulfillment_settings["retail_primary_warehouse"]
+#     elif customer_type == "Hospital":
+#         warehouse = fulfillment_settings["hospital_warehouse"]
+#     elif customer_type == "Institutional":
+#         warehouse = fulfillment_settings["institutional_warehouse"]
 
-    sales_list = fetch_item_list(so_name)
-    print()
-    print("SALES LIST", sales_list)
-    free_list = list(filter(lambda x:x["warehouse"] == fulfillment_settings["free_warehouse"], sales_list))
-    print()
-    print("Free List", free_list)
-    order_list = list(filter(lambda x:x["warehouse"] in warehouse, sales_list))
-    print()
-    print("Order List", order_list)
+#     sales_list = fetch_item_list(so_name)
+#     free_list = list(filter(lambda x:x["warehouse"] == fulfillment_settings["free_warehouse"], sales_list))
+#     order_list = list(filter(lambda x:x["warehouse"] in warehouse, sales_list))
 
-    stock_data = fetch_stock_details(customer_type, order_list, fulfillment_settings)
-    free_data = fetch_free_stock_detail(free_list, fulfillment_settings["free_warehouse"])
-    p_stock = fetch_pick_put_list_data(customer_type, order_list, fulfillment_settings)
-    print("*"*100)
-    for p in p_stock:
-        print(p)
-    stock_data, free_data = update_stock_detail_with_picked_stock(stock_data, free_data, p_stock)
-    print("STOCK DATA")
-    for s in stock_data:
-        print(s)
-    handled_data = handle_stock_data(stock_data)
-    handled_free = handle_free_data(free_data)
-    print("HANDLED FREE")
-    print(handled_free)
-    print("HANDLED DATA")
-    print(handled_data)
-    wbs_details = fetch_wbs_location(customer_type, sales_list, fulfillment_settings)
-    pick_put_list = sales_order_handle(sales_list, handled_data, handled_free, wbs_details, fulfillment_settings)
-    return dict(free_data = free_data, order_list = order_list, free_list = free_list, p_stock = p_stock, wbs_details = wbs_details, pick_put_list = pick_put_list ,sales_list = sales_list, customer_type = customer_type, settings = fulfillment_settings, stock_data = handled_data)
+#     stock_data = fetch_stock_details(customer_type, order_list, fulfillment_settings)
+#     free_data = fetch_free_stock_detail(free_list, fulfillment_settings["free_warehouse"])
+#     p_stock = fetch_pick_put_list_data(customer_type, order_list, fulfillment_settings)
+
+#     stock_data, free_data = update_stock_detail_with_picked_stock(stock_data, free_data, p_stock)
+
+#     handled_data = handle_stock_data(stock_data)
+#     handled_free = handle_free_data(free_data)
+
+#     wbs_details = fetch_wbs_location(customer_type, sales_list, fulfillment_settings)
+#     pick_put_list = sales_order_handle(sales_list, handled_data, handled_free, wbs_details, fulfillment_settings)
+#     return dict(free_data = free_data, order_list = order_list, free_list = free_list, p_stock = p_stock, wbs_details = wbs_details, pick_put_list = pick_put_list ,sales_list = sales_list, customer_type = customer_type, settings = fulfillment_settings, stock_data = handled_data)
 
 def get_customer(so_name):
     customer = frappe.db.sql(
@@ -1275,3 +1262,16 @@ def pick_status(item_list, so_name, company, stage_index, stage_list):
         print(sales_doc.pch_picking_status)
         update_sales_order(sales_doc, average_price, settings["free_warehouse"])
         return dict(next_stage = next_stage, average_price = average_price)
+
+
+@frappe.whitelist()
+def update_pick_put_list_material_names(doc_name, names, sales_invoice):
+    names = json.loads(names)
+
+    frappe.db.set_value('Pick Put List', doc_name, 'material_receipt', names.get('names.mr_name'))
+    frappe.db.set_value('Pick Put List', doc_name, 'material_issue', names.get('names.mi_name'))
+    frappe.db.set_value('Pick Put List', doc_name, 'sales_invoice', sales_invoice)
+
+@frappe.whitelist()
+def update_pick_put_list_stages(doc_name, next_stage):
+    frappe.db.set_value('Pick Put List', doc_name, 'pick_list_stage', next_stage)
