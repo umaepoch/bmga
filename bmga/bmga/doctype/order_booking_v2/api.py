@@ -982,6 +982,8 @@ def sales_promos(item_code , customer_type, company, order_list, customer):
         if v.get('qty', 0) == 0:
             sales_promos_items.pop(i)
     
+    print('done')
+    
     sales_order = sales_order_calculation(sales_promo_discounted_amount, sales_promos_items, order_list, customer_type, settings, settings[0]["free_warehouse"])
 
 
