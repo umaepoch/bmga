@@ -382,19 +382,15 @@ def available_stock_details_for_promos_y_item(item_code, customer_type, settings
     stock_promo.extend(stock_data_batch)
     stock_promo.extend(stock_data_batchless)
     available_qty = {}
-    frappe.msgprint(f"stock_promo{stock_promo}")
     for batch_info in stock_promo:
         try :
             if batch_info["expiry_date"] is not None: 
-                frappe.msgprint(f"date_delta.days, expiry_date {date_delta.days} {expiry_date} {batch_info}")
-                frappe.msgprint(f"date_delta.days < expiry_date {date_delta.days < expiry_date}")
                 date_delta = batch_info["expiry_date"] - today
                 if date_delta.days < expiry_date: continue
                 available_qty[batch_info["item_code"]] = available_qty.get(batch_info["item_code"], 0) + batch_info["actual_qty"]
         except: 
             available_qty[batch_info["item_code"]] = available_qty.get(batch_info["item_code"], 0) + batch_info["actual_qty"]
     # print(type(available_qty))
-    frappe.msgprint(f"Inside{available_qty}")
     print("AVAILABLE_QTY", available_qty)
     return available_qty
 
@@ -589,7 +585,6 @@ def fetch_sales_promos_get_diff_item(customer, item_code, customer_type, free_wa
                                         
                                         try:
                                             if sales_data[0].get("pending_qty") is None: 
-                                                frappe.msgprint(f"promo_qty {promo_qty}")
                                                 qty = promo_qty[promos[i]["free_item"]]
                                             else:
                                                 if sales_data[0]["pending_qty"] <= promo_qty[promos[i]["free_item"]]:
@@ -597,7 +592,6 @@ def fetch_sales_promos_get_diff_item(customer, item_code, customer_type, free_wa
                                                 else:
                                                     continue
                                         except:
-                                            frappe.msgprint(f"promo_qty {promo_qty}")
                                             qty = promo_qty[promos[i]["free_item"]]
 
 
@@ -610,7 +604,6 @@ def fetch_sales_promos_get_diff_item(customer, item_code, customer_type, free_wa
                                         except:
                                             qty = promo_qty[promos[i]["free_item"]]
 
-                                        frappe.msgprint(f"qty {qty}")
                                         print("...............................................................", qty)
                                         if qty > 0:
                                             if order_list[t]["item_code"] == promos[i]["bought_item"]:
@@ -905,13 +898,12 @@ def sales_order_calculation(sales_promo_discounted_amount, sales_promos_items, o
 
 @frappe.whitelist()
 def sales_promo_checked(customer):
-    print(".......customer", customer)
     sp = frappe.db.sql(f"""
         select c.pch_sales_promo
         from `tabCustomer` as c
         where c.name = '{customer}' and c.pch_sales_promo = 1
     """ , as_dict = True)
-    print("SP.........Length", sp)
+    
     if len(sp)>0:
         return True
     else:
@@ -971,21 +963,27 @@ def sales_promos(item_code , customer_type, company, order_list, customer):
     item_code = json.loads(item_code)
     order_list= json.loads(order_list)
 
-    print("Orderlist.....",order_list)
-    # rate_contract = fetch_rate_contract(customer, item_code)
     settings = fetch_fulfillment_settings(company, customer)
     promos_qty = available_stock_details_for_promos(item_code, customer_type, settings[0]["free_warehouse"], settings[0]["expiry_date_limit"])
     sales_promos_same_item = fetch_sales_promos_get_same_item(customer, item_code, customer_type, settings[0]["free_warehouse"], settings[0]["expiry_date_limit"], order_list)
     sales_promo_diff_items = fetch_sales_promos_get_diff_item(customer, item_code, customer_type, settings[0]["free_warehouse"], settings[0]["expiry_date_limit"], order_list)
     sales_promo_discount = fetch_sales_promos_get_same_item_discout(customer, item_code, customer_type, settings[0]["free_warehouse"],  settings[0]["expiry_date_limit"], order_list)
     sales_promo_quantity_discount = fetch_sales_promos_qty_based_discount(customer, item_code, customer_type, settings[0]["retail_primary_warehouse"],  settings[0]["expiry_date_limit"], order_list)
-    sales_promo_discounted_amount = sales_promo_discount["Promo_sales"] + sales_promo_quantity_discount["Promo_sales"]
-    sales_promos_items = sales_promos_same_item["Promo_sales"] + sales_promo_diff_items["Promo_sales"] + sales_promo_discount["Promo_sales"]
-    sales_order = sales_order_calculation(sales_promo_discounted_amount, sales_promos_items, order_list, customer_type, settings, settings[0]["free_warehouse"])
     
-    print("Sales order", '*'*50)
-    for s in sales_order['sales_order']:
-        print(s)
+    sales_promo_discounted_amount = sales_promo_discount["Promo_sales"] + sales_promo_quantity_discount["Promo_sales"]
+    
+    for i, v in enumerate(sales_promo_discounted_amount):
+        if v.get('qty', 0) == 0:
+            sales_promo_discounted_amount.pop(i)
+    
+    sales_promos_items = sales_promos_same_item["Promo_sales"] + sales_promo_diff_items["Promo_sales"] + sales_promo_discount["Promo_sales"]
+    
+    for i, v in enumerate(sales_promos_items):
+        if v.get('qty', 0) == 0:
+            sales_promos_items.pop(i)
+    
+    sales_order = sales_order_calculation(sales_promo_discounted_amount, sales_promos_items, order_list, customer_type, settings, settings[0]["free_warehouse"])
+
 
     return dict(sales_order = sales_order,sales_promos_items= sales_promos_items, bought_item = item_code, sales_promos_same_item = sales_promos_same_item, sales_promo_diff_items = sales_promo_diff_items, sales_promo_discount= sales_promo_discount, promos_qty = promos_qty, sales_promo_discounted_amount = sales_promo_discounted_amount )
 
@@ -1066,17 +1064,19 @@ def check_sales_promo(customer, item_code):
     return 0
 
 @frappe.whitelist()
-def item_qty_container(company, item_code, customer_type, customer):
+def item_qty_container(company, item_code, customer_type, customer = None):
     fulfillment_settings = fetch_fulfillment_settings(company, customer)
-    print('customer type ***', customer_type)
     stock_detail = fetch_item_details(item_code, customer_type, fulfillment_settings[0])
     handled_stock = available_stock_details(item_code, customer_type, fulfillment_settings[0])
-    price_details = fetch_average_price_v2(customer, item_code)
-    brand_name =  fetch_item_brand(item_code)
-    print('*************', price_details)
+    if not customer == None:
+        price_details = fetch_average_price_v2(customer, item_code)
+    else:
+        price_details = None
+    if not customer == None:
+        brand_name =  fetch_item_brand(item_code)
+    else:
+        brand_name = None
     sales_check = check_sales_promo(customer, item_code)
-    print('Salse check *********', sales_check)
-    # sales_promo = fetch_sales_promos(item_code)
     return dict(promo_check = sales_check, available_qty = handled_stock["available_qty"], price_details = price_details, stock_detail = stock_detail, qty_detail = handled_stock, brand_name = brand_name) 
 
 
@@ -1328,3 +1328,53 @@ def sales_order_container(customer, company, customer_type, sales_order):
         qo_name = doc_qo.name
 
     return dict(customer_in_state = customer_in_state, so_name = so_name, qo_name = qo_name, outerJson_qo = outerJson_qo, outerJson_so = outerJson_so, outerJson = outerJson_so)
+
+@frappe.whitelist()
+def update_pending_reason(name, total_amount, unpaid_amount, credit_limit, credit_days = False):    
+    msg = ''
+    
+    doc = frappe.get_doc('Order Booking V2', name)
+        
+    if total_amount + unpaid_amount > credit_limit:
+        msg = 'Credit limit exceeded'
+    
+    if credit_days:
+        msg = 'Credit days exceeded'
+    
+    doc.pending_reason = msg
+    doc.save('Update')
+    
+    return msg
+
+@frappe.whitelist()
+def reject_order(name):
+    doc = frappe.get_doc('Order Booking V2', name)
+    doc.pch_status = "Rejected"
+
+    doc.save('Update')
+
+@frappe.whitelist()
+def approve_order(name, so_name, qo_name):
+    doc = frappe.get_doc('Order Booking V2', name)
+    doc.pch_status = "Approved"
+    doc.order_booking_so = so_name
+    doc.hunting_quotation = qo_name
+
+    doc.save('Update')
+
+@frappe.whitelist()
+def fetch_order_items(name):
+    doc = frappe.get_doc('Order Booking V2', name).as_dict()
+
+    return dict(order_booking_items_v2 = doc.order_booking_items_v2,
+        promos = doc.promos, promos_discount = doc.promos_discount,
+        sales_order_preview = doc.sales_order_preview)
+
+# @frappe.whitelist()
+# def submit_order(name):
+#     doc = frappe.get_doc('Order Booking V2', name)
+
+#     if doc.pending_reason:
+#         doc.pch_status = "Pending"
+#         doc.save('Update')
+#         doc.submit()
