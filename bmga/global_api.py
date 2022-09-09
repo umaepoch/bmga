@@ -543,6 +543,7 @@ def pick_put_list_container(so_name, company):
 @frappe.whitelist()
 def fetch_pick_put_list_items(name):
     items = frappe.get_doc('Pick Put List', name).as_dict().get('item_list', [])
+    if len(items) == 0: frappe.msgprint('NO ITEMS FOUND ERROR')
     return items
 
 
@@ -661,3 +662,10 @@ def check_customer_state_test():
         l.append(doc)
     
     return l
+
+@frappe.whitelist()
+def update_pick_put_list_name(name, pl_name):
+    doc = frappe.get_doc('Sales Order', name)
+    doc.pch_pick_put_list = pl_name
+
+    doc.save()

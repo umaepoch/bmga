@@ -1268,10 +1268,16 @@ def pick_status(item_list, so_name, company, stage_index, stage_list):
 def update_pick_put_list_material_names(doc_name, names, sales_invoice):
     names = json.loads(names)
 
-    frappe.db.set_value('Pick Put List', doc_name, 'material_receipt', names.get('names.mr_name'))
-    frappe.db.set_value('Pick Put List', doc_name, 'material_issue', names.get('names.mi_name'))
-    frappe.db.set_value('Pick Put List', doc_name, 'sales_invoice', sales_invoice)
+    doc = frappe.get_doc('Pick Put List', doc_name)
+    doc.material_receipt = names.get('mr_name', '')
+    doc.material_issue = names.get('mi_name', '')
+    doc.sales_invoice = sales_invoice
+
+    doc.save()
 
 @frappe.whitelist()
 def update_pick_put_list_stages(doc_name, next_stage):
-    frappe.db.set_value('Pick Put List', doc_name, 'pick_list_stage', next_stage)
+    doc = frappe.get_doc("Pick Put List", doc_name)
+    doc.pick_list_stage = next_stage
+
+    doc.save()

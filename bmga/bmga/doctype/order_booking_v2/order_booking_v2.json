@@ -7,6 +7,7 @@
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
+  "pch_status",
   "company",
   "customer",
   "customer_type",
@@ -44,6 +45,7 @@
    "depends_on": "customer",
    "fieldname": "customer_type",
    "fieldtype": "Data",
+   "in_list_view": 1,
    "label": "Customer type",
    "read_only": 1
   },
@@ -77,6 +79,7 @@
   {
    "fieldname": "customer",
    "fieldtype": "Link",
+   "in_list_view": 1,
    "label": "Customer ",
    "options": "Customer"
   },
@@ -118,7 +121,8 @@
    "fieldname": "sales_order_preview",
    "fieldtype": "Table",
    "label": "Sales Order Preview ",
-   "options": "Order booking V2 Sales Order Preview"
+   "options": "Order booking V2 Sales Order Preview",
+   "read_only": 1
   },
   {
    "fieldname": "unpaid_amount",
@@ -170,16 +174,28 @@
    "read_only": 1
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "pending_reason",
    "fieldtype": "Data",
+   "in_list_view": 1,
    "label": "Pending Reason",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "pch_status",
+   "fieldtype": "Select",
+   "hidden": 1,
+   "in_list_view": 1,
+   "label": "Status",
+   "options": "Draft\nPending\nApproved\nRejected",
    "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2022-09-02 15:45:17.308264",
+ "modified": "2022-09-09 11:14:32.046710",
  "modified_by": "Administrator",
  "module": "Bmga",
  "name": "Order Booking V2",

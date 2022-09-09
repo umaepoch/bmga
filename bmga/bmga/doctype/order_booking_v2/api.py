@@ -1372,11 +1372,19 @@ def fetch_order_items(name):
         promos = doc.promos, promos_discount = doc.promos_discount,
         sales_order_preview = doc.sales_order_preview)
 
-# @frappe.whitelist()
-# def submit_order(name):
-#     doc = frappe.get_doc('Order Booking V2', name)
+@frappe.whitelist()
+def pending_order(name):
+    doc = frappe.get_doc('Order Booking V2', name)
 
-#     if doc.pending_reason:
-#         doc.pch_status = "Pending"
-#         doc.save('Update')
-#         doc.submit()
+    if doc.pending_reason:
+        doc.pch_status = "Pending"
+        doc.save('Update')
+        doc.submit()
+
+@frappe.whitelist()
+def submit_order(name):
+    doc = frappe.get_doc('Order Booking V2', name)
+
+    doc.pch_status = "Approved"
+    doc.save('Update')
+    doc.submit()

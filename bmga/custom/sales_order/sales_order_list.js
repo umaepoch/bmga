@@ -13,8 +13,15 @@ frappe.listview_settings['Sales Order'].onload = function(listview) {
                         company: company
                     }
                 }).done(r => {
-                    console.log(r)
-                    frappe.model.set_value("Sales Order", name, "pch_pick_put_list", r.message.ppl_name);
+                    frappe.call({
+                        method: "bmga.global_api.update_pick_put_list_name",
+                        args: {
+                            name: name,
+                            pl_name: r.message.ppl_name
+                        }
+                    }).done(r => {
+                        frappe.msgprint('Pick Put List Generated')
+                    })
                 })
             }
         })
