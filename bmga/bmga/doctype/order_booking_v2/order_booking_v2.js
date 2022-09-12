@@ -136,8 +136,11 @@ frappe.ui.form.on('Order Booking V2', {
 	},
 
 	before_submit: function(frm) {
+		console.log(frm.doc.pending_reason);
 		if(!frm.doc.pending_reason) {
+			
 			if(frm.doc.docstatus == 1 && !frm.doc.order_booking_so) {
+				console.log('docstatus', frm.doc.docstatus, frm.doc.order_booking_so)
 				let order_list = frm.doc.order_booking_items_v2;
 				let customer = frm.doc.customer;
 				let company = frm.doc.company;
@@ -151,8 +154,9 @@ frappe.ui.form.on('Order Booking V2', {
 				if(promo_dis == undefined || promo_dis == null) {
 					promo_dis = []
 				}
-	
+				console.log('order list', order_list)
 				if(order_list) {
+					console.log('sales order container')
 					frappe.call({
 						method: "bmga.bmga.doctype.order_booking_v2.api.sales_order_container",
 						args: {
@@ -343,16 +347,3 @@ frappe.ui.form.on('Order Booking Items V2', {
 		}
 	}
 });
-
-var my_fun = function(frm)
-{
-        if(frm.doc.workflow_state == "Approved"){
-                       frappe.msgprint("This is Approved");
-             }
-        else if(frm.doc.workflow_state == "Rejected"){
-                       frappe.msgprint("This is Rejected");
-             }
-		 else if(frm.doc.workflow_state == "Pending"){
-				frappe.msgprint("This is Pending");
-	  }
-}
