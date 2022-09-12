@@ -960,6 +960,7 @@ def customer_type_container(customer):
 
 @frappe.whitelist()
 def sales_promos(item_code , customer_type, company, order_list, customer):
+    print('customer type', customer_type)
     item_code = json.loads(item_code)
     order_list= json.loads(order_list)
 
@@ -972,20 +973,13 @@ def sales_promos(item_code , customer_type, company, order_list, customer):
     
     sales_promo_discounted_amount = sales_promo_discount["Promo_sales"] + sales_promo_quantity_discount["Promo_sales"]
     
-    for i, v in enumerate(sales_promo_discounted_amount):
-        if v.get('qty', 0) == 0:
-            sales_promo_discounted_amount.pop(i)
-    
     sales_promos_items = sales_promos_same_item["Promo_sales"] + sales_promo_diff_items["Promo_sales"] + sales_promo_discount["Promo_sales"]
-    
-    for i, v in enumerate(sales_promos_items):
-        if v.get('qty', 0) == 0:
-            sales_promos_items.pop(i)
-    
-    print('done')
     
     sales_order = sales_order_calculation(sales_promo_discounted_amount, sales_promos_items, order_list, customer_type, settings, settings[0]["free_warehouse"])
 
+    for i, v in enumerate(sales_order.get('sales_order', [])):
+        if v.get('qty', 0) == 0:
+            sales_order.pop(i)
 
     return dict(sales_order = sales_order,sales_promos_items= sales_promos_items, bought_item = item_code, sales_promos_same_item = sales_promos_same_item, sales_promo_diff_items = sales_promo_diff_items, sales_promo_discount= sales_promo_discount, promos_qty = promos_qty, sales_promo_discounted_amount = sales_promo_discounted_amount )
 

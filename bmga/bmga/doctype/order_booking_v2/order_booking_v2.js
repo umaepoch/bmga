@@ -67,6 +67,10 @@ frappe.ui.form.on('Order Booking V2', {
 
 		let company = frm.doc.company;
 
+		if(!customer_type) {
+			customer_type = frm.doc.customer_type;
+		}
+
 		if (item_code_list) {
 			frappe.call({
 				method : "bmga.bmga.doctype.order_booking_v2.api.sales_promos",
