@@ -136,11 +136,10 @@ frappe.ui.form.on('Order Booking V2', {
 	},
 
 	before_submit: function(frm) {
-		console.log(frm.doc.pending_reason);
+		console.log('pending reason', frm.doc.pending_reason);
 		if(!frm.doc.pending_reason) {
-			
+			console.log('docstatus', frm.doc.docstatus, frm.doc.order_booking_so)
 			if(frm.doc.docstatus == 1 && !frm.doc.order_booking_so) {
-				console.log('docstatus', frm.doc.docstatus, frm.doc.order_booking_so)
 				let order_list = frm.doc.order_booking_items_v2;
 				let customer = frm.doc.customer;
 				let company = frm.doc.company;
