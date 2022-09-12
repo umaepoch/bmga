@@ -215,8 +215,6 @@ frappe.ui.form.on('Order Booking V2', {
 	},
 
 	refresh: function(frm) {
-		console.log(frm.doc);
-
 		if(frm.doc.docstatus == 1 && frm.doc.pending_reason) {
 			frm.add_custom_button(__('Approve'), function(){
 				if(frm.doc.docstatus == 1 && !frm.doc.order_booking_so) {
