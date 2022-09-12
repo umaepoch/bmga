@@ -506,21 +506,40 @@ def item_list_container(so_name, company):
     pick_put_list = sales_order_handle(sales_list, handled_data, handled_free, wbs_details, fulfillment_settings)
     return pick_put_list
 
+
+def fetch_customer_detail(so_name):
+    customer = frappe.db.get_value('Sales Order', so_name, 'customer', as_dict=1)
+    customer_name = frappe.db.get_value('Customer', customer['customer'], 'customer_name', as_dict=1)
+    territory = frappe.db.get_value('Customer', customer['customer'], 'territory', as_dict=1)
+
+    print('customer data!!!!!')
+    print(customer)
+    print(customer_name)
+    print(territory)
+
+    return dict(customer = customer['customer'], customer_name = customer_name['customer_name'], territory = territory['territory'])
+
+
 @frappe.whitelist()
 def pick_put_list_container(so_name, company):
-	outerJson_ppl = {
+    customer = fetch_customer_detail(so_name)
+
+    outerJson_ppl = {
 		"doctype": "Pick Put List",
 		"type": "Pick",
 		"pick_list_stage": "Ready for Picking",
 		"sales_order": so_name,
+        "customer": customer['customer'],
+        "customer_name": customer['customer_name'],
+        "territory": customer['territory'],
 		"item_list": []
 	}
 
-	pick_put_list = item_list_container(so_name, company)
+    pick_put_list = item_list_container(so_name, company)
 
-	for x in pick_put_list:
-		innerJson = {
-			"doctype": "Pick Put List Items",
+    for x in pick_put_list:
+        innerJson = {
+            "doctype": "Pick Put List Items",
 			"item": x.get("item_code", ""),
             "uom": x.get("stock_uom", ""),
 			"batch": x.get("batch_no", ""),
@@ -529,15 +548,15 @@ def pick_put_list_container(so_name, company):
 			"quantity_to_be_picked": x.get("qty", 0),
 			"promo_type": x.get("promo_type", ""),
 			"so_detail": x.get("so_detail", ""),
-		}
+        }
 
-		outerJson_ppl["item_list"].append(innerJson)
+        outerJson_ppl["item_list"].append(innerJson)
+    
+    doc_ppl = frappe.new_doc("Pick Put List")
+    doc_ppl.update(outerJson_ppl)
+    doc_ppl.save()
 
-	doc_ppl = frappe.new_doc("Pick Put List")
-	doc_ppl.update(outerJson_ppl)
-	doc_ppl.save()
-
-	return dict(so_name = so_name, ppl_name = doc_ppl.name)
+    return dict(so_name = so_name, ppl_name = doc_ppl.name)
 
 
 @frappe.whitelist()

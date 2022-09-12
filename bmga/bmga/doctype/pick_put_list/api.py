@@ -528,12 +528,12 @@ def rate_fetch_mrp_batchless(item_code):
         f"""select rci.mrp
         from `tabRate Contract Item` as rci
             join `tabRate Contract` as rc on (rci.parent = rc.name)
-        where rc.selling_price = 1 rci.item = '{item_code}'""",
+        where rc.selling_price = 1 and rci.item = '{item_code}'""",
         as_dict=1
     )
 
     if len(p) > 0:
-        return dict(price = p.get('mrp', 0))
+        return dict(price = p[0].get('mrp', 0))
     else: return dict(price = 0)
 
 
@@ -862,12 +862,12 @@ def fetch_promo_type_1(i, sales_order, customer_type, settings):
 
 def customer_rate_contract(customer, item_code):
     today = datetime.date.today()
-
+    print('rate contract item_code', item_code, len(item_code))
     rc = frappe.db.sql(
         f"""select rc.name
         from `tabRate Contract` as rc
             join `tabRate Contract Item` as rci on (rc.name = rci.parent)
-        where rc.customer = '{customer}' and rci.item='{item_code}' and rci.start_date <= '{today}' and rci.end_date >= '{today}'""",
+        where rc.customer = '{customer}' and rci.item = '{item_code}' and rci.start_date <= '{today}' and rci.end_date >= '{today}'""",
         as_dict=1
     )
 
@@ -876,9 +876,9 @@ def customer_rate_contract(customer, item_code):
 
 def update_average_price(item_list, sales_order, customer_type, settings, customer):
     new_average_price = {}
-    discount = 1
 
     for item in item_list:
+        discount = 1
         if item["warehouse"] == settings["free_warehouse"]: continue
         qty, batch = ppli_qty_and_batch(item)
         if qty == 0: continue
@@ -906,7 +906,7 @@ def update_average_price(item_list, sales_order, customer_type, settings, custom
                     rate = fetch_batch_price(batch, item["item"], rate_contract["name"])
                 else:
                     rate = fetch_batchless_price(item["item"], rate_contract["name"])
-
+                
         else:
             if item["warehouse"] == settings["free_warehouse"]:
                 rate = {"price": 0}
@@ -1164,7 +1164,7 @@ def generate_material_issue(item_list):
 
         return name
 
-def stock_correction(customer, so_name, company, item_list, settings):
+def stock_correction(so_name, item_list):
     print("*"*150)
     m_receipt = []
     m_issue = []
@@ -1244,7 +1244,7 @@ def pick_status(item_list, so_name, company, stage_index, stage_list):
         sales_doc.save()
         sales_doc.submit()
 
-        names = stock_correction(customer, so_name, company, item_list, settings)
+        names = stock_correction(so_name, item_list)
 
         outerJson_salesinvoice = generate_sales_invoice_json(customer, customer_type, so_name, sales_order, company, item_list, settings)
         sales_invoice_doc = frappe.new_doc("Sales Invoice")
