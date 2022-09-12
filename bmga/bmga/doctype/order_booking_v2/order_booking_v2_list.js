@@ -12,7 +12,7 @@ frappe.listview_settings['Order Booking V2'] = {
     },
 
     onload(listview) {
-        listview.page.add_action_item(__("Submit"), function() {
+        listview.page.add_action_item(__("Bulk Submit"), function() {
             $.each(listview.get_checked_items(), function(key, value) {
                 if(value.pch_status == "Draft") {
                     if(value.pending_reason) {
