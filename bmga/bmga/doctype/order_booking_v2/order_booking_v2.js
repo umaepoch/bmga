@@ -135,7 +135,7 @@ frappe.ui.form.on('Order Booking V2', {
 		}	
 	},
 
-	before_submit: function(frm) {
+	on_submit: function(frm) {
 		console.log('pending reason', frm.doc.pending_reason);
 		if(!frm.doc.pending_reason) {
 			console.log('docstatus', frm.doc.docstatus, frm.doc.order_booking_so)
