@@ -1034,9 +1034,13 @@ def get_customer_outstanding(customer, company, ignore_outstanding_sales_order=F
 
 def check_credit_limit(customer, company, ignore_outstanding_sales_order=False, extra_amount=0):
     credit_limit = get_credit_limit(customer, company)
-    if not credit_limit: return
+    if not credit_limit:
+        credit_limit = 0
 
     customer_outstanding = get_customer_outstanding(customer, company, ignore_outstanding_sales_order)
+    if not customer_outstanding:
+        customer_outstanding = 0
+        
     if extra_amount > 0:
         customer_outstanding += flt(extra_amount)
     
@@ -1044,8 +1048,10 @@ def check_credit_limit(customer, company, ignore_outstanding_sales_order=False, 
 
 @frappe.whitelist()
 def customer_type_container(customer, company):
+    print('customer -----', customer, company)
     customer_type = fetch_customer_type(customer)
     unpaid_amount, credit_limit = check_credit_limit(customer, company)
+    print('values', unpaid_amount, credit_limit)
     v = verify_credit_limit(customer)
     return dict(customer_type = customer_type, unpaid_amount = unpaid_amount, credit_limit = credit_limit, credit_days = v)
 
