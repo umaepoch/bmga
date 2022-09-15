@@ -20,14 +20,16 @@ frappe.ui.form.on('Order Booking V2', {
 
 	customer: function(frm) {
 		let customer = frm.doc.customer;
-		if(customer) {
+		let company = frm.doc.company;
+		if(customer && company) {
 			frm.set_value("order_booking_items_v2", [])
 			frm.set_value("order_booking_so", null)
 			frm.set_value("hunting_quotation", null)
 			frappe.call({
 				method: "bmga.bmga.doctype.order_booking_v2.api.customer_type_container",
 				args: {
-					customer: customer
+					customer: customer,
+					company: company
 				}
 			}).done((response) => {
 				customer_type = response.message.customer_type.pch_customer_type;
@@ -38,7 +40,7 @@ frappe.ui.form.on('Order Booking V2', {
 				refresh_field("unpaid_amount");
 				refresh_field("credit_limit");
 
-				if(response.message.verification) {
+				if(response.message.credit_days) {
 					frm.set_value('pending_reason', 'Credit days exceeded');
 					refresh_field('pending_reason');
 					credit_days = true;

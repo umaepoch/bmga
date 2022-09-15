@@ -3,6 +3,178 @@ import frappe
 import datetime
 from erpnext.accounts.utils import get_balance_on
 import re
+from frappe.utils import flt
+
+
+# Credit limit
+def get_credit_limit(customer, company):
+	credit_limit = None
+
+	if customer:
+		credit_limit = frappe.db.get_value("Customer Credit Limit",
+			{'parent': customer, 'parenttype': 'Customer', 'company': company}, 'credit_limit')
+
+		if not credit_limit:
+			customer_group = frappe.get_cached_value("Customer", customer, 'customer_group')
+			credit_limit = frappe.db.get_value("Customer Credit Limit",
+				{'parent': customer_group, 'parenttype': 'Customer Group', 'company': company}, 'credit_limit')
+
+	if not credit_limit:
+		credit_limit = frappe.get_cached_value('Company',  company,  "credit_limit")
+
+	return flt(credit_limit)
+
+def get_customer_outstanding(customer, company, ignore_outstanding_sales_order=False, cost_center=None):
+	# Outstanding based on GL Entries
+
+	cond = ""
+	if cost_center:
+		lft, rgt = frappe.get_cached_value("Cost Center",
+			cost_center, ['lft', 'rgt'])
+
+		cond = """ and cost_center in (select name from `tabCost Center` where
+			lft >= {0} and rgt <= {1})""".format(lft, rgt)
+
+	outstanding_based_on_gle = frappe.db.sql("""
+		select sum(debit) - sum(credit)
+		from `tabGL Entry` where party_type = 'Customer'
+		and party = %s and company=%s {0}""".format(cond), (customer, company))
+
+	outstanding_based_on_gle = flt(outstanding_based_on_gle[0][0]) if outstanding_based_on_gle else 0
+
+	# Outstanding based on Sales Order
+	outstanding_based_on_so = 0
+
+	# if credit limit check is bypassed at sales order level,
+	# we should not consider outstanding Sales Orders, when customer credit balance report is run
+	if not ignore_outstanding_sales_order:
+		outstanding_based_on_so = frappe.db.sql("""
+			select sum(base_grand_total*(100 - per_billed)/100)
+			from `tabSales Order`
+			where customer=%s and docstatus = 1 and company=%s
+			and per_billed < 100 and status != 'Closed'""", (customer, company))
+
+		outstanding_based_on_so = flt(outstanding_based_on_so[0][0]) if outstanding_based_on_so else 0
+
+	# Outstanding based on Delivery Note, which are not created against Sales Order
+	outstanding_based_on_dn = 0
+
+	unmarked_delivery_note_items = frappe.db.sql("""select
+			dn_item.name, dn_item.amount, dn.base_net_total, dn.base_grand_total
+		from `tabDelivery Note` dn, `tabDelivery Note Item` dn_item
+		where
+			dn.name = dn_item.parent
+			and dn.customer=%s and dn.company=%s
+			and dn.docstatus = 1 and dn.status not in ('Closed', 'Stopped')
+			and ifnull(dn_item.against_sales_order, '') = ''
+			and ifnull(dn_item.against_sales_invoice, '') = ''
+		""", (customer, company), as_dict=True)
+
+	if not unmarked_delivery_note_items:
+		return outstanding_based_on_gle + outstanding_based_on_so
+
+	si_amounts = frappe.db.sql("""
+		SELECT
+			dn_detail, sum(amount) from `tabSales Invoice Item`
+		WHERE
+			docstatus = 1
+			and dn_detail in ({})
+		GROUP BY dn_detail""".format(", ".join(
+			frappe.db.escape(dn_item.name)
+			for dn_item in unmarked_delivery_note_items
+		))
+	)
+
+	si_amounts = {si_item[0]: si_item[1] for si_item in si_amounts}
+
+	for dn_item in unmarked_delivery_note_items:
+		dn_amount = flt(dn_item.amount)
+		si_amount = flt(si_amounts.get(dn_item.name))
+
+		if dn_amount > si_amount and dn_item.base_net_total:
+			outstanding_based_on_dn += ((dn_amount - si_amount)
+				/ dn_item.base_net_total) * dn_item.base_grand_total
+
+	return outstanding_based_on_gle + outstanding_based_on_so + outstanding_based_on_dn
+
+@frappe.whitelist()
+def check_credit_limit(customer, company, ignore_outstanding_sales_order=False, extra_amount=0):
+	credit_limit = get_credit_limit(customer, company)
+	if not credit_limit:
+		return
+
+	customer_outstanding = get_customer_outstanding(customer, company, ignore_outstanding_sales_order)
+	if extra_amount > 0:
+		customer_outstanding += flt(extra_amount)
+
+	# if credit_limit > 0 and flt(customer_outstanding) > credit_limit:
+	return "Credit limit has been crossed for customer {0} ({1}/{2})".format(customer, customer_outstanding, credit_limit)
+
+
+# Fetch item promos
+def fetch_sales_promo_1(item_code):
+    today = datetime.date.today()
+
+    p = frappe.db.sql(
+        f"""select p1.bought_item, p1.quantity_bought as bought_qty, p1.discount_percentage as discount, p.promo_type
+            from `tabPromo Type 1` as p1
+                join `tabSales Promos` as p on (p.name = p1.parent)
+            where p1.bought_item = '{item_code}' and p.start_date <= '{today}' and p.end_date >= '{today}'""",
+            as_dict=1
+    )
+
+    if len(p) > 0: return p
+    return []
+
+def fetch_sales_promo_2(item_code):
+    today = datetime.date.today()
+
+    p = frappe.db.sql(
+        f"""select p2.bought_item, p2.for_every_quantity_that_is_bought as bought_qty, p2.quantity_of_free_items_thats_given as free_qty, p.promo_type
+            from `tabPromo Type 2` as p2
+                join `tabSales Promos` as p on (p.name = p2.parent)
+            where p2.bought_item = '{item_code}' and p.start_date <= '{today}' and p.end_date >= '{today}'""",
+            as_dict=1
+    )
+
+    if len(p) > 0: return p
+    return []
+
+def fetch_sales_promo_3(item_code):
+    today = datetime.date.today()
+
+    p = frappe.db.sql(
+        f"""select p3.bought_item, p3.free_item, p3.for_every_quantity_that_is_bought as bought_qty, p3.quantity_of_free_items_thats_given as free_qty, p.promo_type
+            from `tabPromo Type 3` as p3
+                join `tabSales Promos` as p on (p.name = p3.parent)
+            where p3.bought_item = '{item_code}' and p.start_date <= '{today}' and p.end_date >= '{today}'""",
+            as_dict=1
+    )
+
+    if len(p) > 0: return p
+    return []
+
+def fetch_sales_promo_5(item_code):
+    today = datetime.date.today()
+
+    p = frappe.db.sql(
+        f"""select p5.bought_item, p5.for_every_quantity_that_is_bought as bought_qty, p5.quantity_of_free_items_thats_given as free_qty, p5.discount, p.promo_type
+            from `tabPromo Type 5` as p5
+                join `tabSales Promos` as p on (p.name = p5.parent)
+            where p5.bought_item = '{item_code}' and p.start_date <= '{today}' and p.end_date >= '{today}'""",
+            as_dict=1
+    )
+
+    if len(p) > 0: p
+    return []
+
+@frappe.whitelist()
+def sales_promo_detail_container(item_code):
+    p1 = fetch_sales_promo_1(item_code)
+    p2 = fetch_sales_promo_2(item_code)
+    p3 = fetch_sales_promo_3(item_code)
+    p5 = fetch_sales_promo_5(item_code)
+    return p1 + p2 + p3 + p5
 
 # Sales invoice delivery trip
 def fetch_customer_address(customer):
