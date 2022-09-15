@@ -40,6 +40,8 @@ frappe.ui.form.on('Order Booking V2', {
 				refresh_field("unpaid_amount");
 				refresh_field("credit_limit");
 
+				console.log(response.message)
+
 				if(response.message.credit_days) {
 					frm.set_value('pending_reason', 'Credit days exceeded');
 					refresh_field('pending_reason');
