@@ -25,6 +25,10 @@ frappe.ui.form.on('Order Booking V2', {
 			frm.set_value("order_booking_items_v2", [])
 			frm.set_value("order_booking_so", null)
 			frm.set_value("hunting_quotation", null)
+			frm.set_value("credit_limit", null)
+			frm.set_value("unpaid_amount", null)
+			frm.set_value("pending_reason", null)
+			
 			frappe.call({
 				method: "bmga.bmga.doctype.order_booking_v2.api.customer_type_container",
 				args: {

@@ -291,7 +291,7 @@ def fetch_customer_type(so_name):
     )
     return customer_type[0]["pch_customer_type"]
 
-def fetch_fulfillment_settings(company, customer):
+def fetch_fulfillment_settings(company, customer=""):
     fs_name = frappe.db.sql(
         f"""SELECT name, expiry_date_limit FROM `tabFulfillment Settings V1` WHERE company = '{company}'""",
         as_dict=True
@@ -304,8 +304,9 @@ def fetch_fulfillment_settings(company, customer):
             f"""SELECT retail_primary_warehouse, retail_bulk_warehouse, hospital_warehouse, institutional_warehouse, qc_and_dispatch, free_warehouse
             FROM `tabFulfillment Settings Details V1` WHERE parent = '{fs_name[0]["name"]}'""", as_dict=True
         )
-
-        if customer_expiry.get('pch_expiry_date_limit', 0) > 0: settings[0]["expiry_date_limit"] = customer_expiry["pch_expiry_date_limit"]
+        if customer_expiry:
+            if customer_expiry.get('pch_expiry_date_limit', 0) > 0: settings[0]["expiry_date_limit"] = customer_expiry["pch_expiry_date_limit"]
+            else: settings[0]["expiry_date_limit"] = fs_name[0]["expiry_date_limit"]
         else: settings[0]["expiry_date_limit"] = fs_name[0]["expiry_date_limit"]
     else:
         settings = [None]
@@ -650,6 +651,73 @@ def sales_order_handle(sales_list, stock_data, free_data, wbs_details, settings)
                 if to_pickup == 0: break
         
     return pick_up_list + free_pick_list
+
+
+def fetch_item_qty_details(item_code, customer_type, settings):
+    today = datetime.date.today()
+
+    print('FETCH STOCK SETTINGS', settings)
+
+    if customer_type == "Retail":
+        warehouse = [settings["retail_primary_warehouse"], settings["retail_bulk_warehouse"]]
+    elif customer_type == "Hospital":
+        warehouse = [settings["hospital_warehouse"]]
+    elif customer_type == "Institutional":
+        warehouse = [settings["institutional_warehouse"]]
+
+    warehouse = re.sub(r',\)$', ')', str(tuple(warehouse)))
+       
+    stock_data_batch = frappe.db.sql(f"""
+            select batch_id , `tabBatch`.stock_uom, item as item_code, expiry_date, `tabStock Ledger Entry`.warehouse as warehouse, sum(`tabStock Ledger Entry`.actual_qty) as actual_qty
+            from `tabBatch`
+                join `tabStock Ledger Entry` ignore index (item_code, warehouse)
+                    on (`tabBatch`.batch_id = `tabStock Ledger Entry`.batch_no )
+            where `tabStock Ledger Entry`.item_code = '{item_code}' AND warehouse in {warehouse}
+                and `tabStock Ledger Entry`.is_cancelled = 0
+            group by batch_id, warehouse
+            order by expiry_date ASC, warehouse DESC
+        """, as_dict=True)
+
+    stock_data_batchless = frappe.db.sql(
+        f"""select batch_no as batch_id, item_code, warehouse, stock_uom, sum(actual_qty) as actual_qty from `tabStock Ledger Entry`
+        where item_code = '{item_code}' and warehouse in {warehouse} and (batch_no is null or batch_no = '')
+        group by item_code, warehouse""",
+        as_dict=True
+    )
+
+    sales_data = frappe.db.sql(
+        f"""select sum(soi.qty - soi.delivered_qty) as pending_qty
+        from `tabSales Order Item` as soi
+            join `tabSales Order` as so on (soi.parent = so.name)
+        where soi.docstatus < 2 and soi.item_code = '{item_code}' and soi.warehouse in {warehouse} and so.pch_picking_status != ''""", as_dict=True
+    )
+    
+    print("expiry limit", settings["expiry_date_limit"])
+    batch_total = 0
+    for batch_info in stock_data_batch:
+        if batch_info["expiry_date"] is not None: 
+            date_delta = batch_info["expiry_date"] - today
+            if date_delta.days < settings["expiry_date_limit"]: continue
+            print("batch expiry", date_delta.days, "qty", batch_info["actual_qty"])
+        batch_total += batch_info["actual_qty"]
+
+    batchless_total = sum(data["actual_qty"] for data in stock_data_batchless)
+    print("batch", batch_total)
+    print("batchless", batchless_total)
+    try:
+        available_qty = batch_total + batchless_total - sales_data[0]["pending_qty"]
+    except:
+        available_qty = batch_total + batchless_total
+
+    return dict(available_qty = available_qty, sales_qty = sales_data[0]["pending_qty"])
+
+@frappe.whitelist()
+def item_qty_available_container(item_code, company):
+    fulfillment_settings = fetch_fulfillment_settings(company)
+    data = fetch_item_qty_details(item_code, "Retail", fulfillment_settings)
+
+    return data
+
 
 def item_list_container(so_name, company):
     customer = get_customer(so_name)

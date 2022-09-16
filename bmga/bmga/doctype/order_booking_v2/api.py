@@ -914,10 +914,11 @@ def fetch_customer_sales_invoice(customer, template):
     today = datetime.date.today()
 
     s = frappe.db.get_list('Sales Invoice', filters = [{'customer': customer}], fields = ['status', 'due_date'])
+    print('checking sales invoices')
     if len(s) > 0: 
         for x in s:
             if x['status'] != 'Paid':
-                delta_day = today - x.get('due_date', 0)
+                delta_day = x.get('due_date', 0) - today
                 print(delta_day.days, template['credit_days'])
                 if delta_day.days > int(template['credit_days']): return True
     return False
@@ -925,10 +926,19 @@ def fetch_customer_sales_invoice(customer, template):
 def verify_credit_limit(customer):
     template_name = frappe.db.get_list('Customer', filters = [{'name': customer}], fields = ['payment_terms'])
     if len(template_name) > 0:
+        print('inside if')
+        print(template_name)
         template = frappe.db.get_list('Payment Terms Template Detail', filters=[{'parent': template_name[0]['payment_terms']}], fields = ['credit_days', 'invoice_portion'])
         if len(template) > 0:
             if fetch_customer_sales_invoice(customer, template[0]): return True
-    return False              
+        else:
+            print('inside else')
+            if fetch_customer_sales_invoice(customer, {'credit_days': 0}): return True
+    else:
+        print('inside else')
+        if fetch_customer_sales_invoice(customer, {'credit_days': 0}): return True
+
+    return False            
 
 @frappe.whitelist(allow_guest= True)
 def hello():
