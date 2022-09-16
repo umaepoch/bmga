@@ -759,11 +759,6 @@ def fetch_customer_detail(so_name):
     customer_name = frappe.db.get_value('Customer', customer['customer'], 'customer_name', as_dict=1)
     territory = frappe.db.get_value('Customer', customer['customer'], 'territory', as_dict=1)
 
-    print('customer data!!!!!')
-    print(customer)
-    print(customer_name)
-    print(territory)
-
     return dict(customer = customer['customer'], customer_name = customer_name['customer_name'], territory = territory['territory'])
 
 
