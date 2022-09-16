@@ -114,6 +114,10 @@ def available_stock_details(item_code, customer_type, settings):
         available_qty = batch_total + batchless_total - sales_data[0]["pending_qty"]
     except:
         available_qty = batch_total + batchless_total
+        sales_data[0]["pending_qty"] = 0
+    
+    if available_qty < 0:
+        available_qty = 0
 
     return dict(available_qty = available_qty, sales_qty = sales_data[0]["pending_qty"])
 
