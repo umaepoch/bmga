@@ -180,18 +180,17 @@ frappe.ui.form.on('Order Booking V2', {
 							sales_order: sales_order,
 						}
 					}).done((response) => {
-						frm.reload()
 
-						// frm.set_value("order_booking_so", response.message.so_name);
-						// refresh_field("order_booking_so");
+						frm.doc.order_booking_so = response.message.so_name;
+						frm.doc.hunting_quotation = response.message.qo_name;
+						frm.doc.pch_status = "Approved";
 
-						// frm.set_value("hunting_quotation", response.message.qo_name);
-						// refresh_field("hunting_quotation");
+						refresh_field("order_booking_so");
 
-						// frm.set_value("pch_status", "Approved");
-						// refresh_field("pch_status");
+						refresh_field("hunting_quotation");
 
-						// frm.save('Update');
+						refresh_field("pch_status");
+
 						if(response.message.so_name != "" || response.message.qo_name != "") {
 							frappe.msgprint("Order Booked!");
 						} else {
@@ -205,24 +204,6 @@ frappe.ui.form.on('Order Booking V2', {
 		} else {
 			frm.set_value("pch_status", "Pending");
 			refresh_field("pch_status");
-
-			// let credit_days = false;
-			// if(frm.doc.pending_reason) {
-			// 	credit_days = true;
-			// } 
-
-			// frappe.call({
-			// 	method: "bmga.bmga.doctype.order_booking_v2.api.update_pending_reason",
-			// 	args: {
-			// 		name: frm.doc.name,
-			// 		total_amount: frm.doc.total_amount,
-			// 		unpaid_amount: frm.doc.unpaid_amount,
-			// 		credit_limit: frm.doc.credit_limit,
-			// 		credit_days: credit_days
-			// 	}
-			// }).done(r => {
-			// 	console.log('done', r, 'done')
-			// })
 		}
 	},
 
@@ -258,18 +239,17 @@ frappe.ui.form.on('Order Booking V2', {
 								sales_order: sales_order,
 							}
 						}).done((response) => {
-							frm.reload()
+
+							frm.doc.order_booking_so = response.message.so_name;
+							frm.doc.hunting_quotation = response.message.qo_name;
+							frm.doc.pch_status = "Approved";
 	
-							// frm.set_value("order_booking_so", response.message.so_name);
-							// refresh_field("order_booking_so");
+							refresh_field("order_booking_so");
 	
-							// frm.set_value("hunting_quotation", response.message.qo_name);
-							// refresh_field("hunting_quotation");
+							refresh_field("hunting_quotation");
 	
-							// frm.set_value("pch_status", "Approved");
-							// refresh_field("pch_status");
-	
-							// frm.save('Update');
+							refresh_field("pch_status");
+
 							if(response.message.so_name != "" || response.message.qo_name != "") {
 								frappe.msgprint("Order Booked!");
 							} else {
