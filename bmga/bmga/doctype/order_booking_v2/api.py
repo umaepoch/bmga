@@ -883,10 +883,17 @@ def sales_order_calculation(sales_promo_discounted_amount, sales_promos_items, o
             if order_list[o]["rate_contract_check"] == 0 and order_list[o]["item_code"] == sales_promo_discounted_amount[j]["promo_item"]:
                 if sales_promo_discounted_amount[j].get("dic_qty") is not None:
                     if order_list[o]["item_code"] == sales_promo_discounted_amount[j]["promo_item"] and sales_promo_discounted_amount[j]["promo_type"] == "Quantity based discount":
-                        # print("Hello......")
+                        print('finding index ...', promo_sales_order)
+                        for i, x in enumerate(promo_sales_order):
+                            if x['item_code'] == order_list[o]["item_code"] and x['warehouse'] == warehouse and x['average_price'] == order_list[o]["average_price"] and x["promo_type"] == "None":
+                                promo_sales_order.pop(i)
                         promo_sales_order.append({"item_code":sales_promo_discounted_amount[j]["promo_item"], "qty": sales_promo_discounted_amount[j]["dic_qty"], "average_price": sales_promo_discounted_amount[j]["dic"], "warehouse" : warehouse , "promo_type": sales_promo_discounted_amount[j]["promo_type"], "qty_available": order_list[o]["quantity_available"]})
 
                     elif order_list[o]["item_code"] == sales_promo_discounted_amount[j]["promo_item"] and sales_promo_discounted_amount[j]["promo_type"] == "Buy x get same and discount for ineligible qty":
+                        print('finding index ...', promo_sales_order)
+                        for i, x in enumerate(promo_sales_order):
+                            if x['item_code'] == order_list[o]["item_code"] and x['warehouse'] == warehouse and x['average_price'] == order_list[o]["average_price"] and x["promo_type"] == "None":
+                                promo_sales_order.pop(i)
                         promo_sales_order.append({"item_code":sales_promo_discounted_amount[j]["promo_item"], "qty": sales_promo_discounted_amount[j]["dic_qty"], "average_price": sales_promo_discounted_amount[j]["dic"], "warehouse" : warehouse , "promo_type": sales_promo_discounted_amount[j]["promo_type"], "qty_available": order_list[o]["quantity_available"]})
                     
     
@@ -1265,7 +1272,11 @@ def fetch_company_abbr(company):
 
 
 @frappe.whitelist()
-def sales_order_container(customer, company, customer_type, sales_order):
+def sales_order_container(name, customer, company, customer_type, sales_order):
+    
+    sales_order = json.loads(sales_order)
+
+    print('length', len(sales_order))
     print("ORDER.......",sales_order)
 
     abbr = fetch_company_abbr(company)
@@ -1294,7 +1305,6 @@ def sales_order_container(customer, company, customer_type, sales_order):
         delivery_warehouse = fulfillment_settings[0]["institutional_warehouse"]
 
     delivery_date = datetime.datetime.today()
-    sales_order = json.loads(sales_order)
     delivery_date = delivery_date + datetime.timedelta(2)
     
     outerJson_so = {
@@ -1320,6 +1330,9 @@ def sales_order_container(customer, company, customer_type, sales_order):
     }
 
     for data in sales_order:
+        innerJson_so = None
+        innerJson_qo = None
+
         if data["quantity"] > data["quantity_available"]:
             if data["promo_type"] == "None" or data["promo_type"] == "Quantity based discount" or data["promo_type"] == "Buy x get same and discount for ineligible qty":
                 if data["quantity_available"] > 0:
@@ -1382,12 +1395,15 @@ def sales_order_container(customer, company, customer_type, sales_order):
                 "promo_type" : data["promo_type"],
                 "warehouse": data["warehouse"],
             }
+        
         try:
-            outerJson_so["items"].append(innerJson_so)
+            if innerJson_so is not None:
+                outerJson_so["items"].append(innerJson_so)
         except:
             pass
         try:
-            outerJson_qo["items"].append(innerJson_qo)
+            if innerJson_qo is not None:
+                outerJson_qo["items"].append(innerJson_qo)
         except:
             pass
     
@@ -1420,19 +1436,32 @@ def sales_order_container(customer, company, customer_type, sales_order):
     outerJson_so['taxes'].extend(innerJson_tax_list)
     print(outerJson_so['taxes'])
 
+    doc = frappe.get_doc('Order Booking V2', name)
+
     so_name = ""
     qo_name = ""
+
+    print('sales order length', len(outerJson_so["items"]))
+
     if len(outerJson_so["items"]) > 0:
         doc_so = frappe.new_doc("Sales Order")
         doc_so.update(outerJson_so)
         doc_so.save()
         so_name = doc_so.name
 
+        doc.order_booking_so = so_name
+        doc.pch_status = "Approved"
+
     if len(outerJson_qo["items"]) > 0:
         doc_qo = frappe.new_doc("Quotation")
         doc_qo.update(outerJson_qo)
         doc_qo.save()
         qo_name = doc_qo.name
+        doc.hunting_quotation = qo_name
+
+        doc.pch_status = "Approved"
+
+    doc.save('Update')
 
     return dict(customer_in_state = customer_in_state, so_name = so_name, qo_name = qo_name, outerJson_qo = outerJson_qo, outerJson_so = outerJson_so, outerJson = outerJson_so)
 

@@ -87,6 +87,7 @@ const approve_order = function (value) {
             frappe.call({
                 method: "bmga.bmga.doctype.order_booking_v2.api.sales_order_container",
                 args: {
+                    name: value.name,
                     customer: customer,
                     order_list: order_list,
                     company: company,

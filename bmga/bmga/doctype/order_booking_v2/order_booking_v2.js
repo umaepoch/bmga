@@ -90,6 +90,7 @@ frappe.ui.form.on('Order Booking V2', {
 					customer: customer,
 				}
 			}).done((respose) =>{
+				console.log(respose.message)
 				let total_amount = 0;
 				$.each(respose.message.sales_order.sales_order, function(_i, e) {
 					if(e.qty > 0) {
@@ -169,6 +170,7 @@ frappe.ui.form.on('Order Booking V2', {
 					frappe.call({
 						method: "bmga.bmga.doctype.order_booking_v2.api.sales_order_container",
 						args: {
+							name: frm.doc.name,
 							customer: customer,
 							order_list: order_list,
 							company: company,
@@ -178,20 +180,18 @@ frappe.ui.form.on('Order Booking V2', {
 							sales_order: sales_order,
 						}
 					}).done((response) => {
-						console.log("Response",response)
-						console.log("So_name",response.message.so_name)
-						console.log("Qo_name",response.message.qo_name)
+						frm.reload()
 
-						frm.set_value("order_booking_so", response.message.so_name);
-						refresh_field("order_booking_so");
+						// frm.set_value("order_booking_so", response.message.so_name);
+						// refresh_field("order_booking_so");
 
-						frm.set_value("hunting_quotation", response.message.qo_name);
-						refresh_field("hunting_quotation");
+						// frm.set_value("hunting_quotation", response.message.qo_name);
+						// refresh_field("hunting_quotation");
 
-						frm.set_value("pch_status", "Approved");
-						refresh_field("pch_status");
+						// frm.set_value("pch_status", "Approved");
+						// refresh_field("pch_status");
 
-						frm.save('Update');
+						// frm.save('Update');
 						if(response.message.so_name != "" || response.message.qo_name != "") {
 							frappe.msgprint("Order Booked!");
 						} else {
@@ -248,6 +248,7 @@ frappe.ui.form.on('Order Booking V2', {
 						frappe.call({
 							method: "bmga.bmga.doctype.order_booking_v2.api.sales_order_container",
 							args: {
+								name: frm.doc.name,
 								customer: customer,
 								order_list: order_list,
 								company: company,
@@ -257,20 +258,18 @@ frappe.ui.form.on('Order Booking V2', {
 								sales_order: sales_order,
 							}
 						}).done((response) => {
-							console.log("Response",response)
-							console.log("So_name",response.message.so_name)
-							console.log("Qo_name",response.message.qo_name)
+							frm.reload()
 	
-							frm.set_value("order_booking_so", response.message.so_name);
-							refresh_field("order_booking_so");
+							// frm.set_value("order_booking_so", response.message.so_name);
+							// refresh_field("order_booking_so");
 	
-							frm.set_value("hunting_quotation", response.message.qo_name);
-							refresh_field("hunting_quotation");
+							// frm.set_value("hunting_quotation", response.message.qo_name);
+							// refresh_field("hunting_quotation");
 	
-							frm.set_value("pch_status", "Approved");
-							refresh_field("pch_status");
+							// frm.set_value("pch_status", "Approved");
+							// refresh_field("pch_status");
 	
-							frm.save('Update');
+							// frm.save('Update');
 							if(response.message.so_name != "" || response.message.qo_name != "") {
 								frappe.msgprint("Order Booked!");
 							} else {
