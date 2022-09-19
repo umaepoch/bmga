@@ -1272,7 +1272,7 @@ def fetch_company_abbr(company):
 
 
 @frappe.whitelist()
-def sales_order_container(name, customer, company, customer_type, sales_order):
+def sales_order_container(customer, company, customer_type, sales_order):
     
     sales_order = json.loads(sales_order)
 
@@ -1436,8 +1436,6 @@ def sales_order_container(name, customer, company, customer_type, sales_order):
     outerJson_so['taxes'].extend(innerJson_tax_list)
     print(outerJson_so['taxes'])
 
-    doc = frappe.get_doc('Order Booking V2', name)
-
     so_name = ""
     qo_name = ""
 
@@ -1449,19 +1447,11 @@ def sales_order_container(name, customer, company, customer_type, sales_order):
         doc_so.save()
         so_name = doc_so.name
 
-        doc.order_booking_so = so_name
-        doc.pch_status = "Approved"
-
     if len(outerJson_qo["items"]) > 0:
         doc_qo = frappe.new_doc("Quotation")
         doc_qo.update(outerJson_qo)
         doc_qo.save()
         qo_name = doc_qo.name
-        doc.hunting_quotation = qo_name
-
-        doc.pch_status = "Approved"
-
-    doc.save('Update')
 
     return dict(customer_in_state = customer_in_state, so_name = so_name, qo_name = qo_name, outerJson_qo = outerJson_qo, outerJson_so = outerJson_so, outerJson = outerJson_so)
 

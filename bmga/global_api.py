@@ -180,38 +180,52 @@ def sales_promo_detail_container(item_code):
     return p1 + p2 + p3 + p5
 
 # Sales invoice delivery trip
+# @frappe.whitelist()
 def fetch_customer_address(customer):
-	a = frappe.get_doc('Customer', customer)
-	print(a.as_dict())
+    address_list = frappe.db.get_list('Address', 'name')
+    print(address_list)
+    for x in address_list:
+        a = frappe.get_doc('Address', x.get('name')).as_dict()
+        if a.get('links'):
+            if len(a['links']) > 0:
+                for l in a['links']:
+                    if l.get('link_name') == customer: return dict(valid = True, name = x.get('name'))
+    frappe.throw("Error No address for given customer")
+    return dict(valid = False)
+
 
 @frappe.whitelist()
 def generate_delivery_trip(delivery_notes):
-	delivery_notes = json.loads(delivery_notes)
+    delivery_notes = json.loads(delivery_notes)
 
-	print(delivery_notes)
-
-	outerJson = {
+    today = datetime.datetime.now()
+    
+    outerJson = {
 		'doctype': 'Delivery Trip',
 		'naming_series': 'DT-DL-',
+        'driver': 'HR-DRI-2022-00001',
+        'vehicle': 'Dummy',
+        'departure_time': today,
 		'delivery_stops': []
 	}
 
-	# for x in delivery_notes:
-	# 	address = fetch_customer_address(x['customer'])
+    for x in delivery_notes:
+        address = fetch_customer_address(x['customer'])
+        if address.get('valid'):
+            innerJson = {
+                'doctype': 'Delivery Stop',
+                'customer': x['customer'],
+                'address': address.get('name'),
+                'delivery_note': x['delivery_note']
+            }
 
-	# 	innerJson = {
-	# 		'doctype': 'Delivery Stop',
-	# 		'customer': x['customer'],
-	# 		'delivery_note': x['delivery_note']
-	# 	}
+            outerJson['delivery_stops'].append(innerJson)
+    
+    doc = frappe.new_doc('Delivery Trip')
+    doc.update(outerJson)
+    doc.save()
 
-	# 	outerJson['delivery_stops'].append(innerJson)
-	
-	doc = frappe.new_doc('Delivery Trip')
-	doc.update(outerJson)
-	doc
-
-	return doc.name
+    return doc.name
 
 
 @frappe.whitelist()

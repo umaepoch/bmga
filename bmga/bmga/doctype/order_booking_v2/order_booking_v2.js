@@ -148,7 +148,7 @@ frappe.ui.form.on('Order Booking V2', {
 		}	
 	},
 
-	on_submit: function(frm) {
+	before_submit: function(frm) {
 		if(!frm.doc.pending_reason) {
 			if(!frm.doc.order_booking_so) {
 				let order_list = frm.doc.order_booking_items_v2;
@@ -170,7 +170,6 @@ frappe.ui.form.on('Order Booking V2', {
 					frappe.call({
 						method: "bmga.bmga.doctype.order_booking_v2.api.sales_order_container",
 						args: {
-							name: frm.doc.name,
 							customer: customer,
 							order_list: order_list,
 							company: company,
@@ -180,15 +179,12 @@ frappe.ui.form.on('Order Booking V2', {
 							sales_order: sales_order,
 						}
 					}).done((response) => {
-
-						frm.doc.order_booking_so = response.message.so_name;
-						frm.doc.hunting_quotation = response.message.qo_name;
-						frm.doc.pch_status = "Approved";
+						frm.set_value("order_booking_so", response.message.so_name);
+						frm.set_value("hunting_quotation", response.message.qo_name);
+						frm.set_value("pch_status", "Approved");
 
 						refresh_field("order_booking_so");
-
 						refresh_field("hunting_quotation");
-
 						refresh_field("pch_status");
 
 						if(response.message.so_name != "" || response.message.qo_name != "") {
@@ -229,7 +225,6 @@ frappe.ui.form.on('Order Booking V2', {
 						frappe.call({
 							method: "bmga.bmga.doctype.order_booking_v2.api.sales_order_container",
 							args: {
-								name: frm.doc.name,
 								customer: customer,
 								order_list: order_list,
 								company: company,
@@ -240,15 +235,15 @@ frappe.ui.form.on('Order Booking V2', {
 							}
 						}).done((response) => {
 
-							frm.doc.order_booking_so = response.message.so_name;
-							frm.doc.hunting_quotation = response.message.qo_name;
-							frm.doc.pch_status = "Approved";
-	
+							frm.set_value("order_booking_so", response.message.so_name);
+							frm.set_value("hunting_quotation", response.message.qo_name);
+							frm.set_value("pch_status", "Approved");
+
 							refresh_field("order_booking_so");
-	
 							refresh_field("hunting_quotation");
-	
 							refresh_field("pch_status");
+
+							frm.save('Update');
 
 							if(response.message.so_name != "" || response.message.qo_name != "") {
 								frappe.msgprint("Order Booked!");
