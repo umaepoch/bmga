@@ -148,7 +148,7 @@ frappe.ui.form.on('Order Booking V2', {
 		}	
 	},
 
-	before_submit: function(frm) {
+	on_submit: function(frm) {
 		if(!frm.doc.pending_reason) {
 			if(!frm.doc.order_booking_so) {
 				let order_list = frm.doc.order_booking_items_v2;
