@@ -32,8 +32,7 @@
    "fieldtype": "Link",
    "in_list_view": 1,
    "label": "Collection Person",
-   "options": "Employee",
-   "read_only": 1
+   "options": "Employee"
   },
   {
    "fieldname": "details",
@@ -48,7 +47,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2022-09-20 13:59:50.305169",
+ "modified": "2022-09-20 15:24:53.440421",
  "modified_by": "Administrator",
  "module": "Bmga",
  "name": "Collection Trip",

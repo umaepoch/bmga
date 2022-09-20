@@ -223,7 +223,9 @@ def generate_delivery_trip(delivery_notes):
                 'doctype': 'Delivery Stop',
                 'customer': x['customer'],
                 'address': address.get('name'),
-                'delivery_note': x['delivery_note']
+                'delivery_note': x['delivery_note'],
+                'invoice_no': x['invoice_no'],
+                'grand_total': x['grand_total']
             }
 
             outerJson['delivery_stops'].append(innerJson)
@@ -237,9 +239,7 @@ def generate_delivery_trip(delivery_notes):
 
 @frappe.whitelist()
 def generate_delivery_note(sales_invoice):
-	print('hello')
 	sales_order_name = frappe.get_doc('Sales Invoice', sales_invoice).as_dict()['items'][0]['sales_order']
-	print(sales_order_name)
 	sales_order_details = frappe.get_doc('Sales Order', sales_order_name).as_dict()
 	
 	for s in sales_order_details['items']:
@@ -250,6 +250,7 @@ def generate_delivery_note(sales_invoice):
 		'doctype': 'Delivery Note',
 		'naming_series': 'DL-DL-',
 		'customer': sales_order_details.get('customer'),
+        'invoice_no': sales_invoice,
 		'items': sales_order_details.get('items'),
 		'taxes': sales_order_details.get('taxes')
 	}
@@ -258,8 +259,36 @@ def generate_delivery_note(sales_invoice):
 	doc.update(outerJson_delivery_note)
 	doc.save()
 
-	return dict(customer = sales_order_details.get('customer'), delivery_note = doc.name)
+	return dict(customer = sales_order_details.get('customer'), delivery_note = doc.name, invoice_no = sales_invoice, grand_total = doc.grand_total)
 
+
+@frappe.whitelist()
+def generate_collection_trip(name):
+    delivery_trip_items = frappe.get_doc('Delivery Trip', name).as_dict().delivery_stops
+
+    outerJson = {
+        'doctype': 'Collection Trip',
+        'delivery_trip_no': name,
+        'details': []
+    }
+
+    for x in delivery_trip_items:
+        customer_name = frappe.db.get_value('Customer', {'name': x.get('customer')}, 'customer_name')
+
+        innerJson = {
+            'doctype': 'Collection Trip Item',
+            'invoice_no': x.get('invoice_no'),
+            'customer_name': customer_name,
+            'pending_amount': x.get('grand_total')
+        }
+
+        outerJson['details'].append(innerJson)
+    
+    doc = frappe.new_doc('Collection Trip')
+    doc.update(outerJson)
+    doc.save()
+
+    return dict(data = delivery_trip_items, name = doc.name)
 
 # Print Format
 @frappe.whitelist()

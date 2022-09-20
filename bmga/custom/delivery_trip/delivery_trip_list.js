@@ -1,0 +1,16 @@
+frappe.listview_settings['Delivery Trip'] = {
+    onload(listview) {
+        listview.page.add_action_item(__("Make Collection Trip"), function() {
+            $.each(listview.get_checked_items(), function(key, value) {
+                frappe.call({
+                    method: 'bmga.global_api.generate_collection_trip',
+                    args: {
+                        name: value.name
+                    }
+                }).done(r => {
+                    console.log(r.message)
+                })
+            })
+        })
+    },
+}
