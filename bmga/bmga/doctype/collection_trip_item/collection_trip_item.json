@@ -1,0 +1,100 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2022-09-20 13:49:25.994197",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "invoice_no",
+  "customer_name",
+  "pending_amount",
+  "cash_amount",
+  "cheque_amount",
+  "wire_amount",
+  "total_amount_collected",
+  "reference_no",
+  "reference_date"
+ ],
+ "fields": [
+  {
+   "columns": 1,
+   "fieldname": "invoice_no",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Invoice No.",
+   "options": "Sales Invoice",
+   "read_only": 1
+  },
+  {
+   "columns": 2,
+   "fieldname": "customer_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Customer Name",
+   "read_only": 1
+  },
+  {
+   "columns": 1,
+   "fieldname": "pending_amount",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Pending Amount",
+   "read_only": 1
+  },
+  {
+   "columns": 1,
+   "fieldname": "total_amount_collected",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Total Amount Collected",
+   "read_only": 1
+  },
+  {
+   "columns": 1,
+   "fieldname": "cash_amount",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Amount Paid in Cash"
+  },
+  {
+   "columns": 1,
+   "fieldname": "cheque_amount",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Amount Paid by Cheque"
+  },
+  {
+   "columns": 1,
+   "fieldname": "wire_amount",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Amount Paid by Wire Transfer"
+  },
+  {
+   "columns": 1,
+   "fieldname": "reference_no",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Reference No."
+  },
+  {
+   "columns": 1,
+   "fieldname": "reference_date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Reference Date"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2022-09-20 13:58:44.368448",
+ "modified_by": "Administrator",
+ "module": "Bmga",
+ "name": "Collection Trip Item",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC"
+}

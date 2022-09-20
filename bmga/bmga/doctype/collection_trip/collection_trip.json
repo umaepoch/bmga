@@ -1,0 +1,72 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "CT-DL-.####",
+ "creation": "2022-09-20 13:55:17.783472",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "collection_trip_no",
+  "delivery_trip_no",
+  "collection_person",
+  "section_break_4",
+  "details"
+ ],
+ "fields": [
+  {
+   "fieldname": "collection_trip_no",
+   "fieldtype": "Data",
+   "label": "Collection Trip No."
+  },
+  {
+   "fieldname": "delivery_trip_no",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Delivery Trip No.",
+   "options": "Delivery Trip",
+   "read_only": 1
+  },
+  {
+   "fieldname": "collection_person",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Collection Person",
+   "options": "Employee",
+   "read_only": 1
+  },
+  {
+   "fieldname": "details",
+   "fieldtype": "Table",
+   "label": "Details",
+   "options": "Collection Trip Item"
+  },
+  {
+   "fieldname": "section_break_4",
+   "fieldtype": "Section Break"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2022-09-20 13:59:50.305169",
+ "modified_by": "Administrator",
+ "module": "Bmga",
+ "name": "Collection Trip",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC"
+}
