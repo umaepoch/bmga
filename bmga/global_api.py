@@ -176,8 +176,15 @@ def sales_promo_detail_container(item_code):
     p2 = fetch_sales_promo_2(item_code)
     p3 = fetch_sales_promo_3(item_code)
     p5 = fetch_sales_promo_5(item_code)
-    print(p5, 'before sending')
-    return p1 + p2 + p3 + p5
+    
+    promo = {
+        'promo_table_for_quantityamount_based_discount': p1,
+        'promos_table_of_same_item': p2,
+        'promos_table_of_different_items': p3,
+        'free_item_for_eligible_quantity': p5
+    }
+
+    return promo
 
 # Sales invoice delivery trip
 # @frappe.whitelist()
