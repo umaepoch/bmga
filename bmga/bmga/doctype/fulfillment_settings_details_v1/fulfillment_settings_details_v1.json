@@ -14,7 +14,9 @@
   "free_warehouse",
   "goods_warehouse",
   "gst_out_state",
-  "gst_in_state"
+  "gst_in_state",
+  "default_driver",
+  "default_vehicle"
  ],
  "fields": [
   {
@@ -74,12 +76,24 @@
    "fieldtype": "Link",
    "label": "GST In State",
    "options": "Sales Taxes and Charges Template"
+  },
+  {
+   "fieldname": "default_driver",
+   "fieldtype": "Link",
+   "label": "Default Driver",
+   "options": "Driver"
+  },
+  {
+   "fieldname": "default_vehicle",
+   "fieldtype": "Link",
+   "label": "Default Vehicle",
+   "options": "Vehicle"
   }
  ],
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2022-07-07 21:59:12.032314",
+ "modified": "2022-09-21 14:05:51.996520",
  "modified_by": "Administrator",
  "module": "Bmga",
  "name": "Fulfillment Settings Details V1",

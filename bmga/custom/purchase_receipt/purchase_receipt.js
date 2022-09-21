@@ -52,9 +52,12 @@ frappe.ui.form.on('Purchase Receipt', {
 frappe.ui.form.on('Purchase Receipt Item', {
 	pch_ptr(frm, cdt, cdn) {
 		let doc = locals[cdt][cdn];
-
-		if(doc.pch_ptr > 0) {
-			frappe.model.set_value(cdt, cdn, "pch_margin", ((doc.pch_ptr-doc.pch_pts)/doc.pch_pts)*100);
+		if(doc.pch_ptr) {
+			frappe.model.set_value(cdt, cdn, "rate", (doc.pch_ptr));
+			
+			if(doc.pch_ptr > 0) {
+				frappe.model.set_value(cdt, cdn, "pch_margin", ((doc.pch_ptr-doc.pch_pts)/doc.pch_pts)*100);
+			}
 		}
 	},
 

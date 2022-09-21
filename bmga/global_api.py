@@ -201,17 +201,30 @@ def fetch_customer_address(customer):
     return dict(valid = False)
 
 
+def fetch_driver_vehicle_info():
+    d = frappe.db.sql(
+        """select default_driver, default_vehicle
+        from `tabFulfillment Settings Details V1`""", as_dict=1
+    )
+
+    print(d)
+
+    return d[0]['default_driver'], d[0]['default_vehicle']
+
+
 @frappe.whitelist()
 def generate_delivery_trip(delivery_notes):
     delivery_notes = json.loads(delivery_notes)
+
+    driver, vehicle = fetch_driver_vehicle_info()
 
     today = datetime.datetime.now()
     
     outerJson = {
 		'doctype': 'Delivery Trip',
 		'naming_series': 'DT-DL-',
-        'driver': 'HR-DRI-2022-00001',
-        'vehicle': 'Dummy',
+        'driver': driver,
+        'vehicle': vehicle,
         'departure_time': today,
 		'delivery_stops': []
 	}
