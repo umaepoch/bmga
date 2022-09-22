@@ -11,7 +11,8 @@
   "delivery_trip_no",
   "collection_person",
   "section_break_4",
-  "details"
+  "details",
+  "amended_from"
  ],
  "fields": [
   {
@@ -43,11 +44,21 @@
   {
    "fieldname": "section_break_4",
    "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Collection Trip",
+   "print_hide": 1,
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
+ "is_submittable": 1,
  "links": [],
- "modified": "2022-09-20 15:24:53.440421",
+ "modified": "2022-09-21 15:07:56.444162",
  "modified_by": "Administrator",
  "module": "Bmga",
  "name": "Collection Trip",
