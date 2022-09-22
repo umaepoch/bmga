@@ -8,7 +8,7 @@ frappe.listview_settings['Delivery Trip'] = {
                         name: value.name
                     }
                 }).done(r => {
-                    console.log(r.message)
+                    frappe.msgprint(`Generate Collection Trip ${r.message}`)
                 })
             })
         })
