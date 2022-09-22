@@ -10,6 +10,13 @@ frappe.ui.form.on('Collection Trip', {
 					details: frm.doc.details
 				}
 			}).done(r => {
+				$.each(r.message, function(_i, e) {
+					console.log('adding', e)
+					let entry = frm.add_child("payment_entry");
+					entry.payment_entry = e;
+				})
+
+				refresh_field("payment_entry")
 				frappe.msgprint(`${r.message.length} Payment Entry Created`);
 			})
 		}

@@ -7,19 +7,15 @@
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
-  "collection_trip_no",
   "delivery_trip_no",
   "collection_person",
   "section_break_4",
   "details",
+  "section_break_5",
+  "payment_entry",
   "amended_from"
  ],
  "fields": [
-  {
-   "fieldname": "collection_trip_no",
-   "fieldtype": "Data",
-   "label": "Collection Trip No."
-  },
   {
    "fieldname": "delivery_trip_no",
    "fieldtype": "Link",
@@ -53,12 +49,22 @@
    "options": "Collection Trip",
    "print_hide": 1,
    "read_only": 1
+  },
+  {
+   "fieldname": "section_break_5",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "payment_entry",
+   "fieldtype": "Table",
+   "label": "Payment Entry",
+   "options": "Collection Trip Entries"
   }
  ],
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2022-09-21 15:07:56.444162",
+ "modified": "2022-09-22 15:55:42.511005",
  "modified_by": "Administrator",
  "module": "Bmga",
  "name": "Collection Trip",
