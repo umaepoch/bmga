@@ -41,7 +41,7 @@ def generate_outerJson(company, x, paid_type):
 	else:
 		account = get_bank_account(company, 'Company')
 
-	customer_account = get_bank_account(x.get('customer_name'), 'Customer')
+	customer_account = get_bank_account(x.get('customer'), 'Customer')
 	company_account = get_bank_account(company, 'Company')
 	company_address = fetch_company_address(company)
 
@@ -52,7 +52,7 @@ def generate_outerJson(company, x, paid_type):
 		'mode_of_payment': paid_type,
 		'posting_date': today,
 		'party_type': 'Customer',
-		'party': x.get('customer_name'),
+		'party': x.get('customer'),
 		'bank_account': company_account,
 		'party_bank_account': customer_account,
 		'paid_amount': x.get('cash_amount'),

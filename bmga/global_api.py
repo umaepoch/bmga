@@ -291,6 +291,7 @@ def generate_collection_trip(name):
         innerJson = {
             'doctype': 'Collection Trip Item',
             'invoice_no': x.get('invoice_no'),
+            'customer': x.get('customer'),
             'customer_name': customer_name,
             'pending_amount': x.get('grand_total')
         }
