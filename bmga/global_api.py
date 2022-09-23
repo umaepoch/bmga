@@ -275,6 +275,11 @@ def generate_delivery_note(sales_invoice):
 	return dict(customer = sales_order_details.get('customer'), delivery_note = doc.name, invoice_no = sales_invoice, grand_total = doc.grand_total)
 
 
+def fetch_unpaid_sales_invoices(customer):
+    l = frappe.db.get_list('Sales Invoice', filters=[{'customer': customer}, {'docstatus': ['<', '2']}, {'outstanding_amount': ['>', '0']}], fields=['name', 'outstanding_amount'])
+    return l
+
+
 @frappe.whitelist()
 def generate_collection_trip(name):
     delivery_trip_items = frappe.get_doc('Delivery Trip', name).as_dict().delivery_stops
@@ -285,18 +290,25 @@ def generate_collection_trip(name):
         'details': []
     }
 
+    handled_customer = []
+
     for x in delivery_trip_items:
         customer_name = frappe.db.get_value('Customer', {'name': x.get('customer')}, 'customer_name')
+        if x.get('customer') not in handled_customer:
+            handled_customer.append(x.get('customer'))
+            sales_invoice_list = fetch_unpaid_sales_invoices(x.get('customer'))
 
-        innerJson = {
-            'doctype': 'Collection Trip Item',
-            'invoice_no': x.get('invoice_no'),
-            'customer': x.get('customer'),
-            'customer_name': customer_name,
-            'pending_amount': x.get('grand_total')
-        }
+            if sales_invoice_list:
+                for s in sales_invoice_list:
+                    innerJson = {
+                        'doctype': 'Collection Trip Item',
+                        'invoice_no': s.get('name'),
+                        'customer': x.get('customer'),
+                        'customer_name': customer_name,
+                        'pending_amount': s.get('outstanding_amount')
+                    }
 
-        outerJson['details'].append(innerJson)
+                    outerJson['details'].append(innerJson)
     
     doc = frappe.new_doc('Collection Trip')
     doc.update(outerJson)

@@ -12,15 +12,18 @@ class CollectionTrip(Document):
 
 def sales_invoice_details(name):
 	company = frappe.db.get_value('Sales Invoice', name, 'company', as_dict=1)
-	return company.get('company', '')
+	if company: return company.get('company', '')
+	return ''
 
 def get_cash_account(company):
 	a = frappe.db.get_value('Company', company, 'default_cash_account', as_dict=1)
-	return a.get('default_cash_account', '')
+	if a: return a.get('default_cash_account', '')
+	return ''
 
 def get_bank_account(company, user):
 	a = frappe.db.get_value(user, company, 'default_bank_account', as_dict=1)
-	return a.get('default_bank_account', '')
+	if a: return a.get('default_bank_account', '')
+	return ''
 
 def fetch_company_address(company):
     address_list = frappe.db.get_list('Address', 'name')
@@ -33,7 +36,7 @@ def fetch_company_address(company):
     frappe.throw("Error No address for given Company")
     return dict(valid = False)
 
-def generate_outerJson(company, x, paid_type):
+def generate_outerJson(name, company, x, paid_type):
 	today = datetime.date.today()
 
 	if paid_type == 'Cash':
@@ -41,7 +44,12 @@ def generate_outerJson(company, x, paid_type):
 	else:
 		account = get_bank_account(company, 'Company')
 
+	if paid_type == 'Cash': paid_amount = x.get('cash_amount')
+	elif paid_type == 'Cheque': paid_amount = x.get('cheque_amount')
+	else: paid_amount = x.get('wire_amount')
+
 	customer_account = get_bank_account(x.get('customer'), 'Customer')
+	print('customer account', customer_account)
 	company_account = get_bank_account(company, 'Company')
 	company_address = fetch_company_address(company)
 
@@ -49,28 +57,32 @@ def generate_outerJson(company, x, paid_type):
 		'doctype': 'Payment Entry',
 		'company': company,
 		'payment_type': 'Receive',
+		'collection_trip': name,
 		'mode_of_payment': paid_type,
 		'posting_date': today,
 		'party_type': 'Customer',
 		'party': x.get('customer'),
 		'bank_account': company_account,
 		'party_bank_account': customer_account,
-		'paid_amount': x.get('cash_amount'),
-		'received_amount': x.get('cash_amount'),
+		'paid_amount': paid_amount,
+		'received_amount': paid_amount,
 		'paid_to': account,
+		'company_address': company_address.get('name', ''),
 		'references': [
 			{
 				'doctype': 'Payment Entry Reference',
 				'reference_doctype': 'Sales Invoice',
-				'reference_name': x.get('invoice_no')
+				# 'reference_name': x.get('invoice_no')
 			}
 		],
-		'company_address': company_address.get('name', '')
 	}
 
-	if paid_type != 'Cash':
-		outerJson['reference_no'] = x.get('reference_no')
-		outerJson['reference_date'] = x.get('reference_date')
+	if paid_type == 'Cheque':
+		outerJson['reference_no'] = x.get('cheque_reference')
+		outerJson['reference_date'] = x.get('cheque_date')
+	elif paid_type == 'Wire Transfer':
+		outerJson['reference_no'] = x.get('wire_reference')
+		outerJson['reference_date'] = x.get('wire_date')
 
 	print('*'*150, outerJson)
 
@@ -82,7 +94,7 @@ def generate_outerJson(company, x, paid_type):
 
 
 @frappe.whitelist()
-def make_payment(details):
+def make_payment(name, details):
 	details = json.loads(details)
 
 	payment_entries = []
@@ -91,10 +103,10 @@ def make_payment(details):
 		company = sales_invoice_details(x.get('invoice_no'))
 
 		if x.get('cash_amount', 0) > 0:
-			payment_entries.append(generate_outerJson(company, x, 'Cash'))
+			payment_entries.append(generate_outerJson(name, company, x, 'Cash'))
 		if x.get('cheque_amount', 0) > 0:
-			payment_entries.append(generate_outerJson(company, x, 'Cheque'))
+			payment_entries.append(generate_outerJson(name, company, x, 'Cheque'))
 		if x.get('wire_amount', 0) > 0:
-			payment_entries.append(generate_outerJson(company, x, 'Wire Transfer'))
+			payment_entries.append(generate_outerJson(name, company, x, 'Wire Transfer'))
 
 	return payment_entries
