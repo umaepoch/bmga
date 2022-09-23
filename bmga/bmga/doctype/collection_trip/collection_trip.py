@@ -48,8 +48,9 @@ def generate_outerJson(name, company, x, paid_type):
 	elif paid_type == 'Cheque': paid_amount = x.get('cheque_amount')
 	else: paid_amount = x.get('wire_amount')
 
+	if paid_amount == 0: paid_amount = 500
+
 	customer_account = get_bank_account(x.get('customer'), 'Customer')
-	print('customer account', customer_account)
 	company_account = get_bank_account(company, 'Company')
 	company_address = fetch_company_address(company)
 
