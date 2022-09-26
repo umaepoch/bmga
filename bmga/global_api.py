@@ -252,28 +252,28 @@ def generate_delivery_trip(delivery_notes):
 
 @frappe.whitelist()
 def generate_delivery_note(sales_invoice):
-	sales_order_name = frappe.get_doc('Sales Invoice', sales_invoice).as_dict()['items'][0]['sales_order']
-	sales_order_details = frappe.get_doc('Sales Order', sales_order_name).as_dict()
-	
-	for s in sales_order_details['items']:
-		s.pop('pch_batch_no')
-		s.pop('promo_type')
-
-	outerJson_delivery_note = {
-		'doctype': 'Delivery Note',
+    sales_order_name = frappe.get_doc('Sales Invoice', sales_invoice).as_dict()['items'][0]['sales_order']
+    sales_order_details = frappe.get_doc('Sales Order', sales_order_name).as_dict()
+    
+    for s in sales_order_details['items']:
+        s.pop('pch_batch_no')
+        s.pop('promo_type')
+    
+    outerJson_delivery_note = {
+        'doctype': 'Delivery Note',
 		'naming_series': 'DL-DL-',
 		'customer': sales_order_details.get('customer'),
         'invoice_no': sales_invoice,
 		'items': sales_order_details.get('items'),
 		'taxes': sales_order_details.get('taxes')
-	}
+    }
 
-	doc = frappe.new_doc('Delivery Note')
-	doc.update(outerJson_delivery_note)
-	doc.save()
+    doc = frappe.new_doc('Delivery Note')
+    doc.update(outerJson_delivery_note)
+    doc.save()
+    doc.submit()
 
-	return dict(customer = sales_order_details.get('customer'), delivery_note = doc.name, invoice_no = sales_invoice, grand_total = doc.grand_total)
-
+    return dict(customer = sales_order_details.get('customer'), delivery_note = doc.name, invoice_no = sales_invoice, grand_total = doc.grand_total)
 
 def fetch_unpaid_sales_invoices(customer):
     l = frappe.db.get_list('Sales Invoice', filters=[{'customer': customer}, {'docstatus': ['<', '2']}, {'outstanding_amount': ['>', '0']}], fields=['name', 'outstanding_amount'])

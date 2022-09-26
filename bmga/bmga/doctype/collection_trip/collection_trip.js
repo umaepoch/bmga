@@ -29,6 +29,16 @@ frappe.ui.form.on('Collection Trip', {
 
 
 frappe.ui.form.on('Collection Trip Item', {
+	total_amount: function(frm, cdt, cdn) {
+		if(locals[cdt][cdn].total_amount > 0) {
+			frappe.meta.get_docfield('Collection Trip', 'collection_person', frm.doc.name).reqd = 1;
+			cur_frm.refresh_fields();
+		} else {
+			frappe.meta.get_docfield('Collection Trip', 'collection_person', frm.doc.name).reqd = 0;
+			cur_frm.refresh_fields();
+		}
+	},
+
 	cash_amount: function(frm, cdt, cdn) {
 		update_total_amount(cdt, cdn);
 	},
@@ -40,6 +50,10 @@ frappe.ui.form.on('Collection Trip Item', {
 			frappe.meta.get_docfield(cdt, 'cheque_reference', cdn).reqd = 1;
 			frappe.meta.get_docfield(cdt, 'cheque_date', cdn).reqd = 1;
 			cur_frm.refresh_fields();
+		} else {
+			frappe.meta.get_docfield(cdt, 'cheque_reference', cdn).reqd = 0;
+			frappe.meta.get_docfield(cdt, 'cheque_date', cdn).reqd = 0;
+			cur_frm.refresh_fields();
 		}
 	},
 
@@ -49,6 +63,10 @@ frappe.ui.form.on('Collection Trip Item', {
 		if(locals[cdt][cdn].wire_amount > 0) {
 			frappe.meta.get_docfield(cdt, 'wire_reference', cdn).reqd = 1;
 			frappe.meta.get_docfield(cdt, 'wire_date', cdn).reqd = 1;
+			cur_frm.refresh_fields();
+		} else {
+			frappe.meta.get_docfield(cdt, 'wire_reference', cdn).reqd = 0;
+			frappe.meta.get_docfield(cdt, 'wire_date', cdn).reqd = 0;
 			cur_frm.refresh_fields();
 		}
 	},

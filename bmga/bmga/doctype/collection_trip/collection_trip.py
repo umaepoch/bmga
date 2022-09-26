@@ -9,7 +9,6 @@ import datetime
 class CollectionTrip(Document):
 	pass
 
-
 def sales_invoice_details(name):
 	company = frappe.db.get_value('Sales Invoice', name, 'company', as_dict=1)
 	if company: return company.get('company', '')
@@ -69,14 +68,16 @@ def generate_outerJson(name, company, x, paid_type):
 		'received_amount': paid_amount,
 		'paid_to': account,
 		'company_address': company_address.get('name', ''),
-		'references': [
-			{
-				'doctype': 'Payment Entry Reference',
-				'reference_doctype': 'Sales Invoice',
-				# 'reference_name': x.get('invoice_no')
-			}
-		],
+		'references': [],
 	}
+
+	outerJson['references'].append(
+		{
+			'doctype': 'Payment Entry Reference',
+			'reference_doctype': 'Sales Invoice',
+			'reference_name': x.get('invoice_no')
+		}
+	)
 
 	if paid_type == 'Cheque':
 		outerJson['reference_no'] = x.get('cheque_reference')
@@ -84,8 +85,8 @@ def generate_outerJson(name, company, x, paid_type):
 	elif paid_type == 'Wire Transfer':
 		outerJson['reference_no'] = x.get('wire_reference')
 		outerJson['reference_date'] = x.get('wire_date')
-
-	print('*'*150, outerJson)
+	
+	print(outerJson)
 
 	doc = frappe.new_doc('Payment Entry')
 	doc.update(outerJson)
