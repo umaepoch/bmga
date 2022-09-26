@@ -272,7 +272,7 @@ def generate_delivery_note(sales_invoice):
     doc = frappe.new_doc('Delivery Note')
     doc.update(outerJson_delivery_note)
     doc.save()
-    doc.submit()
+    # doc.submit()
 
     return dict(customer = sales_order_details.get('customer'), delivery_note = doc.name, invoice_no = sales_invoice, grand_total = doc.grand_total)
 
