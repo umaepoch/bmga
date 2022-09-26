@@ -256,6 +256,7 @@ def generate_delivery_note(sales_invoice):
     sales_order_details = frappe.get_doc('Sales Order', sales_order_name).as_dict()
     
     for s in sales_order_details['items']:
+        s['batch_no'] = s.get('pch_batch_no')
         s.pop('pch_batch_no')
         s.pop('promo_type')
     
