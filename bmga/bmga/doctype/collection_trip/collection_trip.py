@@ -24,15 +24,15 @@ def get_bank_account(company, user):
 	if a: return a.get('default_bank_account', '')
 	return ''
 
-def fetch_company_address(company):
+def fetch_address(name):
     address_list = frappe.db.get_list('Address', 'name')
     for x in address_list:
         a = frappe.get_doc('Address', x.get('name')).as_dict()
         if a.get('links'):
             if len(a['links']) > 0:
                 for l in a['links']:
-                    if l.get('link_name') == company: return dict(valid = True, name = x.get('name'))
-    frappe.throw("Error No address for given Company")
+                    if l.get('link_name') == name: return dict(valid = True, name = x.get('name'))
+    frappe.throw(f"Error No address for given {name}")
     return dict(valid = False)
 
 def generate_outerJson(name, company, x, paid_type):
@@ -51,7 +51,8 @@ def generate_outerJson(name, company, x, paid_type):
 
 	customer_account = get_bank_account(x.get('customer'), 'Customer')
 	company_account = get_bank_account(company, 'Company')
-	company_address = fetch_company_address(company)
+	company_address = fetch_address(company)
+	customer_address = fetch_address(x.get('customer'))
 
 	outerJson = {
 		'doctype': 'Payment Entry',
@@ -68,6 +69,7 @@ def generate_outerJson(name, company, x, paid_type):
 		'received_amount': paid_amount,
 		'paid_to': account,
 		'company_address': company_address.get('name', ''),
+		'customer_address': customer_address.get('name', ''),
 		'references': [],
 	}
 
