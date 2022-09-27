@@ -13,6 +13,19 @@ frappe.ui.form.on('Breakage And Expiry', {
 		});
 	},
 
+	validate(frm) {
+		let items = frm.doc.items;
+		let total = 0
+
+		if(items.length > 0) {
+			$.each(items, function(_i, v) {
+				total = total + v.pch_mrp_total;
+			})
+
+			frm.set_value('total', total);
+		}
+	},
+
 	customer(frm) {
 		if(frm.doc.customer) {
 			frappe.call({
