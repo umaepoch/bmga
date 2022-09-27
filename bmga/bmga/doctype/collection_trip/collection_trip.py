@@ -75,7 +75,11 @@ def generate_outerJson(name, company, x, paid_type):
 		{
 			'doctype': 'Payment Entry Reference',
 			'reference_doctype': 'Sales Invoice',
-			'reference_name': x.get('invoice_no')
+			'reference_name': x.get('invoice_no'),
+			'due_date': today,
+			'total_amount': x.get('pending_amount'),
+			'oustanding_amount': x.get('pending_amount'),
+			'allocated_amount': paid_amount
 		}
 	)
 

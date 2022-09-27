@@ -1,0 +1,68 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "BE-DL-.####",
+ "creation": "2022-09-26 14:24:51.337346",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "customer",
+  "expiry_permissible_limit",
+  "remainder_of_permissible_limit",
+  "items"
+ ],
+ "fields": [
+  {
+   "fieldname": "customer",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Customer",
+   "options": "Customer",
+   "reqd": 1
+  },
+  {
+   "fieldname": "expiry_permissible_limit",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Expiry Permissible Limit",
+   "read_only": 1
+  },
+  {
+   "fieldname": "remainder_of_permissible_limit",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Remainder of Permissible Limit",
+   "read_only": 1
+  },
+  {
+   "fieldname": "items",
+   "fieldtype": "Table",
+   "label": "Items",
+   "options": "Breakage And Expiry Item"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2022-09-26 15:36:12.253223",
+ "modified_by": "Administrator",
+ "module": "Bmga",
+ "name": "Breakage And Expiry",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC"
+}

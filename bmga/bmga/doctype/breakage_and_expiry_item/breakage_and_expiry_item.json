@@ -1,0 +1,115 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2022-09-26 14:37:34.251063",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "item",
+  "brand",
+  "item_name",
+  "uom",
+  "qty",
+  "batch",
+  "pch_pts",
+  "pch_ptr",
+  "pch_mrp",
+  "pch_mrp_total"
+ ],
+ "fields": [
+  {
+   "columns": 1,
+   "fieldname": "item",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Item",
+   "options": "Item"
+  },
+  {
+   "fieldname": "item_name",
+   "fieldtype": "Data",
+   "label": "Item Name",
+   "read_only": 1
+  },
+  {
+   "columns": 1,
+   "fieldname": "uom",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "UOM",
+   "options": "UOM",
+   "read_only": 1
+  },
+  {
+   "columns": 1,
+   "fieldname": "qty",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Qty"
+  },
+  {
+   "columns": 1,
+   "default": "0",
+   "fieldname": "pch_pts",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "PTS",
+   "read_only": 1
+  },
+  {
+   "columns": 1,
+   "default": "0",
+   "fieldname": "pch_ptr",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "PTR",
+   "read_only": 1
+  },
+  {
+   "columns": 1,
+   "default": "0",
+   "fieldname": "pch_mrp",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "MRP",
+   "read_only": 1
+  },
+  {
+   "columns": 2,
+   "default": "0",
+   "fieldname": "pch_mrp_total",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "MRP Total",
+   "read_only": 1
+  },
+  {
+   "columns": 1,
+   "fieldname": "brand",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Brand",
+   "read_only": 1
+  },
+  {
+   "columns": 1,
+   "fieldname": "batch",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Batch",
+   "options": "Batch"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2022-09-26 15:48:55.452058",
+ "modified_by": "Administrator",
+ "module": "Bmga",
+ "name": "Breakage And Expiry Item",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC"
+}
