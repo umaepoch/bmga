@@ -13,15 +13,15 @@ class BreakageAndExpiry(Document):
 def fetch_last_3_months_invoices(customer):
 	date = add_months(today(), -3)
 	sales_amount = frappe.db.sql(
-		f"""select coalesce(sum(outstanding_amount), 0) as total
+		f"""select coalesce(sum(rounded_total), 0) as total
 		from `tabSales Invoice`
-		where customer = '{customer}' and docstatus < 2 and outstanding_amount > 0 and is_return != 1""", as_dict=1
+		where customer = '{customer}' and docstatus < 2 and rounded_total > 0 and is_return != 1""", as_dict=1
 	)
 	
 	sales_return = frappe.db.sql(
-		f"""select coalesce(sum(outstanding_amount), 0) as total
+		f"""select coalesce(sum(rounded_total), 0) as total
 		from `tabSales Invoice`
-		where customer = '{customer}' and docstatus < 2 and outstanding_amount > 0 and is_return = 1""", as_dict=1
+		where customer = '{customer}' and docstatus < 2 and rounded_total > 0 and is_return = 1""", as_dict=1
 	)
 
 	sales_return = sales_return[0]
