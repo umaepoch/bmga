@@ -1051,7 +1051,7 @@ def get_customer_outstanding(customer, company, ignore_outstanding_sales_order=F
             outstanding_based_on_dn += ((dn_amount - si_amount)
                 / dn_item.base_net_total) * dn_item.base_grand_total
     
-    print(outstanding_based_on_gle, outstanding_based_on_so, outstanding_based_on_dn)
+    frappe.msgprint(outstanding_based_on_gle, outstanding_based_on_so, outstanding_based_on_dn)
 
     return outstanding_based_on_gle + outstanding_based_on_so + outstanding_based_on_dn
 
