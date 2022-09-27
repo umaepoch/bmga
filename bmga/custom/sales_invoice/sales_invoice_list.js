@@ -19,16 +19,18 @@ frappe.listview_settings['Sales Invoice'].onload = function(listview) {
             }
         })
 
-        Promise.all(promise_list).then(v => {
-            frappe.call({
-                method: 'bmga.global_api.generate_delivery_trip',
-                args: {
-                    delivery_notes: v
-                }
-            }).done(r => {
-                frappe.msgprint(`Delivery Trip Generated at ${r.message}`)
-            })
+        if(promise_list.length > 0) {
+            Promise.all(promise_list).then(v => {
+                frappe.call({
+                    method: 'bmga.global_api.generate_delivery_trip',
+                    args: {
+                        delivery_notes: v
+                    }
+                }).done(r => {
+                    frappe.msgprint(`Delivery Trip Generated at ${r.message}`)
+                })
 
-        })
+            })
+        }
     });
 };
