@@ -20,7 +20,8 @@ frappe.ui.form.on('Breakage And Expiry', {
 				args: {
 					customer: frm.doc.customer
 				}
-			}).done(r => {				
+			}).done(r => {			
+				console.log(r.message);
 				frm.set_value('expiry_permissible_limit', r.message.limit);
 				frm.set_value('remainder_of_permissible_limit', r.message.remainder);
 
