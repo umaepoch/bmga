@@ -20,8 +20,11 @@ frappe.ui.form.on('Breakage And Expiry', {
 				args: {
 					customer: frm.doc.customer
 				}
-			}).done(r => {
-				frm.set_value('expiry_permissible_limit', r.message.expiry_permissible_limit);
+			}).done(r => {				
+				frm.set_value('expiry_permissible_limit', r.message.limit);
+				frm.set_value('remainder_of_permissible_limit', r.message.remainder);
+
+				cur_frm.refresh_fields();
 			})
 		}
 	},
@@ -99,14 +102,17 @@ frappe.ui.form.on('Breakage And Expiry Item', {
 					frappe.model.set_value(cdt, cdn, "pch_pts", r.message.price.pts);
 					frappe.model.set_value(cdt, cdn, "pch_ptr", r.message.price.ptr);
 					frappe.model.set_value(cdt, cdn, "pch_mrp", r.message.price.mrp);
+					frappe.model.set_value(cdt, cdn, "expiry_date", r.message.price.expiry_date);
 
 					frappe.meta.get_docfield(cdt, 'pch_pts', cdn).read_only = 1;
 					frappe.meta.get_docfield(cdt, 'pch_ptr', cdn).read_only = 1;
 					frappe.meta.get_docfield(cdt, 'pch_mrp', cdn).read_only = 1;
+					frappe.meta.get_docfield(cdt, 'expiry_date', cdn).read_only = 1;
 				} else {
 					frappe.meta.get_docfield(cdt, 'pch_pts', cdn).read_only = 0;
 					frappe.meta.get_docfield(cdt, 'pch_ptr', cdn).read_only = 0;
 					frappe.meta.get_docfield(cdt, 'pch_mrp', cdn).read_only = 0;
+					frappe.meta.get_docfield(cdt, 'expiry_date', cdn).read_only = 0;
 				}
 
 				cur_frm.refresh_fields();

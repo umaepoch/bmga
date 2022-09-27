@@ -7,10 +7,15 @@
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
+  "company",
   "customer",
   "expiry_permissible_limit",
   "remainder_of_permissible_limit",
-  "items"
+  "section_break_5",
+  "items",
+  "section_break_7",
+  "total",
+  "amended_from"
  ],
  "fields": [
   {
@@ -40,11 +45,43 @@
    "fieldtype": "Table",
    "label": "Items",
    "options": "Breakage And Expiry Item"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Breakage And Expiry",
+   "print_hide": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "label": "Company",
+   "options": "Company",
+   "reqd": 1
+  },
+  {
+   "fieldname": "section_break_5",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "section_break_7",
+   "fieldtype": "Section Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "total",
+   "fieldtype": "Currency",
+   "label": "Total",
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
+ "is_submittable": 1,
  "links": [],
- "modified": "2022-09-26 15:36:12.253223",
+ "modified": "2022-09-27 15:12:38.834370",
  "modified_by": "Administrator",
  "module": "Bmga",
  "name": "Breakage And Expiry",

@@ -12,9 +12,11 @@
   "uom",
   "qty",
   "batch",
+  "expiry_date",
   "pch_pts",
   "pch_ptr",
   "pch_mrp",
+  "gst",
   "pch_mrp_total"
  ],
  "fields": [
@@ -81,7 +83,7 @@
    "fieldname": "pch_mrp_total",
    "fieldtype": "Currency",
    "in_list_view": 1,
-   "label": "MRP Total",
+   "label": "Total",
    "read_only": 1
   },
   {
@@ -99,12 +101,24 @@
    "in_list_view": 1,
    "label": "Batch",
    "options": "Batch"
+  },
+  {
+   "fieldname": "expiry_date",
+   "fieldtype": "Date",
+   "label": "Expiry Date",
+   "read_only": 1
+  },
+  {
+   "fieldname": "gst",
+   "fieldtype": "Percent",
+   "label": "GST",
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2022-09-26 15:48:55.452058",
+ "modified": "2022-09-27 15:06:06.792234",
  "modified_by": "Administrator",
  "module": "Bmga",
  "name": "Breakage And Expiry Item",
