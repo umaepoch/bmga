@@ -176,7 +176,7 @@ def get_permissible_expiry_limit(customer):
 	invoice_amount, invoice_return = fetch_last_3_months_invoices(customer)
 	print(r.get('pch_replacement', 0), invoice_amount, invoice_return)
 
-	return dict(limit = r.get('pch_replacement', 0)/100 * (invoice_amount - invoice_return), remainder = r.get('pch_replacement', 0)/100 * (invoice_amount - invoice_return) - invoice_return, invoice_amount = invoice_amount, invoice_return = invoice_return, replacement = r.get('pch_replacement', 0))
+	return dict(limit = r.get('pch_replacement', 0)/100 * (invoice_amount), remainder = r.get('pch_replacement', 0)/100 * (invoice_amount) + invoice_return, invoice_amount = invoice_amount, invoice_return = invoice_return, replacement = r.get('pch_replacement', 0))
 
 @frappe.whitelist()
 def get_item_details(item_code):
