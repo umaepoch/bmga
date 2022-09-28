@@ -9,6 +9,8 @@
  "field_order": [
   "delivery_trip_no",
   "collection_person",
+  "column_break_3",
+  "collection_person_name",
   "section_break_4",
   "details",
   "section_break_5",
@@ -60,12 +62,23 @@
    "label": "Payment Entry",
    "options": "Collection Trip Entries",
    "read_only": 1
+  },
+  {
+   "fieldname": "column_break_3",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "collection_person_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Collection Person Name",
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2022-09-23 12:42:22.778806",
+ "modified": "2022-09-28 16:18:05.403547",
  "modified_by": "Administrator",
  "module": "Bmga",
  "name": "Collection Trip",

@@ -118,3 +118,10 @@ def make_payment(name, details):
 			payment_entries.append(generate_outerJson(name, company, x, 'Wire Transfer'))
 
 	return payment_entries
+
+@frappe.whitelist()
+def get_employee_name(name):
+	name = frappe.db.get_value('Employee', {'name': name}, 'employee_name', as_dict=1)
+
+	if name: return name.get('employee_name', '')
+	else: return ''

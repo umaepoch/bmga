@@ -27,6 +27,20 @@ frappe.ui.form.on('Collection Trip', {
 				frappe.msgprint(`${r.message.length} Payment Entry Created`);
 			})
 		}
+	},
+
+	collection_person(frm) {
+		if(frm.doc.collection_person) {
+			frappe.call({
+				method: "bmga.bmga.doctype.collection_trip.collection_trip.get_employee_name",
+				args: {
+					name: frm.doc.collection_person
+				}
+			}).done(r => {
+				frm.set_value('collection_person_name', r.message);
+				refresh_field('collection_person_name');
+			})
+		}
 	}
 });
 
