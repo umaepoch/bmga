@@ -14,11 +14,11 @@ frappe.ui.form.on('Breakage And Expiry', {
 	},
 
 	before_submit(frm) {
-		if(total > frm.doc.remainder_of_permissible_limit) {
+		if(frm.doc.total > frm.doc.remainder_of_permissible_limit) {
 			frappe.throw('Error total exceeded permissible limit');
 		}
 
-		if(!(total > 0)) {
+		if(!(frm.doc.total > 0)) {
 			frappe.throw('Error total is 0');
 		}
 
@@ -32,8 +32,12 @@ frappe.ui.form.on('Breakage And Expiry', {
 				items: frm.doc.items
 			}
 		}).done(r => {
-			frm.set_value('invoice_no', r.message.name);
-			refresh_field('invoice_no');
+			if(r.message.name) {
+				frm.set_value('invoice_no', r.message.name);
+				refresh_field('invoice_no');
+			} else {
+				frappe.throw('Error generating Sales Invoice');
+			}
 		})
 	},
 
