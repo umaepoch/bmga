@@ -11,6 +11,9 @@ frappe.ui.form.on('Collection Trip', {
 					details: frm.doc.details
 				}
 			}).done(r => {
+				if(!r.message || r.message.length ==0) {
+					frappe.throw('Error please enter a valid Sum')
+				}
 				frm.doc.payment_entry = [];
 				refresh_field("payment_entry");
 

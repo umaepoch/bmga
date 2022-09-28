@@ -13,6 +13,29 @@ frappe.ui.form.on('Breakage And Expiry', {
 		});
 	},
 
+	// before_submit(frm) {
+	// 	if(frm.doc.total > frm.doc.remainder_of_permissible_limit) {
+	// 		frappe.throw('Error total exceeded permissible limit');
+	// 	}
+
+	// 	if(!(frm.doc.total > 0)) {
+	// 		frappe.throw('Error total is 0');
+	// 	}
+
+	// 	if(frm.doc.company && frm.doc.customer && frm.doc.items)
+		
+	// 	frappe.call({
+	// 		method: "bmga.bmga.doctype.breakage_and_expiry.breakage_and_expiry.generate_sales_invoice",
+	// 		args: {
+	// 			company: frm.doc.company,
+	// 			customer: frm.doc.customer,
+	// 			items: frm.doc.items
+	// 		}
+	// 	}).done(r => {
+	// 		console.log(r.message)
+	// 	})
+	// },
+
 	validate(frm) {
 		let items = frm.doc.items;
 		let total = 0
@@ -24,6 +47,28 @@ frappe.ui.form.on('Breakage And Expiry', {
 
 			frm.set_value('total', total);
 		}
+
+		if(total > frm.doc.remainder_of_permissible_limit) {
+			frappe.throw('Error total exceeded permissible limit');
+		}
+
+		if(!(total > 0)) {
+			frappe.throw('Error total is 0');
+		}
+
+		if(frm.doc.company && frm.doc.customer && frm.doc.items)
+		
+		frappe.call({
+			method: "bmga.bmga.doctype.breakage_and_expiry.breakage_and_expiry.generate_sales_invoice",
+			args: {
+				company: frm.doc.company,
+				customer: frm.doc.customer,
+				items: frm.doc.items
+			}
+		}).done(r => {
+			frm.set_value('invoice_no', r.message.name);
+			refresh_field('invoice_no');
+		})
 	},
 
 	customer(frm) {
