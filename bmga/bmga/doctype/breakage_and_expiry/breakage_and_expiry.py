@@ -22,7 +22,7 @@ def fetch_last_3_months_invoices(customer):
 	sales_return = frappe.db.sql(
 		f"""select coalesce(sum(rounded_total), 0) as total
 		from `tabSales Invoice`
-		where customer = '{customer}' and docstatus < 2 and and is_return = 1 and due_date >= '{date}'""", as_dict=1
+		where customer = '{customer}' and docstatus < 2 and is_return = 1 and due_date >= '{date}'""", as_dict=1
 	)
 
 	sales_return = sales_return[0]
