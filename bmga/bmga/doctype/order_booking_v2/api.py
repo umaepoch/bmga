@@ -494,8 +494,7 @@ def fetch_sales_promos_get_same_item(customer, item_code, customer_type, free_wa
                                         )
                                         print("sales", sales_data)
                                         promo_qty = available_stock_details_for_promos(item_code, customer_type, free_warehouse, expiry_date)
-                                        print(promo_qty)
-                                        print("Promo qty",promo_qty[promos[i]["bought_item"]])
+
                                         try:
                                             if sales_data[0].get("pending_qty") is None: 
                                                 qty = promo_qty[promos[i]["bought_item"]]
