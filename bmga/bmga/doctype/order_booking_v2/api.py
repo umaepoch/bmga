@@ -505,7 +505,8 @@ def fetch_sales_promos_get_same_item(customer, item_code, customer_type, free_wa
                                                 else:
                                                     continue
                                         except:
-                                            qty = promo_qty[promos[i]["bought_item"]]
+                                            try: qty = promo_qty[promos[i]["bought_item"]]
+                                            except: qty = 0
                                         sales_promos_details = ((j["quantity_booked"])//(promos[i]["for_every_quantity_that_is_bought"]))
                                         sales_promos_quantity = sales_promos_details*((promos[i]["quantity_of_free_items_thats_given"]))
                                         print("Wty........",qty)
@@ -516,7 +517,8 @@ def fetch_sales_promos_get_same_item(customer, item_code, customer_type, free_wa
                                             else:
                                                 sales_promos_quantity = qty
                                         except:
-                                            qty = promo_qty[promos[i]["bought_item"]]
+                                            try: qty = promo_qty[promos[i]["bought_item"]]
+                                            except: qty = 0
                                         
                                         if qty > 0:
                                             if order_list[t]["item_code"] == promos[i]["bought_item"]:
@@ -596,7 +598,8 @@ def fetch_sales_promos_get_diff_item(customer, item_code, customer_type, free_wa
                                                 else:
                                                     continue
                                         except:
-                                            qty = promo_qty[promos[i]["free_item"]]
+                                            try: qty = promo_qty[promos[i]["free_item"]]
+                                            except: qty = 0
 
 
                                         try:
@@ -606,7 +609,8 @@ def fetch_sales_promos_get_diff_item(customer, item_code, customer_type, free_wa
                                                 sales_promos_quantity = qty
 
                                         except:
-                                            qty = promo_qty[promos[i]["free_item"]]
+                                            try: qty = promo_qty[promos[i]["free_item"]]
+                                            except: qty = 0
 
                                         print("...............................................................", qty)
                                         if qty > 0:
@@ -687,7 +691,8 @@ def fetch_sales_promos_get_same_item_discout(customer, item_code, customer_type,
                                                 else:
                                                     continue
                                         except:
-                                            qty = promo_qty[promos[i]["bought_item"]]
+                                            try: qty = promo_qty[promos[i]["bought_item"]]
+                                            except: qty = 0
 
                                         try:
                                             if sales_promos_quantity <= qty:
@@ -696,7 +701,8 @@ def fetch_sales_promos_get_same_item_discout(customer, item_code, customer_type,
                                                 sales_promos_quantity = qty
 
                                         except:
-                                            qty = promo_qty[promos[i]["bought_item"]]
+                                            try: qty = promo_qty[promos[i]["bought_item"]]
+                                            except: qty = 0
 
                                         if qty > 0:
                                             if order_list[t]["item_code"] == promos[i]["bought_item"]:
@@ -784,7 +790,8 @@ def fetch_sales_promos_qty_based_discount(customer , item_code, customer_type, f
                                                     qty =  promo_qty[promos[i]["bought_item"]] - sales_data[0]["pending_qty"]
                                                 
                                         except:
-                                            qty = promo_qty[promos[i]["bought_item"]]
+                                            try: qty = promo_qty[promos[i]["bought_item"]]
+                                            except: qty = 0
                                             
                                         try:
                                             if sales_promos_quantity <= qty:
@@ -792,7 +799,8 @@ def fetch_sales_promos_qty_based_discount(customer , item_code, customer_type, f
                                             else:
                                                 sales_promos_quantity = qty
                                         except:
-                                            qty = promo_qty[promos[i]["bought_item"]]
+                                            try: qty = promo_qty[promos[i]["bought_item"]]
+                                            except: qty = 0
 
                                         if qty > 0:
                                             
