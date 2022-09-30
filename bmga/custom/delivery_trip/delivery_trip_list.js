@@ -9,7 +9,9 @@ frappe.listview_settings['Delivery Trip'] = {
                             name: value.name
                         }
                     }).done(r => {
-                        frappe.msgprint(`Generate Collection Trip ${r.message.name}`)
+                        if(r.message.name) {
+                            frappe.msgprint(`Generate Collection Trip ${get_link_to_form("Batch", r.message.name)}`);
+                        }
                     })
                 }
             })

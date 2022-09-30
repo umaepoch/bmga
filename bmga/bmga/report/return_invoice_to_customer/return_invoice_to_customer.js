@@ -12,13 +12,6 @@ frappe.query_reports["Return Invoice to Customer"] = {
 			"reqd": 1,
 		},
 		{
-			"fieldname": "warehouse",
-			"label": __("Warehouse"),
-			"fieldtype": "Link",
-			"options": "Warehouse",
-			"reqd": 1,
-		},
-		{
 			"fieldname": "from_date",
 			"label": __("From Date"),
 			"fieldtype": "Date",
@@ -35,15 +28,16 @@ frappe.query_reports["Return Invoice to Customer"] = {
 	],
 
 	onload(report) {
-		report.page.add_inner_button(__("Material Transfer"), function() {
+		report.page.add_inner_button(__("Create Return Invoice "), function() {
 			let company = report.filters[0].value;
-			let warehouse = report.filters[1].value;
-			if(company && warehouse) {
+			let data = report.data
+
+			if(company && data) {
 				frappe.call({
-					method: "bmga.bmga.report.return_invoice_to_customer.return_invoice_to_customer.generate_material_transfer",
+					method: "bmga.bmga.report.return_invoice_to_customer.return_invoice_to_customer.create_return_invoice",
 					args: {
 						company: company,
-						f_warehouse: warehouse
+						data: data
 					}
 				}).done(r => {
 					console.log(r.message);

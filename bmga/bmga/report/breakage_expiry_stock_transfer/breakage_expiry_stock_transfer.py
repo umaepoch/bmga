@@ -3,6 +3,8 @@
 
 import frappe
 from frappe import _
+import json
+from datetime import date
 
 def execute(filters=None):
 	columns = get_columns()
@@ -56,21 +58,49 @@ def get_stock_details(filters):
 
 	return stock
 
+def check_expiry(batch):
+	t = date.today()
+	e = frappe.db.get_value('Batch', {'name': batch}, 'expiry_date', as_dict=1)
+	if e:
+		return e.get('expiry_date', t) < t
+	return True
+
 @frappe.whitelist()
-def generate_material_transfer(company, f_warehouse):
+def generate_material_transfer(company, f_warehouse, data):
+	data = json.loads(data)
 	t_warehouse = get_t_warehouse(company)
+
 	if t_warehouse:
 		outerJson = {
 			'doctype': 'Stock Entry',
 			'naming_series': 'MT-BX-DL-',
 			'stock_entry_type': 'Material Transfer',
 			'from_warehouse': f_warehouse,
-			'to_warehouse': t_warehouse
+			'to_warehouse': t_warehouse,
+			'items': []
 		}
+
+		for x in data:
+			if not x.get('qty', 0) > 0: continue
+			if check_expiry(x.get('batch')): continue
+
+			innerJson = {
+				'doctype': 'Stock Entry Detail',
+				'item_code': x.get('item_code'),
+				'batch_no': x.get('batch'),
+				'qty': x.get('qty')
+			}
+
+			outerJson['items'].append(innerJson)
+		
+		if len(outerJson['items']) == 0:
+			frappe.throw('No valid items')
+			return
 	
 		doc = frappe.new_doc('Stock Entry')
 		doc.update(outerJson)
 		doc.save()
 
 		return dict(name = doc.name)
-	return 'Error'
+	frappe.throw('Target warehouse not found')
+	return

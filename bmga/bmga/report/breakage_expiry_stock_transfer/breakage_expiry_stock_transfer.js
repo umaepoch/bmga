@@ -38,15 +38,24 @@ frappe.query_reports["Breakage Expiry Stock Transfer"] = {
 		report.page.add_inner_button(__("Material Transfer"), function() {
 			let company = report.filters[0].value;
 			let warehouse = report.filters[1].value;
-			if(company && warehouse) {
+			let data = report.data;
+
+			if(company && warehouse && data) {
 				frappe.call({
-					method: "bmga.bmga.report.return_invoice_to_customer.return_invoice_to_customer.generate_material_transfer",
+					method: "bmga.bmga.report.breakage_expiry_stock_transfer.breakage_expiry_stock_transfer.generate_material_transfer",
 					args: {
 						company: company,
-						f_warehouse: warehouse
+						f_warehouse: warehouse,
+						data: data
 					}
 				}).done(r => {
-					console.log(r.message);
+					if(r.message.name) {
+						frappe.msgprint(`Generated material transfer at ${r.message.name}`)
+					}
+
+					if(r.message.error) {
+						frappe.msgprint(`${r.message.error}`)
+					}
 				})
 			}
 		});

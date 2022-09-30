@@ -3,6 +3,8 @@
 
 import frappe
 from frappe import _
+from datetime import date
+import json
 
 def execute(filters=None):
 	columns = get_columns()
@@ -37,7 +39,7 @@ def fetch_stock_details(warehouse, from_date, to_date):
 
     return stock_data_batch
 
-def get_t_warehouse(company):
+def get_s_warehouse(company):
 	warehouse = frappe.db.sql(
 		f"""select fsd.breakage_and_expiry_warehouse as warehouse
 		from `tabFulfillment Settings Details V1` as fsd
@@ -52,25 +54,44 @@ def get_t_warehouse(company):
 
 def get_stock_details(filters):
 	stock = []
-	stock = fetch_stock_details(filters['warehouse'], filters['from_date'], filters['to_date'])
+	warehouse = get_s_warehouse(filters['company'])
+	stock = fetch_stock_details(warehouse, filters['from_date'], filters['to_date'])
 
 	return stock
 
 @frappe.whitelist()
-def generate_material_transfer(company, f_warehouse):
-	t_warehouse = get_t_warehouse(company)
-	if t_warehouse:
-		outerJson = {
-			'doctype': 'Stock Entry',
-			'naming_series': 'MT-BX-DL-',
-			'stock_entry_type': 'Material Transfer',
-			'from_warehouse': f_warehouse,
-			'to_warehouse': t_warehouse
+def create_return_invoice(company, data):
+	t = date.today()
+	data = json.loads(data)
+	warehouse = get_s_warehouse(company)
+
+	outerJson = {
+		'doctype': 'Purchase Invoice',
+		'naming_series': 'PI-RC-DL-',
+		'posting_date': t,
+		'update_stock': 1,
+		'supplier': 'The Good Guy',
+		'items': []
+	}
+
+	for x in data:
+		if not x.get('qty', 0) > 0: continue
+
+		innerJson = {
+			'doctype': 'Purchase Invoice Item',
+			'item_code': x.get('item_code'),
+			'uom': x.get('uom'),
+			'qty': x.get('qty'),
+			'rate': x.get('mrp'),
+			'warehouse': warehouse
 		}
+
+		outerJson['items'].append(innerJson)
 	
-		doc = frappe.new_doc('Stock Entry')
+	if len(outerJson['items']) > 0:
+		doc = frappe.new_doc('Purchase Invoice')
 		doc.update(outerJson)
 		doc.save()
 
 		return dict(name = doc.name)
-	return 'Error'
+	return
