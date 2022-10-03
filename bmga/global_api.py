@@ -254,20 +254,43 @@ def generate_delivery_trip(delivery_notes):
 def generate_delivery_note(sales_invoice):
     sales_order_name = frappe.get_doc('Sales Invoice', sales_invoice).as_dict()['items'][0]['sales_order']
     sales_order_details = frappe.get_doc('Sales Order', sales_order_name).as_dict()
+    # sales_invoice_details = frappe.get_doc('Sales Invoice', sales_invoice).as_dict()
     
-    for s in sales_order_details['items']:
-        s['batch_no'] = s.get('pch_batch_no')
-        s.pop('pch_batch_no')
-        s.pop('promo_type')
-    
+    for t in sales_order_details['taxes']:
+        t.pop('name')
+        t.pop('owner')
+        t.pop('creation')
+        t.pop('modified')
+        t.pop('modified_by')
+        t.pop('parent')
+        t.pop('parentfield')
+        t.pop('parenttype')
+        t.pop('idx')
+        t.pop('docstatus')
+        t.pop('row_id')
+
     outerJson_delivery_note = {
         'doctype': 'Delivery Note',
 		'naming_series': 'DL-DL-',
 		'customer': sales_order_details.get('customer'),
         'invoice_no': sales_invoice,
-		'items': sales_order_details.get('items'),
+		'items': [],
 		'taxes': sales_order_details.get('taxes')
     }
+    
+    for s in sales_order_details['items']:
+        innerS = {
+            'doctype': 'Delivery Note Item',
+            'item_code': s.get('item_code'),
+            'qty': s.get('qty'),
+            'stock_uom': s.get('stock_uom'),
+            'rate': s.get('rate'),
+            'warehouse': s.get('warehouse'),
+            'against_sales_order': s.get('parent'),
+            'batch_no': s.get('pch_batch_no')
+        }
+
+        outerJson_delivery_note['items'].append(innerS)
 
     doc = frappe.new_doc('Delivery Note')
     doc.update(outerJson_delivery_note)

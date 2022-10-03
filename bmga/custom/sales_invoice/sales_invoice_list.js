@@ -4,7 +4,7 @@ frappe.listview_settings['Sales Invoice'].onload = function(listview) {
         var promise_list = []
 
     	$.each(listview.get_checked_items(), function(key, value) {
-            if(value.docstatus == 1) {
+            if(value.docstatus < 2) {
                 const p = new Promise((resolve, reject) => {
                     frappe.call({
                         method: 'bmga.global_api.generate_delivery_note',
