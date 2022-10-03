@@ -40,7 +40,10 @@ frappe.query_reports["Return Invoice to Customer"] = {
 						data: data
 					}
 				}).done(r => {
-					console.log(r.message);
+					if(r.message.length > 0) {
+						let names = r.message.toString();
+						frappe.msgprint(`Generated Purchase Invoice at ${names}`);
+					}
 				})
 			}
 		});
