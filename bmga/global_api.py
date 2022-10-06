@@ -312,6 +312,16 @@ def get_user_collection_trip():
 
     return user
 
+def fetch_si_collection_trip(customer):
+    s = frappe.db.sql(
+        f"""select invoice_no
+        from `tabCollection Trip Item`
+        where customer = '{customer}' and docstatus < 2""", as_dict=1
+    )
+
+    if len(s) > 0: return [x['invoice_no'] for x in s]
+    return []
+
 @frappe.whitelist()
 def generate_collection_trip(name):
     delivery_trip_items = frappe.get_doc('Delivery Trip', name).as_dict().delivery_stops
@@ -329,9 +339,13 @@ def generate_collection_trip(name):
         if x.get('customer') not in handled_customer:
             handled_customer.append(x.get('customer'))
             sales_invoice_list = fetch_unpaid_sales_invoices(x.get('customer'))
+            sales_invoice_collection = fetch_si_collection_trip(x.get('customer'))
 
-            if sales_invoice_list:
-                for s in sales_invoice_list:
+            filtered_invoice = [x for x in sales_invoice_list if x.get('name') not in sales_invoice_collection]
+            print('filtered invoices -------', filtered_invoice)
+
+            if filtered_invoice:
+                for s in filtered_invoice:
                     innerJson = {
                         'doctype': 'Collection Trip Item',
                         'invoice_no': s.get('name'),
