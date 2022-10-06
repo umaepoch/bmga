@@ -430,8 +430,11 @@ def available_stock_details_for_promos(item_code, customer_type, settings, expir
 
     stock_promo.extend(stock_data_batch)
     stock_promo.extend(stock_data_batchless)
-
-    frappe.throw('stock fetched', len(stock_data_batch), len(stock_data_batchless))
+    if len(stock_data_batch) == 0:
+        frappe.throw('stock fetched')
+    
+    if len(stock_data_batchless) == 0:
+        frappe.throw('stock fetched')
    
     available_qty = {}
     for batch_info in stock_promo:
