@@ -442,6 +442,7 @@ def available_stock_details_for_promos(item_code, customer_type, settings, expir
             available_qty[batch_info["item_code"]] = available_qty.get(batch_info["item_code"], 0) + batch_info["actual_qty"]
     
     print("AVAILABLE_QTY", available_qty)
+    frappe.msgprint(available_qty)
     return available_qty
     
 # Buy x get same x
