@@ -249,7 +249,6 @@ def generate_delivery_trip(delivery_notes):
 
     return doc.name
 
-
 @frappe.whitelist()
 def generate_delivery_note(sales_invoice):
     sales_order_name = frappe.get_doc('Sales Invoice', sales_invoice).as_dict()['items'][0]['sales_order']
@@ -287,8 +286,12 @@ def generate_delivery_note(sales_invoice):
             'rate': s.get('rate'),
             'warehouse': s.get('warehouse'),
             'against_sales_order': s.get('parent'),
+            'so_detail': s.get('name'),
+            'against_sales_invoice': sales_invoice,
             'batch_no': s.get('pch_batch_no')
         }
+
+        print(innerS)
 
         outerJson_delivery_note['items'].append(innerS)
 
@@ -303,6 +306,11 @@ def fetch_unpaid_sales_invoices(customer):
     l = frappe.db.get_list('Sales Invoice', filters=[{'customer': customer}, {'docstatus': ['<', '2']}, {'outstanding_amount': ['>', '0']}], fields=['name', 'outstanding_amount'])
     return l
 
+@frappe.whitelist()
+def get_user_collection_trip():
+    user = frappe.session.user
+
+    return user
 
 @frappe.whitelist()
 def generate_collection_trip(name):

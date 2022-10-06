@@ -4,7 +4,7 @@
 import frappe
 from frappe import _
 import json
-from datetime import date
+from datetime import date, timedelta
 
 def execute(filters=None):
 	columns = get_columns()
@@ -65,6 +65,18 @@ def check_expiry(batch):
 		return e.get('expiry_date', t) < t
 	return True
 
+def get_expiry_date(batch):
+	today = date.today() + timedelta(days=1)
+
+	expiry_date = frappe.db.get_value('Batch', {'name': batch}, 'expiry_date')
+	frappe.db.set_value('Batch', {'name': batch}, 'expiry_date', today)
+	frappe.db.set_value('Batch', {'name': batch}, 'pch_expiry_date', expiry_date)
+
+	return expiry_date
+
+def update_expiry_date(batch, expiry_date):
+	frappe.db.set_value('Batch', {'name': batch}, 'expiry_date', expiry_date)
+
 @frappe.whitelist()
 def generate_material_transfer(company, f_warehouse, data):
 	data = json.loads(data)
@@ -80,9 +92,13 @@ def generate_material_transfer(company, f_warehouse, data):
 			'items': []
 		}
 
+		expired_batch = []
+
 		for x in data:
 			if not x.get('qty', 0) > 0: continue
-			if check_expiry(x.get('batch')): continue
+			if check_expiry(x.get('batch')):
+				expiry_date = get_expiry_date(x.get('batch'))
+				expired_batch.append({'batch': x.get('batch'), 'expiry_date': expiry_date})
 
 			innerJson = {
 				'doctype': 'Stock Entry Detail',
@@ -100,6 +116,9 @@ def generate_material_transfer(company, f_warehouse, data):
 		doc = frappe.new_doc('Stock Entry')
 		doc.update(outerJson)
 		doc.save()
+
+		for x in expired_batch:
+			update_expiry_date(x.get('batch'), x.get('expiry_date'))
 
 		return dict(name = doc.name)
 	frappe.throw('Target warehouse not found')

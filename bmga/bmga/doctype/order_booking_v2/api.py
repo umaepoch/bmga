@@ -410,10 +410,8 @@ def available_stock_details_for_promos(item_code, customer_type, settings, expir
     
     print("Item",i)
     
-    # for i in stock_batch_promo:
-    #     print("...................................", i)
     stock_data_batch = frappe.db.sql(f"""
-            select batch_id , `tabBatch`.stock_uom, item as item_code, expiry_date, `tabStock Ledger Entry`.warehouse as warehouse, sum(`tabStock Ledger Entry`.actual_qty) as actual_qty
+            select item as item_code, expiry_date, sum(`tabStock Ledger Entry`.actual_qty) as actual_qty
             from `tabBatch`
                 join `tabStock Ledger Entry` ignore index (item_code, warehouse)
                     on (`tabBatch`.batch_id = `tabStock Ledger Entry`.batch_no )
@@ -422,15 +420,16 @@ def available_stock_details_for_promos(item_code, customer_type, settings, expir
             group by batch_id, warehouse
             order by expiry_date ASC, warehouse DESC
         """, as_dict=True)
+
     stock_data_batchless = frappe.db.sql(
-        f"""select batch_no as batch_id, item_code, warehouse, stock_uom, sum(actual_qty) as actual_qty from `tabStock Ledger Entry`
+        f"""select item_code, sum(actual_qty) as actual_qty from `tabStock Ledger Entry`
         where item_code in {i} and warehouse = '{settings}' and (batch_no is null or batch_no = '')
         group by item_code, warehouse""",
         as_dict=True
     )
+
     stock_promo.extend(stock_data_batch)
     stock_promo.extend(stock_data_batchless)
-    # print("Stock_promos")
    
     available_qty = {}
     for batch_info in stock_promo:
@@ -441,26 +440,24 @@ def available_stock_details_for_promos(item_code, customer_type, settings, expir
                 available_qty[batch_info["item_code"]] = available_qty.get(batch_info["item_code"], 0) + batch_info["actual_qty"]
         except: 
             available_qty[batch_info["item_code"]] = available_qty.get(batch_info["item_code"], 0) + batch_info["actual_qty"]
-    # print(type(available_qty))
+    
     print("AVAILABLE_QTY", available_qty)
     return available_qty
     
 # Buy x get same x
 def fetch_sales_promos_get_same_item(customer, item_code, customer_type, free_warehouse, expiry_date, order_list):
     promo_type = "Buy x get same x"
-    # fullfillment_settings = fetch_fulfillment_settings(company)
-    # print("ORDER LIST*****************", order_list)
     sales_check = sales_promo_checked(customer)
     sales_promos_quantity = []
     promos_sale = []
     sales_data = None
     promos = []
     seen = []
-    # print("Item",i)
+
     i = [x["item_code"] for x in item_code]
     i = re.sub(r',\)$', ')', str(tuple(i)))
     today = datetime.date.today()
-    # print("HAI***************************")
+
     promos = frappe.db.sql (f""" select sp.start_date, sp.end_date, 
         pt.for_every_quantity_that_is_bought, pt.quantity_of_free_items_thats_given,
         pt.bought_item
@@ -1083,7 +1080,6 @@ def customer_type_container(customer, company):
 
 @frappe.whitelist()
 def sales_promos(item_code , customer_type, company, order_list, customer):
-    print('customer type', customer_type)
     item_code = json.loads(item_code)
     order_list= json.loads(order_list)
 
@@ -1227,10 +1223,6 @@ def check_customer_state(customer, company):
             if doc.get('links')[0].get('link_name') == company: company_code = doc.gst_state_number
         except:
             continue
-
-    print('/*-+'*50)
-    print(customer_code, company_code)
-    print('/*-+'*50)
     
     return dict(valid = company_code == customer_code, customer_code = customer_code, company_code = company_code)
     
@@ -1283,15 +1275,10 @@ def sales_order_container(customer, company, customer_type, sales_order):
     
     sales_order = json.loads(sales_order)
 
-    print('length', len(sales_order))
-    print("ORDER.......",sales_order)
-
     abbr = fetch_company_abbr(company)
-    print(abbr)
 
     gst_detail = fetch_gst_detail(company)
     customer_in_state = check_customer_state(customer, company)
-    print(customer_in_state)
     if customer_in_state.get('valid'):
         tax = gst_detail['gst_in_state']
         tax_detail = fetch_tax_detail(gst_detail['gst_in_state'])
@@ -1302,7 +1289,6 @@ def sales_order_container(customer, company, customer_type, sales_order):
     
     delivery_warehouse = ""
     fulfillment_settings = fetch_fulfillment_settings(company, customer)
-    # print("SETTINGS IN SALES ORDER", fulfillment_settings)
     delivery_warehouse = ""
     if customer_type == "Retail":
         delivery_warehouse = fulfillment_settings[0]["retail_primary_warehouse"]
@@ -1343,19 +1329,6 @@ def sales_order_container(customer, company, customer_type, sales_order):
         if data["quantity"] > data["quantity_available"]:
             if data["promo_type"] == "None" or data["promo_type"] == "Quantity based discount" or data["promo_type"] == "Buy x get same and discount for ineligible qty":
                 if data["quantity_available"] > 0:
-                    # item_tax = fetch_item_tax(data['item_code'])
-                    # if item_tax.get('valid'):
-                    #     if customer_in_state.get('valid'):
-                    #         cgst += (data['average'] * item_tax['tax_rate'].get(f'Input Tax CGST - {abbr}')/100) * data['quantity']
-                    #         sgst += (data['average'] * item_tax['tax_rate'].get(f'Input Tax SGST - {abbr}')/100) * data['quantity']
-                    #     else:
-                    #         igst += (data['average'] * item_tax['tax_rate'].get(f'Input Tax IGST - {abbr}')/100) * data['quantity']
-                    # else:
-                    #     if customer_in_state.get('valid'):
-                    #         pass
-                    #     else:
-                    #         igst += (data['average'] * tax_detail['tax'].get(f'Output Tax IGST - {abbr}')/100) * data['quantity']
-
                     innerJson_so = {
                         "doctype": "Sales Order Item",
                         "item_code": data["item_code"],
@@ -1377,23 +1350,6 @@ def sales_order_container(customer, company, customer_type, sales_order):
                         "rate": data["average"],
                     }
         else:
-            # item_tax = fetch_item_tax(data['item_code'])
-            # if item_tax.get('valid'):
-            #     if customer_in_state.get('valid'):
-            #         cgst += (data['average'] * item_tax['tax_rate'].get(f'Input Tax CGST - {abbr}')/100) * data['quantity']
-            #         sgst += (data['average'] * item_tax['tax_rate'].get(f'Input Tax SGST - {abbr}')/100) * data['quantity']
-            #     else:
-            #         igst += (data['average'] * item_tax['tax_rate'].get(f'Input Tax IGST - {abbr}')/100) * data['quantity']
-            # else:
-            #     if customer_in_state.get('valid'):
-            #         pass
-            #     else:
-            #         igst += (data['average'] * tax_detail['tax'].get(f'Output Tax IGST - {abbr}')/100) * data['quantity']
-            
-            # print('igst', igst)
-            # print('sgst', sgst)
-            # print('cgst', cgst)
-
             innerJson_so = {
                 "doctype": "Sales Order Item",
                 "item_code": data["item_code"],
@@ -1418,7 +1374,6 @@ def sales_order_container(customer, company, customer_type, sales_order):
     if customer_in_state.get('valid'):
         for x in tax_detail['detail']:
             if x.get('account_head') == f'Output Tax SGST - {abbr}':
-                print('SGST', x.get('description'))
                 innerJson_tax_list.append({
                     "doctype": "Sales Taxes and Charges",
                     "charge_type": x["charge_type"],
@@ -1441,12 +1396,9 @@ def sales_order_container(customer, company, customer_type, sales_order):
         })
 
     outerJson_so['taxes'].extend(innerJson_tax_list)
-    print(outerJson_so['taxes'])
 
     so_name = ""
     qo_name = ""
-
-    print('sales order length', len(outerJson_so["items"]))
 
     if len(outerJson_so["items"]) > 0:
         doc_so = frappe.new_doc("Sales Order")
