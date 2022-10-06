@@ -342,7 +342,6 @@ def generate_collection_trip(name):
             sales_invoice_collection = fetch_si_collection_trip(x.get('customer'))
 
             filtered_invoice = [x for x in sales_invoice_list if x.get('name') not in sales_invoice_collection]
-            print('filtered invoices -------', filtered_invoice)
 
             if filtered_invoice:
                 for s in filtered_invoice:
