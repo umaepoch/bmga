@@ -116,6 +116,7 @@ def generate_material_transfer(company, f_warehouse, data):
 		doc = frappe.new_doc('Stock Entry')
 		doc.update(outerJson)
 		doc.save()
+		doc.submit()
 
 		for x in expired_batch:
 			update_expiry_date(x.get('batch'), x.get('expiry_date'))

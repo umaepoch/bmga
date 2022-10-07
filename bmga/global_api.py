@@ -5,7 +5,6 @@ from erpnext.accounts.utils import get_balance_on
 import re
 from frappe.utils import flt
 
-
 # Credit limit
 def get_credit_limit(customer, company):
 	credit_limit = None
@@ -360,6 +359,42 @@ def generate_collection_trip(name):
     doc.save()
 
     return dict(data = delivery_trip_items, name = doc.name)
+
+@frappe.whitelist()
+def fetch_employee_collection_trips(employee):
+    t = frappe.db.sql(
+        f"""select cti.name, cti.invoice_no, cti.pending_amount, cti.cash_amount, cti.cheque_amount,
+        cti.wire_amount, cti.total_amount, cti.cheque_reference, cti.cheque_date, cti.wire_reference, cti.wire_date
+            from `tabCollection Trip Item` as cti
+                join `tabCollection Trip` as ct on (ct.name = cti.parent)
+            where ct.collection_person = '{employee}'""", as_dict=1
+    )
+
+    if not t: []
+    if len(t) > 0: return t
+    return []
+
+@frappe.whitelist()
+def update_employee_collection_trips(payload):
+    payload = json.loads(payload)
+    updated_ct = []
+
+    for x in payload:
+        doc = frappe.get_doc('Collection Trip Item', x.get('name'))
+        doc.cash_amount = x.get('cash_amount', 0)
+        doc.cheque_amount = x.get('cheque_amount', 0)
+        doc.wire_amount = x.get('wire_amount', 0)
+        doc.total_amount = x.get('total_amount', 0)
+        doc.cheque_reference = x.get('cheque_reference')
+        doc.cheque_date = x.get('cheque_date')
+        doc.wire_reference = x.get('wire_reference')
+        doc.wire_date = x.get('wire_date')
+
+        doc.save()
+
+        updated_ct.append(doc.name)
+    
+    return dict(updated_names = updated_ct, updated_len = len(updated_ct))
 
 # Print Format
 @frappe.whitelist()
