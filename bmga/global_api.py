@@ -367,7 +367,7 @@ def fetch_employee_collection_trips(employee):
         cti.wire_amount, cti.total_amount, cti.cheque_reference, cti.cheque_date, cti.wire_reference, cti.wire_date
             from `tabCollection Trip Item` as cti
                 join `tabCollection Trip` as ct on (ct.name = cti.parent)
-            where ct.collection_person = '{employee}' and docstatus = 1""", as_dict=1
+            where ct.collection_person = '{employee}' and ct.docstatus = 0""", as_dict=1
     )
 
     if not t: []
