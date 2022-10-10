@@ -363,11 +363,13 @@ def generate_collection_trip(name):
 @frappe.whitelist()
 def fetch_employee_collection_trips(employee):
     t = frappe.db.sql(
-        f"""select cti.name, cti.invoice_no, cti.pending_amount, cti.cash_amount, cti.cheque_amount,
+        f"""select cti.name, cti.invoice_no, c.territory as customer_territory, c.customer_name as customer_name, cti.pending_amount, cti.cash_amount, cti.cheque_amount,
         cti.wire_amount, cti.total_amount, cti.cheque_reference, cti.cheque_date, cti.wire_reference, cti.wire_date
             from `tabCollection Trip Item` as cti
                 join `tabCollection Trip` as ct on (ct.name = cti.parent)
-            where ct.collection_person = '{employee}' and ct.docstatus = 0""", as_dict=1
+                join `tabSales Invoice` as si on (si.name = cti.invoice_no)
+                join `tabCustomer` as c on (c.name = si.customer)
+            where ct.collection_person = '{employee}' and (ct.docstatus = 0 or (ct.docstatus = 1 and cti.pending_amount > cti.total_amount))""", as_dict=1
     )
 
     if not t: []
@@ -445,6 +447,8 @@ def fetch_customer_type(so_name):
         f"""SELECT pch_customer_type FROM `tabCustomer Group` WHERE name = '{customer_group[0]["customer_group"]}'""",
         as_dict=True
     )
+
+    
     return customer_type[0]["pch_customer_type"]
 
 def fetch_fulfillment_settings(company, customer=""):
