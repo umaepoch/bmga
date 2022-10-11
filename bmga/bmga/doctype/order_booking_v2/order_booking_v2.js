@@ -1,6 +1,5 @@
 // Copyright (c) 2022, Karthik Raman and contributors
 // For license information, please see license.txt
-var customer_type = null;
 var credit_days = false;
 
 frappe.ui.form.on('Order Booking V2', {
@@ -36,7 +35,6 @@ frappe.ui.form.on('Order Booking V2', {
 					company: company
 				}
 			}).done((response) => {
-				customer_type = response.message.customer_type.pch_customer_type;
 				frm.set_value("customer_type", response.message.customer_type.pch_customer_type);
 				frm.set_value("unpaid_amount", response.message.unpaid_amount);
 				frm.set_value("credit_limit", response.message.credit_limit);
@@ -65,6 +63,8 @@ frappe.ui.form.on('Order Booking V2', {
 		let item_code_list = frm.doc.order_booking_items_v2.map(function(d) {
 			return {item_code: d.item_code, quantity_booked: d.quantity_booked, average_price:d.average_price, amount:d.amount, quantity_available:d.quantity_available}
 		})
+
+		let customer_type = frm.doc.customer_type;
 
 		frm.doc.promos = [];
 		refresh_field("promos");
@@ -153,7 +153,8 @@ frappe.ui.form.on('Order Booking V2', {
 				let company = frm.doc.company;
 				var free_promos = frm.doc.promos;
 				var promo_dis = frm.doc.promos_discount;
-				var sales_order = frm.doc.sales_order_preview
+				var sales_order = frm.doc.sales_order_preview;
+				let customer_type = frm.doc.customer_type;
 	
 				if(free_promos == undefined || free_promos == null) {
 					free_promos = []
@@ -206,6 +207,7 @@ frappe.ui.form.on('Order Booking V2', {
 				if(frm.doc.docstatus == 1 && !frm.doc.order_booking_so) {
 					let order_list = frm.doc.order_booking_items_v2;
 					let customer = frm.doc.customer;
+					let customer_type = frm.doc.customer_type
 					let company = frm.doc.company;
 					var free_promos = frm.doc.promos;
 					var promo_dis = frm.doc.promos_discount;
@@ -266,8 +268,10 @@ frappe.ui.form.on('Order Booking V2', {
 frappe.ui.form.on('Order Booking Items V2', {
 	item_code: function(frm, cdt, cdn) {
 		let item_code = frappe.get_doc(cdt, cdn).item_code;
-		let company = frm.doc.company
-		let customer = frm.doc.customer
+		let company = frm.doc.company;
+		let customer = frm.doc.customer;
+		let customer_type = frm.doc.customer_type;
+
 		if(item_code) {
 			if(frm.check_duplicate(frm)) {
 				frappe.msgprint("Can not re-select chosen item!");
