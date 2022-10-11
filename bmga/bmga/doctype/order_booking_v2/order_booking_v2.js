@@ -54,16 +54,11 @@ frappe.ui.form.on('Order Booking V2', {
 	},
 
 	validate: function(frm) {
-		console.log(frm.doc.order_booking_items_v2[0])
 		var order_list = frm.doc.order_booking_items_v2.map(function(d) {
-			return {item_code: d.item_code, quantity_booked: d.quantity_booked, average_price:d.average_price, mrp:d.amount_after_gst,
+			return {item_code: d.item_code, quantity_booked: d.quantity_booked, average_price:d.average_price,
 				amount:d.amount, quantity_available:d.quantity_available, rate_contract:d.rate_contract_check};
 		})
 		var customer = frm.doc.customer
-		let item_code_list = frm.doc.order_booking_items_v2.map(function(d) {
-			return {item_code: d.item_code, quantity_booked: d.quantity_booked, average_price:d.average_price, amount:d.amount, quantity_available:d.quantity_available}
-		})
-
 		let customer_type = frm.doc.customer_type;
 
 		frm.doc.promos = [];
@@ -81,7 +76,7 @@ frappe.ui.form.on('Order Booking V2', {
 			customer_type = frm.doc.customer_type;
 		}
 
-		if (item_code_list) {
+		if (order_list) {
 			frappe.call({
 				method : "bmga.bmga.doctype.order_booking_v2.api.sales_promos",
 				args :{

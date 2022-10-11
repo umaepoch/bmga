@@ -1158,7 +1158,7 @@ def check_promo_1(i):
     if not p: return
     if not len(p) > 0: return
 
-    discount_price = i['mrp'] * ((100 - p[0]['discount'])/100)
+    discount_price = i['average_price'] * ((100 - p[0]['discount'])/100)
     return dict(discount_price = discount_price)
 
 def check_promo_5(i, free_warehouse, expiry_days):
@@ -1181,7 +1181,7 @@ def check_promo_5(i, free_warehouse, expiry_days):
 
 
     free_stock = check_promo_stock(i['item_code'], fcalc_qty, free_warehouse, expiry_days)
-    return dict(discount_price = i['mrp'] * ((100 - p[0]['discount'])/100), dic_qty = dicalc_qty,
+    return dict(discount_price = i['average_price'] * ((100 - p[0]['discount'])/100), dic_qty = dicalc_qty,
         free_qty = free_stock['free_qty'], free_available_qty = free_stock['available_qty'],
         normal_qty = normalcalc_qty)
 
