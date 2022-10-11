@@ -96,6 +96,7 @@ def create_return_invoice(company, data):
 			'naming_series': 'PI-RC-DL-',
 			'posting_date': t,
 			'update_stock': 1,
+			'is_return': 1,
 			'supplier': to_do,
 			'items': []
 		}
@@ -107,7 +108,7 @@ def create_return_invoice(company, data):
 				'doctype': 'Purchase Invoice Item',
 				'item_code': x.get('item_code'),
 				'uom': x.get('uom'),
-				'qty': x.get('qty'),
+				'qty': x.get('qty')*(-1),
 				'rate': x.get('mrp'),
 				'warehouse': warehouse
 			}
