@@ -62,6 +62,7 @@ def check_expiry(batch):
 	t = date.today()
 	e = frappe.db.get_value('Batch', {'name': batch}, 'expiry_date', as_dict=1)
 	if e:
+		if e.get('expiry_date') is None: return
 		return e.get('expiry_date', t) < t
 	return True
 
