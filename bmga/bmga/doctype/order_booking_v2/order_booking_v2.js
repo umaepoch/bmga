@@ -56,8 +56,10 @@ frappe.ui.form.on('Order Booking V2', {
 	},
 
 	validate: function(frm) {
+		console.log(frm.doc.order_booking_items_v2[0])
 		var order_list = frm.doc.order_booking_items_v2.map(function(d) {
-			return {item_code: d.item_code, quantity_booked: d.quantity_booked, average_price:d.average_price, amount:d.amount, quantity_available:d.quantity_available, rate_contract_check:d.rate_contract_check}
+			return {item_code: d.item_code, quantity_booked: d.quantity_booked, average_price:d.average_price, mrp:d.amount_after_gst,
+				amount:d.amount, quantity_available:d.quantity_available, rate_contract:d.rate_contract_check};
 		})
 		var customer = frm.doc.customer
 		let item_code_list = frm.doc.order_booking_items_v2.map(function(d) {
@@ -83,27 +85,26 @@ frappe.ui.form.on('Order Booking V2', {
 			frappe.call({
 				method : "bmga.bmga.doctype.order_booking_v2.api.sales_promos",
 				args :{
-					item_code: item_code_list,
-					customer_type: customer_type,
 					company : company,
-					order_list: order_list,
 					customer: customer,
+					order_list: order_list,
 				}
 			}).done((respose) =>{
 				console.log(respose.message)
 				let total_amount = 0;
-				$.each(respose.message.sales_order.sales_order, function(_i, e) {
-					if(e.qty > 0) {
-						let entry = frm.add_child("sales_order_preview");
-						entry.item_code = e.item_code;
-						entry.quantity_available = e.qty_available;
-						entry.quantity = e.qty;
-						entry.average = e.average_price;
-						entry.promo_type = e.promo_type;
-						entry.warehouse = e.warehouse;
-						total_amount = total_amount + (e.qty * e.average_price);
-					}
+
+				$.each(respose.message.sales_preview, function(_i, e) {
+					let entry = frm.add_child("sales_order_preview");
+					entry.item_code = e.item_code;
+					entry.quantity_available = e.qty_available;
+					entry.quantity = e.qty;
+					entry.average = e.average_price;
+					entry.promo_type = e.promo_type;
+					entry.warehouse = e.warehouse;
+					total_amount = total_amount + (e.qty * e.average_price);
 				});
+
+				refresh_field("sales_order_preview")
 
 				frm.set_value('total_amount', total_amount);
 				refresh_field("total_amount")
@@ -118,32 +119,28 @@ frappe.ui.form.on('Order Booking V2', {
 					refresh_field('pending_reason');
 				}
 
-				$.each(respose.message.sales_promos_items, function(_i, e) {
-					if(e.qty > 0) {
-						let entry = frm.add_child("promos");
-						entry.bought_item = e.bought_item;
-						entry.free_items = e.promo_item;
-						entry.price = e.rate;
-						entry.quantity = e.qty;
-						entry.warehouse_quantity = e.w_qty;
-						entry.promo_type = e.promo_type;
-					}
+				$.each(respose.message.free_preview, function(_i, e) {
+					let entry = frm.add_child("promos");
+					entry.bought_item = e.bought_item;
+					entry.free_items = e.free_item;
+					entry.price = e.rate;
+					entry.quantity = e.qty;
+					entry.warehouse_quantity = e.warehouse_quantity;
+					entry.promo_type = e.promo_type;
 				});
 				refresh_field("promos")
 
-				$.each(respose.message.sales_promo_discounted_amount, function(_i, e){
-						if (e.dic !== "0" && e.dic_qty > 0){
-							let entry = frm.add_child("promos_discount");
-							entry.bought_item = e.bought_item;
-							entry.free_item = e.promo_item;
-							entry.quantity = e.dic_qty;
-							entry.discount = e.dic;
-							entry.promo_type = e.promo_type;
-							entry.amount= e.amount;
-						}
-					})
+				$.each(respose.message.discount_preview, function(_i, e){
+					let entry = frm.add_child("promos_discount");
+					entry.bought_item = e.bought_item;
+					entry.free_item = e.free_item;
+					entry.quantity = e.dic_qty;
+					entry.discount = e.dic;
+					entry.promo_type = e.promo_type;
+					entry.amount= e.amount;
+				})
 
-					refresh_field("promos_discount")
+				refresh_field("promos_discount");
 			})
 		}	
 	},

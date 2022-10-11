@@ -1078,32 +1078,351 @@ def customer_type_container(customer, company):
     v = verify_credit_limit(customer)
     return dict(customer_type = customer_type, unpaid_amount = unpaid_amount, credit_limit = credit_limit, credit_days = v)
 
+# @frappe.whitelist()
+# def sales_promos(item_code , customer_type, company, order_list, customer):
+#     item_code = json.loads(item_code)
+#     order_list= json.loads(order_list)
+
+#     settings = fetch_fulfillment_settings(company, customer)
+#     promos_qty = available_stock_details_for_promos(item_code, customer_type, settings[0]["free_warehouse"], settings[0]["expiry_date_limit"])
+#     sales_promos_same_item = fetch_sales_promos_get_same_item(customer, item_code, customer_type, settings[0]["free_warehouse"], settings[0]["expiry_date_limit"], order_list)
+#     sales_promo_diff_items = fetch_sales_promos_get_diff_item(customer, item_code, customer_type, settings[0]["free_warehouse"], settings[0]["expiry_date_limit"], order_list)
+#     sales_promo_discount = fetch_sales_promos_get_same_item_discout(customer, item_code, customer_type, settings[0]["free_warehouse"],  settings[0]["expiry_date_limit"], order_list)
+#     sales_promo_quantity_discount = fetch_sales_promos_qty_based_discount(customer, item_code, customer_type, settings[0]["retail_primary_warehouse"],  settings[0]["expiry_date_limit"], order_list)
+    
+#     sales_promo_discounted_amount = sales_promo_discount["Promo_sales"] + sales_promo_quantity_discount["Promo_sales"]
+    
+#     sales_promos_items = sales_promos_same_item["Promo_sales"] + sales_promo_diff_items["Promo_sales"] + sales_promo_discount["Promo_sales"]
+    
+#     sales_order = sales_order_calculation(sales_promo_discounted_amount, sales_promos_items, order_list, customer_type, settings, settings[0]["free_warehouse"])
+
+#     # for i, v in enumerate(sales_order['sales_order']):
+#     #     if v.get('qty', 0) == 0:
+#     #         sales_order['sales_order'].pop(i)
+#     #     if v.get('promo_type', 'None') == 'None' and sales_order['sales_order'].index(v) != i:
+#     #         sales_order['sales_order'].pop(i)
+
+#     return dict(sales_order = sales_order,sales_promos_items= sales_promos_items, bought_item = item_code, sales_promos_same_item = sales_promos_same_item, sales_promo_diff_items = sales_promo_diff_items, sales_promo_discount= sales_promo_discount, promos_qty = promos_qty, sales_promo_discounted_amount = sales_promo_discounted_amount )
+
+def check_promo_stock(item_code, qty, free_warehouse, expiry_days):
+    today = datetime.date.today()
+    
+    stock_data_batch = frappe.db.sql(f"""
+            select expiry_date, sum(`tabStock Ledger Entry`.actual_qty) as actual_qty
+            from `tabBatch`
+                join `tabStock Ledger Entry` ignore index (item_code, warehouse)
+                    on (`tabBatch`.batch_id = `tabStock Ledger Entry`.batch_no )
+            where `tabStock Ledger Entry`.item_code = '{item_code}' and warehouse = '{free_warehouse}'
+                and `tabStock Ledger Entry`.is_cancelled = 0
+            group by batch_id, warehouse
+            order by expiry_date ASC, warehouse DESC
+        """, as_dict=True)
+
+    stock_data_batchless = frappe.db.sql(
+        f"""select sum(actual_qty) as actual_qty from `tabStock Ledger Entry`
+        where item_code = '{item_code}' and warehouse = '{free_warehouse}' and (batch_no is null or batch_no = '')""",
+        as_dict=True
+    )
+
+    batch_sum = 0
+    if stock_data_batch:
+        for x in stock_data_batch:
+            if x["expiry_date"] is not None: 
+                date_delta = x["expiry_date"] - today
+                if date_delta.days < expiry_days: continue
+                if x.get('actual_qty') is None: continue
+                batch_sum += x['actual_qty']
+    
+    batchless_sum = 0
+    if stock_data_batchless:
+        if len(stock_data_batchless) > 0:
+            if stock_data_batchless[0].get('actual_qty') is not None:
+                batchless_sum += stock_data_batchless[0].get['actual_qty']
+    
+    available_qty = batch_sum + batchless_sum
+    if qty <= available_qty: return dict(free_qty = qty, available_qty = available_qty)
+    return dict(free_qty = available_qty, available_qty = available_qty)
+
+def check_promo_1(i):
+    today = datetime.date.today()
+
+    p = frappe.db.sql(
+        f"""select p1.discount_percentage as discount
+            from `tabPromo Type 1` as p1
+                join `tabSales Promos` as p on (p.name = p1.parent)
+            where p1.bought_item = '{i['item_code']}' and p1.quantity_bought <= '{i['quantity_booked']}' and p.start_date <= '{today}' and p.end_date >= '{today}'
+            order by p1.quantity_bought DESC""",
+            as_dict=1
+    )
+
+    if not p: return
+    if not len(p) > 0: return
+
+    discount_price = i['mrp'] * ((100 - p[0]['discount'])/100)
+    return dict(discount_price = discount_price)
+
+def check_promo_5(i, free_warehouse, expiry_days):
+    today = datetime.date.today()
+
+    p = frappe.db.sql(
+        f"""select p5.quantity_of_free_items_thats_given as free_qty, p5.discount, p5.for_every_quantity_that_is_bought as bought_qty
+            from `tabPromo Type 5` as p5
+                join `tabSales Promos` as p on (p.name = p5.parent)
+            where p5.bought_item = '{i['item_code']}' and p5.for_every_quantity_that_is_bought <= '{i['quantity_booked']}' and p.start_date <= '{today}' and p.end_date >= '{today}'
+            order by p5.for_every_quantity_that_is_bought DESC""",
+            as_dict=1
+    )
+    if not p: return
+    if not len(p) > 0: return
+
+    fcalc_qty = i['quantity_booked']//p[0]['bought_qty'] * p[0]['free_qty']
+    dicalc_qty = i['quantity_booked']%10
+    normalcalc_qty = i['quantity_booked'] - dicalc_qty
+
+
+    free_stock = check_promo_stock(i['item_code'], fcalc_qty, free_warehouse, expiry_days)
+    return dict(discount_price = i['mrp'] * ((100 - p[0]['discount'])/100), dic_qty = dicalc_qty,
+        free_qty = free_stock['free_qty'], free_available_qty = free_stock['available_qty'],
+        normal_qty = normalcalc_qty)
+
+def check_promo_2(i, free_warehouse, expiry_days):
+    today = datetime.date.today()
+
+    p = frappe.db.sql(
+        f"""select p2.quantity_of_free_items_thats_given as free_qty, p2.for_every_quantity_that_is_bought as bought_qty
+            from `tabPromo Type 2` as p2
+                join `tabSales Promos` as p on (p.name = p2.parent)
+            where p2.bought_item = '{i['item_code']}' and p2.for_every_quantity_that_is_bought <= '{i['quantity_booked']}' and p.start_date <= '{today}' and p.end_date >= '{today}'
+            order by p2.for_every_quantity_that_is_bought DESC""",
+            as_dict=1
+    )
+
+    if not p: return
+    if not len(p) > 0: return
+
+    fcalc_qty = i['quantity_booked']//p[0]['bought_qty'] * p[0]['free_qty']
+
+    free_stock = check_promo_stock(i['item_code'], fcalc_qty, free_warehouse, expiry_days)
+    return dict(free_item = i['item_code'], free_qty = free_stock['free_qty'],
+        free_available_qty = free_stock['available_qty'])
+
+def check_promo_3(i, free_warehouse, expiry_days):
+    today = datetime.date.today()
+
+    p = frappe.db.sql(
+        f"""select p3.free_item, p3.for_every_quantity_that_is_bought as bought_qty, p3.quantity_of_free_items_thats_given as free_qty
+            from `tabPromo Type 3` as p3
+                join `tabSales Promos` as p on (p.name = p3.parent)
+            where p3.bought_item = '{i['item_code']}' and p3.for_every_quantity_that_is_bought <= '{i['quantity_booked']}' and p.start_date <= '{today}' and p.end_date >= '{today}'
+            order by p3.for_every_quantity_that_is_bought DESC""",
+            as_dict=1
+    )
+
+    if not p: return
+    if not len(p) > 0: return
+
+    fcalc_qty = i['quantity_booked']//p[0]['bought_qty'] * p[0]['free_qty']
+    free_item = p[0]['free_item']
+    free_stock = check_promo_stock(free_item, fcalc_qty, free_warehouse, expiry_days)
+    return dict(free_item = free_item, free_qty = free_stock['free_qty'],
+        free_available_qty = free_stock['available_qty'])
+
+def handle_sales_promo(i, settings):
+    default_preview_added = False
+    sales_preview = []
+    promo_discount = []
+    promo_free = []
+
+    p1 = check_promo_1(i)
+    if p1:
+        promo_type = 'Quantity based discount'
+        promo_discount.append(
+            promo_discount_helper(i['item_code'], i['item_code'], i['quantity_booked'], p1['discount_price'], promo_type, i['quantity_booked'] * p1['discount_price'])
+        )
+        sales_preview.append(
+            sales_preview_helper(i['item_code'], i['quantity_available'], i['quantity_booked'], p1['discount_price'], settings[0]["retail_primary_warehouse"], promo_type)
+        )
+        default_preview_added = True
+    else:
+        p5 = check_promo_5(i, settings[0]["free_warehouse"], settings[0]["expiry_date_limit"])
+        if p5:
+            promo_type = 'Buy x get same and discount for ineligible qty'
+            promo_discount.append(
+                promo_discount_helper(i['item_code'], i['item_code'], p5['dic_qty'], p5['discount_price'], promo_type, p5['dic_qty'] * p5['discount_price'])
+            )
+            sales_preview.append(
+                sales_preview_helper(i['item_code'], i['quantity_available'], p5['dic_qty'], p5['discount_price'], settings[0]["retail_primary_warehouse"], promo_type)
+            )
+            if p5['free_available_qty'] > 0:
+                promo_free.append(
+                    promo_free_helper(i['item_code'], i['item_code'], p5['free_qty'], 0, p5['free_available_qty'], promo_type)
+                )
+                sales_preview.append(
+                    sales_preview_helper(i['item_code'], p5['free_available_qty'], p5['free_qty'], 0, settings[0]["free_warehouse"], promo_type)
+                )
+            sales_preview.append(
+                sales_preview_helper(i['item_code'], i['quantity_available'], p5['normal_qty'], i['average_price'], settings[0]["retail_primary_warehouse"], 'None')
+            )
+            default_preview_added = True
+    
+    p2 = check_promo_2(i, settings[0]["free_warehouse"], settings[0]["expiry_date_limit"])
+    if p2:
+        if p2['free_available_qty'] > 0:
+            promo_type = 'Buy x get same x'
+            promo_free.append(
+                promo_free_helper(i['item_code'], p2['free_item'], p2['free_qty'], 0, p2['free_available_qty'], promo_type)
+            )
+            sales_preview.append(
+                sales_preview_helper(i['item_code'], p2['free_available_qty'], p2['free_qty'], 0, settings[0]["free_warehouse"], promo_type)
+            )
+            if not default_preview_added:
+                sales_preview.append(
+                    sales_preview_helper(i['item_code'], i['quantity_available'], i['quantity_booked'], i['average_price'], settings[0]["retail_primary_warehouse"], 'None')
+                )
+                default_preview_added = True
+    
+    p3 = check_promo_3(i, settings[0]["free_warehouse"], settings[0]["expiry_date_limit"])
+    if p3:
+        if p3['free_available_qty'] > 0:
+            promo_type = 'Buy x get another y item'
+            promo_free.append(
+                promo_free_helper(i['item_code'], p3['free_item'], p3['free_qty'], 0, p3['free_available_qty'], promo_type)
+            )
+            sales_preview.append(
+                sales_preview_helper(p3['free_item'], p3['free_available_qty'], p3['free_qty'], 0, settings[0]["free_warehouse"], promo_type)
+            )
+            if not default_preview_added:
+                sales_preview.append(
+                    sales_preview_helper(i['item_code'], i['quantity_available'], i['quantity_booked'], i['average_price'], settings[0]["retail_primary_warehouse"], 'None')
+                )
+                default_preview_added = True
+
+    if not default_preview_added:
+        sales_preview.append(
+            sales_preview_helper(i['item_code'], i['quantity_available'], i['quantity_booked'], i['average_price'], settings[0]["retail_primary_warehouse"], 'None')
+        )
+    
+    return sales_preview, promo_discount, promo_free
+
+def promo_discount_helper(bought_item, free_item, dic_qty, dic, promo_type, amount):
+    return {
+        'bought_item': bought_item,
+        'free_item': free_item,
+        'dic_qty': dic_qty,
+        'dic': dic,
+        'promo_type': promo_type,
+        'amount': amount
+    }
+
+def sales_preview_helper(item_code, qty_available, qty, average_price, warehouse, promo_type):
+    return {
+        'item_code': item_code,
+        'qty_available': qty_available,
+        'qty': qty,
+        'average_price': average_price,
+        'warehouse': warehouse,
+        'promo_type': promo_type
+    }
+
+def promo_free_helper(bought_item, free_item, quantity, price, warehouse_quantity, promo_type):
+    return {
+        'bought_item': bought_item,
+        'free_item': free_item,
+        'qty': quantity,
+        'price': price,
+        'warehouse_quantity': warehouse_quantity,
+        'promo_type': promo_type
+    }
+
+def sales_preview_cumulative(orders:list):
+    f_list = []
+    for i, val in enumerate(orders):
+        f_list.append({
+            'item_code': val['item_code'],
+            'qty_available': val['qty_available'],
+            'average_price': val['average_price'],
+            'warehouse': val['warehouse'],
+            'promo_type': val['promo_type']
+        })
+
+    for i, val in enumerate(f_list):
+        if i != f_list.index(val):
+            orders[f_list.index(val)]['qty'] += orders[i]['qty']
+            orders.pop(i)
+            f_list.pop(i)
+
+    return orders
+
+def free_preview_cumulative(orders: list):
+    f_list = []
+    for i, val in enumerate(orders):
+        f_list.append({
+            'bought_item': val['bought_item'],
+            'free_item': val['free_item'],
+            'price': val['price'],
+            'warehouse_quantity': val['warehouse_quantity'],
+            'promo_type': val['promo_type']
+        })
+
+    for i, val in enumerate(f_list):
+        if i != f_list.index(val):
+            orders[f_list.index(val)]['qty'] += orders[i]['qty']
+            orders.pop(i)
+            f_list.pop(i)
+
+    return orders
+
+def discount_preview_cumulative(orders: list):
+    f_list = []
+    for i, val in enumerate(orders):
+        f_list.append({
+            'bought_item': val['bought_item'],
+            'free_item': val['free_item'],
+            'dic': val['dic'],
+            'promo_type': val['promo_type'],
+            'amount': val['amount']
+        })
+
+    for i, val in enumerate(f_list):
+        if i != f_list.index(val):
+            orders[f_list.index(val)]['dic_qty'] += orders[i]['dic_qty']
+            orders.pop(i)
+            f_list.pop(i)
+
+    return orders
+
 @frappe.whitelist()
-def sales_promos(item_code , customer_type, company, order_list, customer):
-    item_code = json.loads(item_code)
-    order_list= json.loads(order_list)
-
+def sales_promos(company, customer, order_list):
+    order_list = json.loads(order_list)
     settings = fetch_fulfillment_settings(company, customer)
-    promos_qty = available_stock_details_for_promos(item_code, customer_type, settings[0]["free_warehouse"], settings[0]["expiry_date_limit"])
-    sales_promos_same_item = fetch_sales_promos_get_same_item(customer, item_code, customer_type, settings[0]["free_warehouse"], settings[0]["expiry_date_limit"], order_list)
-    sales_promo_diff_items = fetch_sales_promos_get_diff_item(customer, item_code, customer_type, settings[0]["free_warehouse"], settings[0]["expiry_date_limit"], order_list)
-    sales_promo_discount = fetch_sales_promos_get_same_item_discout(customer, item_code, customer_type, settings[0]["free_warehouse"],  settings[0]["expiry_date_limit"], order_list)
-    sales_promo_quantity_discount = fetch_sales_promos_qty_based_discount(customer, item_code, customer_type, settings[0]["retail_primary_warehouse"],  settings[0]["expiry_date_limit"], order_list)
-    
-    sales_promo_discounted_amount = sales_promo_discount["Promo_sales"] + sales_promo_quantity_discount["Promo_sales"]
-    
-    sales_promos_items = sales_promos_same_item["Promo_sales"] + sales_promo_diff_items["Promo_sales"] + sales_promo_discount["Promo_sales"]
-    
-    sales_order = sales_order_calculation(sales_promo_discounted_amount, sales_promos_items, order_list, customer_type, settings, settings[0]["free_warehouse"])
 
-    for i, v in enumerate(sales_order['sales_order']):
-        if v.get('qty', 0) == 0:
-            sales_order['sales_order'].pop(i)
-        if v.get('promo_type', 'None') == 'None' and sales_order['sales_order'].index(v) != i:
-            sales_order['sales_order'].pop(i)
+    order_preview = []
+    promo_discount = []
+    promo_free = []
 
-    return dict(sales_order = sales_order,sales_promos_items= sales_promos_items, bought_item = item_code, sales_promos_same_item = sales_promos_same_item, sales_promo_diff_items = sales_promo_diff_items, sales_promo_discount= sales_promo_discount, promos_qty = promos_qty, sales_promo_discounted_amount = sales_promo_discounted_amount )
+    for x in order_list:
+        if x.get('rate_contract'):
+            order_preview.append(
+                sales_preview_helper(x['item_code'], x['quantity_available'], x['quantity_booked'], x['average_price'], settings[0]["retail_primary_warehouse"], 'None')
+            )
+            continue
+        
+        if check_sales_promo(customer, x.get('item_code')) == 0:
+            order_preview.append(
+                sales_preview_helper(x['item_code'], x['quantity_available'], x['quantity_booked'], x['average_price'], settings[0]["retail_primary_warehouse"], 'None')
+            )
+            continue
+        
+        p_preview, p_discount, p_free = handle_sales_promo(x, settings)
 
+        order_preview.extend(p_preview)
+        promo_discount.extend(p_discount)
+        promo_free.extend(p_free)
+    
+    order_preview = sales_preview_cumulative(order_preview)
+    
+    return dict(sales_preview = order_preview, discount_preview = promo_discount, free_preview = promo_free)
+    
 
 def check_promo_type_1(item_code):
     today = datetime.date.today()
