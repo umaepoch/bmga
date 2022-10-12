@@ -1,5 +1,3 @@
-from cProfile import label
-from dataclasses import fields
 import json
 import frappe
 import datetime
@@ -1346,6 +1344,11 @@ def sales_preview_cumulative(orders:list):
         })
 
     for i, val in enumerate(f_list):
+        if not orders[i]['qty'] > 0: 
+            orders.pop(i)
+            f_list.pop(i)
+            continue
+
         if i != f_list.index(val):
             orders[f_list.index(val)]['qty'] += orders[i]['qty']
             orders.pop(i)
@@ -1365,6 +1368,11 @@ def free_preview_cumulative(orders: list):
         })
 
     for i, val in enumerate(f_list):
+        if not orders[i]['qty'] > 0: 
+            orders.pop(i)
+            f_list.pop(i)
+            continue
+
         if i != f_list.index(val):
             orders[f_list.index(val)]['qty'] += orders[i]['qty']
             orders.pop(i)
@@ -1384,6 +1392,11 @@ def discount_preview_cumulative(orders: list):
         })
 
     for i, val in enumerate(f_list):
+        if not orders[i]['dic_qty'] > 0: 
+            orders.pop(i)
+            f_list.pop(i)
+            continue
+
         if i != f_list.index(val):
             orders[f_list.index(val)]['dic_qty'] += orders[i]['dic_qty']
             orders.pop(i)
@@ -1391,12 +1404,48 @@ def discount_preview_cumulative(orders: list):
 
     return orders
 
+def quotation_preview_cumulative(orders:list):
+    f_list = []
+    for i, val in enumerate(orders):
+        f_list.append({
+            'item_code': val['item_code'],
+            'average': val['average'],
+        })
+
+    for i, val in enumerate(f_list):
+        if not orders[i]['quantity'] > 0: 
+            orders.pop(i)
+            f_list.pop(i)
+            continue
+
+        if i != f_list.index(val):
+            orders[f_list.index(val)]['quantity'] += orders[i]['quantity']
+            orders.pop(i)
+            f_list.pop(i)
+
+    return orders
+
+def customer_allowed_for_promo(customer):
+    a = frappe.db.get_value('Customer', {'name': customer}, 'pch_sales_promo', as_dict=1)
+    if not a: return False
+    if a.get('pch_sales_promo') is None: return False
+    if a.get('pch_sales_promo', 0) != 1: return False
+    return True 
+
+def handle_quotation_preview(q):
+    return {
+        'item_code': q['item_code'],
+        'quantity': q['qty'],
+        'average': q['average_price']
+    }
+
 @frappe.whitelist()
 def sales_promos(company, customer, order_list):
     order_list = json.loads(order_list)
     settings = fetch_fulfillment_settings(company, customer)
 
     order_preview = []
+    quotation_preview = []
     promo_discount = []
     promo_free = []
 
@@ -1406,22 +1455,59 @@ def sales_promos(company, customer, order_list):
                 sales_preview_helper(x['item_code'], x['quantity_available'], x['quantity_booked'], x['average_price'], settings[0]["retail_primary_warehouse"], 'None')
             )
             continue
-        
-        if check_sales_promo(customer, x.get('item_code')) == 0:
-            order_preview.append(
-                sales_preview_helper(x['item_code'], x['quantity_available'], x['quantity_booked'], x['average_price'], settings[0]["retail_primary_warehouse"], 'None')
-            )
-            continue
-        
-        p_preview, p_discount, p_free = handle_sales_promo(x, settings)
 
-        order_preview.extend(p_preview)
-        promo_discount.extend(p_discount)
-        promo_free.extend(p_free)
+        print('*'*150)
+        s = {}
+        q = {}
+        
+        if x['quantity_available'] < x['quantity_booked']:
+            if x['quantity_available'] > 0:
+                s.update(x)
+                s['quantity_booked'] = s['quantity_available']
+
+            q.update(x)
+            q['qty'] = q['quantity_booked'] - q['quantity_available']
+        else:
+            s.update(x)
+
+        sales_promo_appicable = customer_allowed_for_promo(customer)
+        if not sales_promo_appicable:
+            if bool(s):
+                order_preview.append(
+                    sales_preview_helper(s['item_code'], s['quantity_available'], s['quantity_booked'], s['average_price'], settings[0]["retail_primary_warehouse"], 'None')
+                )
+        
+        print('sales order', s, bool(s))
+        print('quatation order', q, bool(q))
+        
+        if bool(s) and sales_promo_appicable:
+            p_preview, p_discount, p_free = handle_sales_promo(x, settings)
+
+            order_preview.extend(p_preview)
+            promo_discount.extend(p_discount)
+            promo_free.extend(p_free)
+        
+        if bool(q):
+            q_preview = handle_quotation_preview(q)
+
+            quotation_preview.append(q_preview)
     
     order_preview = sales_preview_cumulative(order_preview)
+    promo_discount = discount_preview_cumulative(promo_discount)
+    promo_free = free_preview_cumulative(promo_free)
+    quotation_preview = quotation_preview_cumulative(quotation_preview)
+
+    s_total = 0
+    q_total = 0
+    if order_preview:
+        s_total = sum(sp['qty'] * sp['average_price'] for sp in order_preview)
+    if quotation_preview:
+        q_total = sum(qp['quantity'] * qp['average'] for qp in quotation_preview)
     
-    return dict(sales_preview = order_preview, discount_preview = promo_discount, free_preview = promo_free)
+    total = s_total + q_total
+    print(total)
+    
+    return dict(sales_preview = order_preview, quotation_preview = quotation_preview, discount_preview = promo_discount, free_preview = promo_free, total_amount = total)
     
 
 def check_promo_type_1(item_code):
@@ -1578,7 +1664,7 @@ def fetch_item_tax(item_code):
     )
 
     handled = {}
-    list(map(lambda x: handled.update({x['tax_type']: x['tax_rate']}), r))
+    list(map(lambda x: handled.update({x['tax_type']: x['tax_rate']}), r)) 
 
     if len(r) > 0: return dict(valid = True, tax_rate = handled)
     else: return dict(valid = False, tax_rate = None)
@@ -1590,9 +1676,10 @@ def fetch_company_abbr(company):
 
 
 @frappe.whitelist()
-def sales_order_container(customer, company, customer_type, sales_order):
+def sales_order_container(customer, company, customer_type, sales_preview, quotation_preview):
     
-    sales_order = json.loads(sales_order)
+    sales_preview = json.loads(sales_preview)
+    quotation_preview = json.loads(quotation_preview)
 
     abbr = fetch_company_abbr(company)
 
@@ -1626,8 +1713,6 @@ def sales_order_container(customer, company, customer_type, sales_order):
         "delivery_date": delivery_date,
         "pch_picking_status": "Ready for Picking",
         "pch_sales_order_purpose": "Delivery",
-        "set_warehouse": delivery_warehouse,
-        # 'taxes_and_charges': tax,
         "items": [],
         "taxes": [],
         "ignore_pricing_rule" : 1,
@@ -1641,53 +1726,27 @@ def sales_order_container(customer, company, customer_type, sales_order):
         "items": []
     }
 
-    for data in sales_order:
-        innerJson_so = None
-        innerJson_qo = None
+    for s in sales_preview:
+        innerJson_so = {
+            "doctype": "Sales Order Item",
+            "item_code": s["item_code"],
+            "qty": s["quantity"],
+            "rate": s["average"],
+            "warehouse": s["warehouse"],
+            "promo_type": s["promo_type"]
+        }
 
-        if data["quantity"] > data["quantity_available"]:
-            if data["promo_type"] == "None" or data["promo_type"] == "Quantity based discount" or data["promo_type"] == "Buy x get same and discount for ineligible qty":
-                if data["quantity_available"] > 0:
-                    innerJson_so = {
-                        "doctype": "Sales Order Item",
-                        "item_code": data["item_code"],
-                        "qty": data["quantity_available"],
-                        "rate": data["average"],
-                    }
+        outerJson_so["items"].append(innerJson_so)
+    
+    for q in quotation_preview:
+        innerJson_qo = {
+            "doctype": "Quotation Item",
+            "item_code": q["item_code"],
+            "qty": q["quantity"],
+            "rate": q["average"],
+        }
 
-                    innerJson_qo = {
-                        "doctype": "Quotation Item",
-                        "item_code": data["item_code"],
-                        "qty": data["quantity"] - data["quantity_available"],
-                        "rate": data["average"],
-                    }
-                else:
-                    innerJson_qo = {
-                        "doctype": "Quotation Item",
-                        "item_code": data["item_code"],
-                        "qty": data["quantity"],
-                        "rate": data["average"],
-                    }
-        else:
-            innerJson_so = {
-                "doctype": "Sales Order Item",
-                "item_code": data["item_code"],
-                "qty": data["quantity"],
-                "rate": data["average"],
-                "promo_type" : data["promo_type"],
-                "warehouse": data["warehouse"],
-            }
-        
-        try:
-            if innerJson_so is not None:
-                outerJson_so["items"].append(innerJson_so)
-        except:
-            pass
-        try:
-            if innerJson_qo is not None:
-                outerJson_qo["items"].append(innerJson_qo)
-        except:
-            pass
+        outerJson_qo["items"].append(innerJson_qo)
     
     innerJson_tax_list = []
     if customer_in_state.get('valid'):
@@ -1719,19 +1778,19 @@ def sales_order_container(customer, company, customer_type, sales_order):
     so_name = ""
     qo_name = ""
 
-    if len(outerJson_so["items"]) > 0:
+    if outerJson_so["items"]:
         doc_so = frappe.new_doc("Sales Order")
         doc_so.update(outerJson_so)
         doc_so.save()
         so_name = doc_so.name
 
-    if len(outerJson_qo["items"]) > 0:
+    if outerJson_qo["items"]:
         doc_qo = frappe.new_doc("Quotation")
         doc_qo.update(outerJson_qo)
         doc_qo.save()
         qo_name = doc_qo.name
 
-    return dict(customer_in_state = customer_in_state, so_name = so_name, qo_name = qo_name, outerJson_qo = outerJson_qo, outerJson_so = outerJson_so, outerJson = outerJson_so)
+    return dict(so_name = so_name, qo_name = qo_name)
 
 @frappe.whitelist()
 def update_pending_reason(name, total_amount, unpaid_amount, credit_limit, credit_days = False):    

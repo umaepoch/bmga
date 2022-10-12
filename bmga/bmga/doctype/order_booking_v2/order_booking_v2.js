@@ -54,11 +54,11 @@ frappe.ui.form.on('Order Booking V2', {
 	},
 
 	validate: function(frm) {
-		var order_list = frm.doc.order_booking_items_v2.map(function(d) {
+		let order_list = frm.doc.order_booking_items_v2.map(function(d) {
 			return {item_code: d.item_code, quantity_booked: d.quantity_booked, average_price:d.average_price,
 				amount:d.amount, quantity_available:d.quantity_available, rate_contract:d.rate_contract_check};
 		})
-		var customer = frm.doc.customer
+		let customer = frm.doc.customer
 		let customer_type = frm.doc.customer_type;
 
 		frm.doc.promos = [];
@@ -69,6 +69,9 @@ frappe.ui.form.on('Order Booking V2', {
 
 		frm.doc.sales_order_preview = [];
 		refresh_field("sales_order_preview");
+
+		frm.doc.quotation_preview = [];
+		refresh_field('quotation_preview');
 
 		let company = frm.doc.company;
 
@@ -84,11 +87,10 @@ frappe.ui.form.on('Order Booking V2', {
 					customer: customer,
 					order_list: order_list,
 				}
-			}).done((respose) =>{
-				console.log(respose.message)
-				let total_amount = 0;
+			}).done((response) =>{
+				console.log(response.message);
 
-				$.each(respose.message.sales_preview, function(_i, e) {
+				$.each(response.message.sales_preview, function(_i, e) {
 					let entry = frm.add_child("sales_order_preview");
 					entry.item_code = e.item_code;
 					entry.quantity_available = e.qty_available;
@@ -96,10 +98,18 @@ frappe.ui.form.on('Order Booking V2', {
 					entry.average = e.average_price;
 					entry.promo_type = e.promo_type;
 					entry.warehouse = e.warehouse;
-					total_amount = total_amount + (e.qty * e.average_price);
 				});
+				refresh_field("sales_order_preview");
 
-				refresh_field("sales_order_preview")
+				$.each(response.message.quotation_preview, function(_i, e) {
+					let entry = frm.add_child('quotation_preview');
+					entry.item_code = e.item_code;
+					entry.quantity = e.quantity;
+					entry.average = e.average;
+				})
+				refresh_field("quotation_preview");
+
+				let total_amount = response.message.total_amount
 
 				frm.set_value('total_amount', total_amount);
 				refresh_field("total_amount")
@@ -114,7 +124,7 @@ frappe.ui.form.on('Order Booking V2', {
 					refresh_field('pending_reason');
 				}
 
-				$.each(respose.message.free_preview, function(_i, e) {
+				$.each(response.message.free_preview, function(_i, e) {
 					let entry = frm.add_child("promos");
 					entry.bought_item = e.bought_item;
 					entry.free_items = e.free_item;
@@ -125,7 +135,7 @@ frappe.ui.form.on('Order Booking V2', {
 				});
 				refresh_field("promos")
 
-				$.each(respose.message.discount_preview, function(_i, e){
+				$.each(response.message.discount_preview, function(_i, e){
 					let entry = frm.add_child("promos_discount");
 					entry.bought_item = e.bought_item;
 					entry.free_item = e.free_item;
@@ -143,52 +153,53 @@ frappe.ui.form.on('Order Booking V2', {
 	before_submit: function(frm) {
 		if(!frm.doc.pending_reason) {
 			if(!frm.doc.order_booking_so) {
-				let order_list = frm.doc.order_booking_items_v2;
 				let customer = frm.doc.customer;
-				let company = frm.doc.company;
-				var free_promos = frm.doc.promos;
-				var promo_dis = frm.doc.promos_discount;
-				var sales_order = frm.doc.sales_order_preview;
-				let customer_type = frm.doc.customer_type;
-	
-				if(free_promos == undefined || free_promos == null) {
-					free_promos = []
-				}
-				if(promo_dis == undefined || promo_dis == null) {
-					promo_dis = []
-				}
-				console.log('order list', order_list)
-				if(order_list) {
-					console.log('sales order container')
-					frappe.call({
-						method: "bmga.bmga.doctype.order_booking_v2.api.sales_order_container",
-						args: {
-							customer: customer,
-							order_list: order_list,
-							company: company,
-							customer_type: customer_type,
-							free_promos: free_promos,
-							promo_dis: promo_dis,
-							sales_order: sales_order,
-						}
-					}).done((response) => {
-						frm.set_value("order_booking_so", response.message.so_name);
-						frm.set_value("hunting_quotation", response.message.qo_name);
-						frm.set_value("pch_status", "Approved");
+					let customer_type = frm.doc.customer_type
+					let company = frm.doc.company;
 
-						refresh_field("order_booking_so");
-						refresh_field("hunting_quotation");
-						refresh_field("pch_status");
+					let sales_preview = []
+					if(frm.doc.sales_order_preview) {
+						sales_preview = frm.doc.sales_order_preview.map(function(d) {
+							return {item_code: d.item_code, quantity: d.quantity,
+								average: d.average, warehouse: d.warehouse, promo_type: d.promo_type}
+						});
+					}
 
-						if(response.message.so_name != "" || response.message.qo_name != "") {
-							frappe.msgprint("Order Booked!");
-						} else {
-							frappe.msgprint("No Order has been Placed")
-						}
-					})
-				} else {
-					frappe.msgprint("Select Customer First");
-				}
+					let quotation_preview = []
+					if(frm.doc.quotation_preview) {
+						quotation_preview = frm.doc.quotation_preview.map(function(d) {
+							return {item_code: d.item_code, quantity: d.quantity, average: d.average}
+						});
+					}
+		
+					if(sales_preview || quotation_preview) {
+						frappe.call({
+							method: "bmga.bmga.doctype.order_booking_v2.api.sales_order_container",
+							args: {
+								customer: customer,
+								company: company,
+								customer_type: customer_type,
+								quotation_preview: quotation_preview,
+								sales_preview: sales_preview,
+							}
+						}).done((response) => {
+							frm.set_value("order_booking_so", response.message.so_name);
+							frm.set_value("hunting_quotation", response.message.qo_name);
+							frm.set_value("pch_status", "Approved");
+
+							refresh_field("order_booking_so");
+							refresh_field("hunting_quotation");
+							refresh_field("pch_status");
+
+							if(response.message.so_name != "" || response.message.qo_name != "") {
+								frappe.msgprint("Order Booked!");
+							} else {
+								frappe.msgprint("No Order has been Placed")
+							}
+						})
+					} else {
+						frappe.msgprint("Select Customer First");
+					}
 			}
 		} else {
 			frm.set_value("pch_status", "Pending");
@@ -200,32 +211,34 @@ frappe.ui.form.on('Order Booking V2', {
 		if(frm.doc.docstatus == 1 && frm.doc.pending_reason) {
 			frm.add_custom_button(__('Approve'), function(){
 				if(frm.doc.docstatus == 1 && !frm.doc.order_booking_so) {
-					let order_list = frm.doc.order_booking_items_v2;
 					let customer = frm.doc.customer;
 					let customer_type = frm.doc.customer_type
 					let company = frm.doc.company;
-					var free_promos = frm.doc.promos;
-					var promo_dis = frm.doc.promos_discount;
-					var sales_order = frm.doc.sales_order_preview
-		
-					if(free_promos == undefined || free_promos == null) {
-						free_promos = []
+
+					let sales_preview = []
+					if(frm.doc.sales_order_preview) {
+						sales_preview = frm.doc.sales_order_preview.map(function(d) {
+							return {item_code: d.item_code, quantity: d.quantity,
+								average: d.average, warehouse: d.warehouse, promo_type: d.promo_type}
+						});
 					}
-					if(promo_dis == undefined || promo_dis == null) {
-						promo_dis = []
+
+					let quotation_preview = []
+					if(frm.doc.quotation_preview) {
+						quotation_preview = frm.doc.quotation_preview.map(function(d) {
+							return {item_code: d.item_code, quantity: d.quantity, average: d.average}
+						});
 					}
 		
-					if(order_list) {
+					if(sales_preview || quotation_preview) {
 						frappe.call({
 							method: "bmga.bmga.doctype.order_booking_v2.api.sales_order_container",
 							args: {
 								customer: customer,
-								order_list: order_list,
 								company: company,
 								customer_type: customer_type,
-								free_promos: free_promos,
-								promo_dis: promo_dis,
-								sales_order: sales_order,
+								quotation_preview: quotation_preview,
+								sales_preview: sales_preview,
 							}
 						}).done((response) => {
 
