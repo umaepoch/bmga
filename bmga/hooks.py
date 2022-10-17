@@ -34,13 +34,14 @@ app_license = "MIT"
 # doctype_js = {"doctype" : "public/js/doctype.js"}
 doctype_js = {
 	"Sales Order": "custom/sales_order/sales_order.js",
-	"Item": "custom/item/item.js"
+	"Item": "custom/item/item.js",
+	"Purchase Receipt": "custom/purchase_receipt/purchase_receipt.js",
+	
 }
 # doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
 doctype_list_js = {
 	"Sales Order": "custom/sales_order/sales_order_list.js",
 	"Sales Invoice": "custom/sales_invoice/sales_invoice_list.js",
-	"Purchase Receipt": "custom/purchase_receipt/purchase_receipt.js",
 	"Delivery Trip": "custom/delivery_trip/delivery_trip_list.js",
 }
 # doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}

@@ -252,7 +252,8 @@ def generate_delivery_trip(delivery_notes):
 def generate_delivery_note(sales_invoice):
     sales_order_name = frappe.get_doc('Sales Invoice', sales_invoice).as_dict()['items'][0]['sales_order']
     sales_order_details = frappe.get_doc('Sales Order', sales_order_name).as_dict()
-    # sales_invoice_details = frappe.get_doc('Sales Invoice', sales_invoice).as_dict()
+    sales_invoice_details = frappe.get_doc('Sales Invoice', sales_invoice)
+    print('sales item name', sales_invoice_details.items[0].name)
     
     for t in sales_order_details['taxes']:
         t.pop('name')
@@ -276,7 +277,7 @@ def generate_delivery_note(sales_invoice):
 		'taxes': sales_order_details.get('taxes')
     }
     
-    for s in sales_order_details['items']:
+    for i, s in enumerate(sales_order_details['items']):
         innerS = {
             'doctype': 'Delivery Note Item',
             'item_code': s.get('item_code'),
@@ -287,10 +288,9 @@ def generate_delivery_note(sales_invoice):
             'against_sales_order': s.get('parent'),
             'so_detail': s.get('name'),
             'against_sales_invoice': sales_invoice,
+            'si_detail': sales_invoice_details.as_dict()['items'][i]['name'],
             'batch_no': s.get('pch_batch_no')
         }
-
-        print(innerS)
 
         outerJson_delivery_note['items'].append(innerS)
 
@@ -298,6 +298,11 @@ def generate_delivery_note(sales_invoice):
     doc.update(outerJson_delivery_note)
     doc.save()
     doc.submit()
+    
+    for i, s in enumerate(sales_invoice_details.items):
+        s.delivery_note = doc.name
+        s.dn_detail = doc.as_dict()['items'][i]['name']
+    sales_invoice_details.save()
 
     return dict(customer = sales_order_details.get('customer'), delivery_note = doc.name, invoice_no = sales_invoice, grand_total = doc.grand_total)
 
@@ -448,7 +453,6 @@ def fetch_customer_type(so_name):
         as_dict=True
     )
 
-    
     return customer_type[0]["pch_customer_type"]
 
 def fetch_fulfillment_settings(company, customer=""):
