@@ -606,12 +606,9 @@ def fetch_due_date(customer):
 def generate_sales_invoice_json(customer, customer_type, so_name, sales_order, company, item_list, settings):
     today = datetime.datetime.today()
     credit_days = fetch_due_date(customer)
-    print('CREDIT DAYS -----------------', credit_days)
     due_date = today + datetime.timedelta(credit_days)
-    print('DUE DATE +++++++++', due_date)
 
     abbr = fetch_company_abbr(company)
-    print(abbr)
 
     gst_detail = fetch_gst_detail(company)
     customer_in_state = check_customer_state(customer, company)
@@ -627,12 +624,10 @@ def generate_sales_invoice_json(customer, customer_type, so_name, sales_order, c
         "company": company,
         "customer": customer,
         "due_date": due_date,
-        "update_stock": 1,
+        # "update_stock": 1,
         "items": [],
         "taxes": []
     }
-    print("*"*150)
-    print("SALES INVOICE")
 
     for item in item_list:
         print(item)
@@ -674,12 +669,6 @@ def generate_sales_invoice_json(customer, customer_type, so_name, sales_order, c
                     rate = fetch_batch_price(batch, item["item"], rate_contract["name"])
                 else:
                     rate = fetch_batchless_price(item["item"], rate_contract["name"])
-        
-        print("qty", qty)
-        print(type(qty))
-        print("batch", batch)
-        print("rate", rate)
-        print("*"*100)
 
         if qty <= 0: continue
         so_detail = get_so_detail(so_name, item['item'], item['warehouse'], batch, qty)
@@ -778,19 +767,14 @@ def discount_item_price(i, qty):
         as_dict=1
     )
 
-    print("*"*150)
     if len(d) > 0:
-        print("Sales Type 1")
-        print(d)
         d = sorted(d, key = lambda x : x["discount_percentage"], reverse=1)
         for x in d:
             if x["quantity_bought"] > qty: continue
-            print(x)
             break
     else:
         print("Sales Type 5")
     
-    print("*"*150)
     return d
 
 def fetch_promo_type_5(i, sales_order, customer_type, settings):
@@ -816,18 +800,12 @@ def fetch_promo_type_5(i, sales_order, customer_type, settings):
         order by pt.for_every_quantity_that_is_bought DESC""",
         as_dict=1
     )
-    print(d)
+
     for x in d:
-        print(qty)
-        print(x)
         if qty >= x["b_qty"]:
             discount = (100 - int(x["discount"])) / 100
-            print((100 - int(x["discount"])) / 100)
             break
 
-    print("*-/"*25)
-    print("discount", discount)
-    # frappe.msgprint(f"discount percentage {discount} {qty} {d} {i['item']}")
     return discount
 
 def fetch_promo_type_1(i, sales_order, customer_type, settings):
@@ -857,12 +835,10 @@ def fetch_promo_type_1(i, sales_order, customer_type, settings):
         if qty >= x["b_qty"]:
             discount = (100 - int(x["discount"])) / 100
             break
-    print("QUANTITY BASED DISCOUNT!!!!!!!!!!!!!!!", discount)
     return discount
 
 def customer_rate_contract(customer, item_code):
     today = datetime.date.today()
-    print('rate contract item_code', item_code, len(item_code))
     rc = frappe.db.sql(
         f"""select rc.name
         from `tabRate Contract` as rc
@@ -959,8 +935,6 @@ def update_average_price(item_list, sales_order, customer_type, settings, custom
     return new_average_price 
 
 def update_sales_order(sales_doc, average_price, free_warehouse):
-    print(free_warehouse)
-    print("update sales order", average_price)
     for child in sales_doc.get_all_children():
             if child.doctype != "Sales Order Item": continue
             sales_item_doc = frappe.get_doc(child.doctype, child.name)
@@ -1069,18 +1043,12 @@ def get_ppli_balance(item_code, batch, warehouse, so_name):
         where ppli.batch = '{batch}' and ppl.sales_order != '{so_name}' and ppli.item = '{item_code}' and ppl.pick_list_stage != 'Invoiced' and ppl.pick_list_stage != 'Ready for Picking' and ppl.docstatus < 2 and ppli.warehouse = '{warehouse}'""",
         as_dict=1
     )
-    print()
-    print("-"*100)
-    for i in s:
-        print(i)
-    print("-"*100)
-    print()
+
     if len(s) > 0: return s[0]
     else: return None
 
 def generate_material_receipt(item_list):
     name = None
-    print("receipt", item_list)
     if len(item_list) > 0:
         outerJson = {
             "doctype": "Stock Entry",
@@ -1123,7 +1091,6 @@ def generate_material_receipt(item_list):
     
 def generate_material_issue(item_list):
     name = None
-    print("issue", item_list)
     if len(item_list) > 0:
         outerJson = {
             "doctype": "Stock Entry",
@@ -1165,7 +1132,6 @@ def generate_material_issue(item_list):
         return name
 
 def stock_correction(so_name, item_list):
-    print("*"*150)
     m_receipt = []
     m_issue = []
     for i in item_list:
@@ -1177,19 +1143,14 @@ def stock_correction(so_name, item_list):
             if ppli_balance:
                 stock_balance["actual_qty"] -= ppli_balance["pick_quantity"] 
 
-            print("stock balance", stock_balance)
-
             try:
                 i["quantity_picked"] = int(i["quantity_picked"])
             except:
                 continue
             if stock_balance["actual_qty"] < i["quantity_picked"]:
-                print("material receip needed for", i)
                 m_receipt.append(dict(item_code = i["item"], warehouse = i["warehouse"], wbs_storage_location = i["wbs_storage_location"], batch = '', qty = i["quantity_picked"] - stock_balance["actual_qty"]))
-            print("DIFFERENCE", stock_balance["actual_qty"] - int(i["quantity_picked"]))
             try:
                 if int(i["quantity_picked"]) < i["quantity_to_be_picked"]:
-                    print("material issue needed for:", i)
                     m_issue.append(dict(item_code = i["item"], warehouse = i["warehouse"], wbs_storage_location = i["wbs_storage_location"], batch = '', qty = i["quantity_to_be_picked"] - int(i["quantity_picked"])))
             except:
                 pass
@@ -1199,17 +1160,14 @@ def stock_correction(so_name, item_list):
             ppli_balance = get_ppli_balance(i["item"], i["batch_picked"], i["warehouse"], so_name)
             if ppli_balance:
                 stock_balance["actual_qty"] -= ppli_balance["pick_quantity"] 
-            print(stock_balance)
             try:
                 i["quantity_picked"] = int(i["quantity_picked"])
             except:
                 continue
             if stock_balance["actual_qty"] < i["quantity_picked"]:
-                print("material receip needed for", i)
                 m_receipt.append(dict(item_code = i["item"], warehouse = i["warehouse"], wbs_storage_location = i["wbs_storage_location"], batch = i["batch_picked"], qty = i["quantity_picked"] - stock_balance["actual_qty"]))
             try:
                 if int(i["quantity_picked"]) < i["quantity_to_be_picked"]:
-                    print("material issue needed for:", i)
                     m_issue.append(dict(item_code = i["item"], warehouse = i["warehouse"], wbs_storage_location = i["wbs_storage_location"], batch = i["batch_picked"], qty = i["quantity_to_be_picked"] - int(i["quantity_picked"])))
             except:
                 pass
@@ -1217,7 +1175,6 @@ def stock_correction(so_name, item_list):
     mi_name = generate_material_issue(m_issue)
     mr_name = generate_material_receipt(m_receipt)
     
-    print("*"*150)
     return dict(mi_name = mi_name, mr_name = mr_name)
 
 @frappe.whitelist()
@@ -1235,7 +1192,6 @@ def pick_status(item_list, so_name, company, stage_index, stage_list):
     settings = fetch_fulfillment_settings(company, customer)
 
     average_price = update_average_price(item_list, sales_order, customer_type, settings, customer)
-    print("average price", average_price)
 
     if next_stage == "Invoiced":
         sales_doc = frappe.get_doc("Sales Order", so_name)
@@ -1255,11 +1211,8 @@ def pick_status(item_list, so_name, company, stage_index, stage_list):
 
     else:
         sales_doc = frappe.get_doc("Sales Order", so_name)
-        print(sales_doc.pch_picking_status)
-        print("changing sales.pch_picking_status")
         sales_doc.pch_picking_status = next_stage
         sales_doc.save()
-        print(sales_doc.pch_picking_status)
         update_sales_order(sales_doc, average_price, settings["free_warehouse"])
         return dict(next_stage = next_stage, average_price = average_price)
 

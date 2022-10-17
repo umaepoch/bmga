@@ -292,7 +292,14 @@ def generate_delivery_note(sales_invoice):
             'batch_no': s.get('pch_batch_no')
         }
 
+        if s.get('rate', 0) == 0:
+            innerS['is_free_item'] = 1
+
         outerJson_delivery_note['items'].append(innerS)
+    
+    if sales_invoice_details.update_stock == 1:
+        sales_invoice_details.update_stock = 0
+        sales_invoice_details.save()
 
     doc = frappe.new_doc('Delivery Note')
     doc.update(outerJson_delivery_note)
