@@ -1,0 +1,775 @@
+<html>
+<head>
+    <meta name="pdfkit-orientation" content="Landscape" />
+    <link href='https://fonts.googleapis.com/css?family=Asul' rel='stylesheet'>
+</head>
+<body>
+    {% set company_name = "Bharath Medical & General Agencies" %}
+    {% set items = doc.items %}
+    {% set MAX_DISP = 20 %}
+    {% set pages = (doc.items|length)//MAX_DISP + 1%}
+    {% for cpt in range(pages) %}
+        {% set start = cpt*MAX_DISP %}
+        {% set end = (cpt+1)*MAX_DISP %}
+        <table border="1"  width="100%">
+            <tr>
+                <td width="80%" height="859px" style="border-right: 1px dashed black; padding: 0px 0px  !important;">
+                    <!-- MAIN SECTION -->
+                    <table width="100%">
+                        <tr style="border-bottom: 1px solid black;" height="180px">
+                            <td width="100%" style="padding: 0px 0px  !important;">
+                                <!-- FIRST SECTION HEADER -->
+                                <table>
+                                    <tr>
+                                        <!-- COMPANY DETAILS -->
+                                        <td style="padding: 0px 6px 0px 6px !important; border-right: 1px solid black;" width="50%" height="180px">
+                                            <div>
+                                                <img src="/files/Bharath Rajesh_Logo_Icon.png" alt="Logo" style="height: 15%; width: 15%;">
+                                                <span style="font-family: 'Asul'; font-size: 20px; color: #333333">{{ company_name }}</span>
+                                                <br>
+                                                {% set address = frappe.get_list("Address", filters={"name": doc.company_address}, fields=["*"]) %}
+                                                <div style="font-size: 10px;" class="text-left">
+                                                    {{ address[0]["address_line1"] }}{{ "" }}{{ address[0]["address_line2"] }}{{ "" }}
+                                                    <div>{{address[0]["city"]}}{{" "}}{% if address[0]['county'] %}
+                                                        {{address[0]['county']}}{% endif
+                                                        %}{{""}}{{address[0]['gst_state']}}{{","}}{{address[0]['pincode']}}
+                                                    </div>
+                                                    <div width=100%>
+                                                        <div style="display: inline-block; width:50%;">
+                                                            GSTIN: {{address[0]['gstin']}}<br>
+                                                            MSME No.: {{ frappe.db.get_value('Company', doc.company, 'pch_msme') or "" }}
+                                                        </div>
+                                                        {% set company_tax = frappe.get_list("Company", filters = {"name":doc.company} , fields=['*']) %}
+                                                        <div style="display: inline-block; width:40%;">
+                                                            PAN: {{company_tax[0]['tax_id']}}<br>
+                                                            FSSAI: {{ frappe.db.get_value('Company', doc.company, 'pch_fssai') or "" }}
+                                                        </div>
+                                                        <div>
+                                                            DL No.: {{ frappe.db.get_value('Company', doc.company, 'pch_dl_no') or "" }}<br>
+                                                            PH: {{ frappe.db.get_value('Company', doc.company, 'phone_no') or "" }}</div>
+                                                        <div>Web: {{ frappe.db.get_value('Company', doc.company, 'website') or "" }}&nbsp;&nbsp;E-Mail:{{ frappe.db.get_value('Company', doc.company, 'email') or "" }}</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <!-- TAX INVOICE DETAILS -->
+                                        <td width="50%" height="180px" style="padding: 0px 0px !important;">
+                                            <table width="100%">
+                                                <tr>
+                                                    <td class="text-left" style="width:50%; font-size:10px;">
+                                                        <table width="100%">
+                                                            <tr style=" padding: 0px 0px  !important;" class="text-center">
+                                                                <b><u>TAX INVOICE</u></b>
+                                                            </tr>
+                                                            <tr>
+                                                                <td style=" padding: 0px 0px  !important;" width="33%">Invoice No.</td>
+                                                                <td style=" padding: 0px 0px  !important;" width="1%">:&nbsp;</td>
+                                                                <td style=" padding: 0px 0px  !important;">{{doc.name}}</td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td style=" padding: 0px 0px  !important;" width="33%">Invoice Date</td>
+                                                                <td style=" padding: 0px 0px  !important;" width="1%">:&nbsp;</td>
+                                                                <td style=" padding: 0px 0px  !important;">{{doc.get_formatted("posting_date")}}</td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td style=" padding: 0px 0px  !important;" width="33%">Due Date</td>
+                                                                <td style=" padding: 0px 0px  !important;" width="1%">:&nbsp;</td>
+                                                                <td style=" padding: 0px 0px  !important;">{{doc.get_formatted("due_date")}}</td>
+                                                            </tr>
+                                                            {% set territory = frappe.db.get_value('Customer', doc.customer, 'territory') or "" %}
+                                                            {% set sales_person = frappe.db.get_value('Territory', territory, 'territory_manager') or "" %}
+                                                            {% set sales_person_contact = 
+                                                                frappe.db.get_value('Employee', frappe.db.get_value('Sales Person', sales_person, 'employee') or "", 'cell_number') or "" %}
+                                                                <tr>
+                                                                    <td style=" padding: 0px 0px  !important;" width="33%">Rep. Name</td>
+                                                                    <td style=" padding: 0px 0px  !important;" width="1%">:&nbsp;</td>
+                                                                    <td style=" padding: 0px 0px  !important;">{{ sales_person }}</td>
+                                                                </tr>
+                                                                <tr>
+                                                                    <td style=" padding: 0px 0px  !important;" width="33%">Rep. Ph. No.</td>
+                                                                    <td style=" padding: 0px 0px  !important;" width="1%">:&nbsp;</td>
+                                                                    <td style=" padding: 0px 0px  !important;">{{ sales_person_contact }}</td>
+                                                                </tr>
+                                                                <tr>
+                                                                    <td style=" padding: 0px 0px  !important;" width="33%">Prepared By</td>
+                                                                    <td style=" padding: 0px 0px  !important;" width="1%">:&nbsp;</td>
+                                                                    <td style=" padding: 0px 0px  !important;">{{ doc.modified_by }}</td>
+                                                                </tr>
+                                                                <tr>
+                                                                    <td style=" padding: 0px 0px  !important;" width="33%">PO No</td>
+                                                                    <td style=" padding: 0px 0px  !important;" width="1%">:&nbsp;</td>
+                                                                    <td style=" padding: 0px 0px  !important;">{{doc.po_no or ""}}</td>
+                                                                </tr>
+                                                                <tr>
+                                                                    <td style=" padding: 0px 0px  !important;" width="33%">PO Date</td>
+                                                                    <td style=" padding: 0px 0px  !important;" width="1%">:&nbsp;</td>
+                                                                    <td style=" padding: 0px 0px  !important;">{{doc.get_formatted("po_date") or ""}}</td>
+                                                                </tr>
+                                                                <tr>
+                                                                    <td style=" padding: 0px 0px  !important;" width="33%">DL No.</td>
+                                                                    <td style=" padding: 0px 0px  !important;" width="1%">:&nbsp;</td>
+                                                                    <td style=" padding: 0px 0px  !important;">{{ get_dl_no(doc.customer) }}</td>
+                                                                </tr>
+                                                                <tr>
+                                                                    <td style=" padding: 0px 0px  !important;" width="33%">Territory</td>
+                                                                    <td style=" padding: 0px 0px  !important;" width="1%">:&nbsp;</td>
+                                                                    <td style=" padding: 0px 0px  !important;">{{ frappe.db.get_value('Customer', doc.customer, 'territory') or "" }}</td>
+                                                                </tr>
+                                                        </table>
+                                                    </td>
+                                                    <td style="width:50%; font-size:10px;" class="text-center">
+                                                        <img style="width:100px; height:100px" src="/files/BMGA UPI PNG.png">
+                                                    </td>
+                                                </tr>
+                                            </table>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </td>
+                        </tr>
+                        <tr style=" padding: 0px 0px  !important;" height="150px">
+                            <td style="padding: 0px 0px  !important;">
+                                <!-- SECONT SECTION ADDRESS -->
+                                <table width="100%" style="border-bottom: 1px solid black;">
+                                    <tr>
+                                        <!-- RECIPIENT BILL ADDRESS -->
+                                        <td width="33.3%" height="150px" style="font-size:10px; border-right: 1px solid black;">
+                                            {% set address_details =
+                                                frappe.get_list("Address",filters={"name":doc.customer_address},fields=["*"]) -%}
+
+                                            <div class="text-left"><b>
+                                                Recipient (Billed to - {{address_details[0]["gst_state_number"] or
+                                                    ""}}{{"-"}}{{address_details[0]["gst_state"] or ""}}): </b>
+                                            </div>
+                                            <div class="text-left">{{doc.customer_address or ""}}</div>
+                                            <div class="text-left">{{doc.address_display or ""}}</div>
+                                            <div class="text-left">GSTIN/Unique ID : {{doc.billing_address_gstin or ""}}</div>
+                                        </td>
+                                        <!-- RECIPIENT SHIPPING ADDRESS -->
+                                        <td width="33.3%" height="150px" style="border-right: 1px solid black;">
+                                            {% set shipping_address_details =
+                                                frappe.get_list("Address",filters={"name":doc.shipping_address_name},fields=["*"]) or "" -%}
+                                            <div class="text-left"><b>Consignee(Shipped to,address of Delivery):</b></div>
+                                            {% if shipping_address_details != "" %}
+                                                {% if doc.shipping_address_name!="" %}
+                                                    <div class="text-left">{{doc.shipping_address_name }}</div>
+                                                    <div class="text-left">{{doc.shipping_address }}</div>
+                                                    <div class="text-left">GSTIN/Unique ID : {{shipping_address_details[0]["gstin"] or "" }}</div>
+                                                    <div class="text-left">
+                                                        State Code: {{shipping_address_details[0]["gst_state_number"] or
+                                                            ""}}{{"-"}}{{shipping_address_details[0]["gst_state"] or ""}}
+                                                    </div>
+                                                {% elif doc.shipping_address_name=="" or doc.shipping_address_name=="none"%}
+                                                    {{""}}
+                                                {%endif %}
+                                            {% else %}
+                                                    <div class="text-left">{{doc.customer_address or ""}}</div>
+                                                    <div class="text-left">{{doc.address_display or ""}}</div>
+                                                    <div class="text-left">GSTIN/Unique ID : {{doc.billing_address_gstin or ""}}</div>
+                                            {% endif %}
+                                        </td>
+                                        <!-- TRANSPORT DETAILS -->
+                                        <td width="33.3%%" height="150px">
+                                            <div class="text-left"><b>Transporter Detail:{{doc.transporter_name or ""}}</b></div>
+                                            <div style="margin-top:8px;" class="text-left">EWAY No:{{doc.ewaybill or ""}}</div>
+                                            <div style="margin-top:8px;" class="text-left">Lr No:{{doc.lr_no or ""}}</div>
+                                            <div style="margin-top:8px;" class="text-left">Vehicle No:{{doc.vehicle_no or ""}}</div>
+                                            <div style="margin-top:8px;" class="text-left">IRN NO:{{doc.irn or ""}}</div>
+                                            <div style="margin-top:8px;" class="text-left">Payment Terms:{{doc.pch_payment_terms or ""}}</div>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </td>
+                        </tr>
+                        <tr style=" padding: 0px 0px  !important; font-size:10px;" height="338px">
+                            <td style="padding: 0px 0px  !important;">
+                                <!-- ITEM BREAK DOWN SECTION -->
+                                <table width="100%" height="338px">
+                                    <tr>
+                                        <th style="padding: 0px 6px 0px 6px !important; border-right: 1px solid black;" class="text-center" width=1%>S.No</th>
+                                        <th style="padding: 0px 6px 0px 6px !important; border-right: 1px solid black;" class="text-center" width=8%>Item Name</th>
+                                        <th style="padding: 0px 6px 0px 6px !important; border-right: 1px solid black;" class="text-center" width=8%>Batch</th>
+                                        <th style="padding: 0px 6px 0px 6px !important; border-right: 1px solid black;" class="text-center" width=5%>MRP</th>
+                                        <th style="padding: 0px 6px 0px 6px !important; border-right: 1px solid black;" class="text-center" width=8%>HSN</th>
+                                        <th style="padding: 0px 6px 0px 6px !important; border-right: 1px solid black;" class="text-center" width=5%>Qty</th>
+                                        <th style="padding: 0px 6px 0px 6px !important; border-right: 1px solid black;" class="text-center" width=5%>UOM</th>
+                                        <th style="padding: 0px 6px 0px 6px !important; border-right: 1px solid black;" class="text-center" width=6%>Rate</th>
+                                        <th style="padding: 0px 6px 0px 6px !important; border-right: 1px solid black;" class="text-center" width=5%> Disc%</th>
+                                        <th style="padding: 0px 6px 0px 6px !important; border-right: 1px solid black;" class="text-center" width=5%> Sch%</th>
+                                        <th style="padding: 0px 6px 0px 6px !important; border-right: 1px solid black;" class="text-center" width=10%>Total(Rs)</th>
+                                        <th style="padding: 0px 6px 0px 6px !important; border-right: 1px solid black;" class="text-center" width=5%> GST%</th>
+                                        <th style="padding: 0px 6px 0px 6px !important;" class="text-center" width=6%> GST Amt.</th>
+                                    </tr>
+                                    <!-- INIT GST BREAKDOWN -->
+                                    {% set tax_5 = {'SGST': {'prod_val': [0], 'total': [0]}, 'CGST': {'prod_val': [0], 'total': [0]}, 'IGST': {'prod_val': [0], 'total': [0]}} %}
+                                    {% set tax_12 = {'SGST': {'prod_val': [0], 'total': [0]}, 'CGST': {'prod_val': [0], 'total': [0]}, 'IGST': {'prod_val': [0], 'total': [0]}} %}
+                                    {% set tax_18 = {'SGST': {'prod_val': [0], 'total': [0]}, 'CGST': {'prod_val': [0], 'total': [0]}, 'IGST': {'prod_val': [0], 'total': [0]}} %}
+                                    {% set tax_28 = {'SGST': {'prod_val': [0], 'total': [0]}, 'CGST': {'prod_val': [0], 'total': [0]}, 'IGST': {'prod_val': [0], 'total': [0]}} %}
+                                    {% set total_taxable_value = [] %}
+                                    {% for i in range(start, end) %}
+                                    {% if i < doc.items|length %}
+                                        {% if total_taxable_value.append(items[i].net_amount) %} {% endif %}
+                                        {% set tax_type = doc.taxes[0].account_head %}
+                                        {% set tax_detail = frappe.db.get_list('Item Tax Template Detail', filters={'parent': doc.items[i].item_tax_template or "adfg"}, fields=['tax_type', 'tax_rate']) or [] %}
+                                        <tr style="border-top: 1px solid black;">
+                                            <td style=" padding: 0px 6px 0px 6px !important; border-right: 1px solid black;">{{i+1}}</td>
+                                            <td style=" padding: 0px 6px 0px 6px !important; border-right: 1px solid black;">{{items[i].item_name}}</td>
+                                            <td style=" padding: 0px 6px 0px 6px !important; border-right: 1px solid black;">{{items[i].batch_no or ""}}</td>
+                                            <td style=" padding: 0px 6px 0px 6px !important; border-right: 1px solid black;" class="text-right">{{frappe.db.get_value('Batch', items[i].batch_no, 'pch_mrp') or ""}}</td>
+                                            {% set item_name = items[i].item_code or "" %}
+                                            {%- set Details = frappe.get_doc("Item", {"name": item_name}) or "" -%}
+                            
+                                            <td style=" padding: 0px 6px 0px 6px !important; border-right: 1px solid black;" class="text-right">{{Details.gst_hsn_code}}</td>
+                                            <td style=" padding: 0px 6px 0px 6px !important; border-right: 1px solid black;" class="text-right">{{"{0:.0f}".format(items[i].qty)}}</td>
+                                            <td style=" padding: 0px 6px 0px 6px !important; border-right: 1px solid black;" class="text-right">{{items[i].uom or ""}}</td>
+                                            <td style=" padding: 0px 6px 0px 6px !important; border-right: 1px solid black;" class="text-right">
+                                                {% if items[i].rate == 0 %}
+                                                    FREE
+                                                {% else %}
+                                                    {{"{0:.2f}".format(items[i].rate)}}
+                                                {% endif %}
+                                            </td>
+                                            <td style=" padding: 0px 6px 0px 6px !important; border-right: 1px solid black;" class="text-right">
+                                                {{"{0:.2f}".format(doc.additional_discount_percentage)}}</td>
+                                            <td style=" padding: 0px 6px 0px 6px !important; border-right: 1px solid black;" class="text-right">
+                                                {{ "{0:.2f}".format(check_promo(items[i].item_code, items)) }}</td>
+                                            <td style=" padding: 0px 6px 0px 6px !important; border-right: 1px solid black;" class="text-right">
+                                                {% if items[i].net_amount == 0 %}
+                                                    FREE
+                                                {% else %}
+                                                    {{items[i].get_formatted("net_amount")}}
+                                                {% endif %}
+                                            <!-- CALC GST BREAKDOWN -->
+                                            {% if tax_detail|length > 0 %}
+                                                {% for t in tax_detail %}
+                                                    {% if t.tax_type == tax_type %}
+                                                        {% set tax_key = doc.taxes[0].account_head.split() %}
+                                                        {% if t.tax_rate == 2.5 or t.tax_rate == 5 %}
+                                                        {% if tax_5[tax_key[2]]['total'].append((t.tax_rate/100) * items[i].net_amount) %} {% endif %}
+                                                        {% if tax_5[tax_key[2]]['prod_val'].append(items[i].net_amount) %} {% endif %}
+                                                        {% elif t.tax_rate == 6 or t.tax_rate == 12 %}
+                                                        {% if tax_12[tax_key[2]]['total'].append((t.tax_rate/100) * items[i].net_amount) %} {% endif %}
+                                                        {% if tax_12[tax_key[2]]['prod_val'].append(items[i].net_amount) %} {% endif %}
+                                                        {% elif t.tax_rate == 9 or t.tax_rate == 18 %}
+                                                        {% if tax_18[tax_key[2]]['total'].append((t.tax_rate/100) * items[i].net_amount) %} {% endif %}
+                                                        {% if tax_18[tax_key[2]]['prod_val'].append(items[i].net_amount) %} {% endif %}
+                                                        {% elif t.tax_rate == 14 or t.tax_rate == 28 %}
+                                                        {% if tax_28[tax_key[2]]['total'].append((t.tax_rate/100) * items[i].net_amount) %} {% endif %}
+                                                        {% if tax_28[tax_key[2]]['prod_val'].append(items[i].net_amount) %} {% endif %}
+                                                        {% endif %}
+                                                        {% set gst_amount = (t.tax_rate/100) * items[i].net_amount %}
+                                                        {% set tax_rate = "{0:.2f}".format(t.tax_rate*doc.taxes|length) %}
+                                                        <td style=" padding: 0px 6px 0px 6px !important; border-right: 1px solid black;" class="text-right">{{ tax_rate }}</td>
+                                                        <td style=" padding: 0px 6px 0px 6px !important;" class="text-right">{{ "{:,.2f}".format(gst_amount) }}</td>
+                                                    {% endif %}
+                                                {% endfor %}
+                                            {% else %}
+                                                <td style=" padding: 0px 6px 0px 6px !important;border-right: 1px solid black;" class="text-right">0.00</td>
+                                                <td style=" padding: 0px 6px 0px 6px !important;" class="text-right">0.00</td>
+                                            {% endif %}
+                                            </td>
+                                        </tr>
+                                    {% else %}
+                                        <!-- EMPTY ITEM ROWS TO FILL UP SPACE -->
+                                        <tr style="border-top: 1px solid black;">
+                                            <td style=" padding: 0px 6px 0px 6px !important; border-right: 1px solid black;">{{i+1}}</td>
+                                            <td style=" padding: 0px 6px 0px 6px !important; border-right: 1px solid black;"></td>
+                                            <td style=" padding: 0px 6px 0px 6px !important; border-right: 1px solid black;"></td>
+                                            <td style=" padding: 0px 6px 0px 6px !important; border-right: 1px solid black;"></td>
+                                            <td style=" padding: 0px 6px 0px 6px !important; border-right: 1px solid black;"></td>
+                                            <td style=" padding: 0px 6px 0px 6px !important; border-right: 1px solid black;"></td>
+                                            <td style=" padding: 0px 6px 0px 6px !important; border-right: 1px solid black;"></td>
+                                            <td style=" padding: 0px 6px 0px 6px !important; border-right: 1px solid black;"></td>
+                                            <td style=" padding: 0px 6px 0px 6px !important; border-right: 1px solid black;"></td>
+                                            <td style=" padding: 0px 6px 0px 6px !important; border-right: 1px solid black;"></td>
+                                            <td style=" padding: 0px 6px 0px 6px !important; border-right: 1px solid black;"></td>
+                                            <td style=" padding: 0px 6px 0px 6px !important; border-right: 1px solid black;"></td>
+                                            <td style=" padding: 0px 6px 0px 6px !important;"></td>
+                                        </tr>
+                                    {% endif %}
+                                    {%endfor%}
+                                </table>
+                            </td>
+                        </tr>
+                        <tr style="padding: 0px 0px  !important; font-size:10.5px;" height="130px">
+                            <td style="padding: 0px 0px  !important;">
+                                <!-- TAX BREAK DOWN SECTION -->
+                                <table width="100%" style="border-bottom: 1px solid black; border-top: 1px solid black;">
+                                    <tr>
+                                        <td width="100%" height="130px" style="padding: 0px 0px  !important;">
+                                            <table width="100%">
+                                                <tr>
+                                                    <!-- BANK DETAILS -->
+                                                    <td width="18%" height="130px" style="border-right: 1px solid black;">
+                                                        <div style="margin-left: 5px; margin-top: 5px">
+                                                            <div class="text-left" width=30%><b>Bank Detail</b></div>
+                                                            {% set bank_detail = 
+                                                                frappe.db.get_list('Account', filters=[{'name': ['=', frappe.db.get_value('Company', doc.company, 'default_bank_account')]}], 
+                                                                fields=['account_number', 'pch_name', 'pch_branch', 'pch_ifsc_code'])
+                                                            %}
+                                                            <div class="text-left" width=30%>{{ bank_detail[0].pch_name or "" }}</div>
+                                                            <div class="text-left" width=30%>{{ bank_detail[0].pch_branch or "" }}</div>
+                                                            <div class="text-left" width=30%>Account No.&nbsp;:&nbsp;{{ bank_detail[0].account_number or "" }}</div>
+                                                            <div class="text-left" width=30%>IFSC Code&nbsp;:&nbsp;{{ bank_detail[0].pch_ifsc_code or "" }}</div>
+                                                        </div>
+                                                    </td>
+                                                    <!-- UPI PAYMENT -->
+                                                    <td width="18%" height="130px" style="border-right: 1px solid black;">
+                                                        <div class="text-center"><b>UPI PAYMENT - QR CODE</b><br>
+                                                            <img style="width:50%; height:50%" src="/files/BMGA UPI PNG.png">
+                                                        </div>
+                                                    </td>
+                                                    <!-- OUTSTANDING AMOUNT -->
+                                                    <td width="15%" height="130px" style="padding: 0px 0px !important; border-right: 1px solid black;">
+                                                        <table width=100% height=130px>
+                                                            <tr style="border-bottom: 1px solid black;">
+                                                                <td style=" padding: 4px 6px 4px 6px !important;" class="text-center"><b>Oustanding Details</b>
+                                                                </td>
+                                                            </tr>
+                                                            <tr style="border-bottom: 1px solid black;">
+                                                                <td style=" padding: 0px 6px 0px 6px !important;">
+                                                                {% set no_bills = frappe.db.get_list('Sales Invoice', filters = [{'customer': doc.customer}, {'docstatus': ['=', 1]}, {'status': ['!=', 'Paid']}]) %}
+                                                                <p>No of Bills&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:&nbsp;{{ no_bills|length }}</p>
+                                                                <p>Tentative O/S:&nbsp;{{ get_unpaid_amount(doc.customer) }}</p>
+                                                                </td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td style=" padding: 4px 6px 4px 6px !important;">Qty/No.of Item: {{ doc.total_qty }} / {{ doc.items|length }}
+                                                                </td>
+                                                            </tr>
+                                                       </table>
+                                                    </td>
+                                                    <!-- GST BREAKDOWN -->
+                                                    <td width="15%" height="130px" style="padding: 0px 0px !important; font-size: 8px;">
+                                                        {% if cpt == pages - 1 %}
+                                                            <table width=100% height=130px>
+                                                                <tr>
+                                                                    <th style=" padding: 0px 4px 0px 4px !important; border-right: 1px solid black; width: 5%;">GST</th>
+                                                                    <th style=" padding: 0px 4px 0px 4px !important; border-right: 1px solid black; width: 5%;">Prod.Val</th>
+                                                                    <th style=" padding: 0px 4px 0px 4px !important; border-right: 1px solid black; width: 10%;">SGST</th>
+                                                                    <th style=" padding: 0px 4px 0px 4px !important; border-right: 1px solid black; width: 10%;">CGST</th>
+                                                                    <th style=" padding: 0px 4px 0px 4px !important; border-right: 1px solid black; width: 10%;">IGST</th>
+                                                                    <th style=" padding: 0px 4px 0px 4px !important; width: 10%;">Total</th>
+                                                                </tr>
+                                                                <tr style="border-top: 1px solid black;">
+                                                                    <td style=" padding: 0px 6px 0px 6px !important; border-right: 1px solid black;" class="text-center">5%</td>
+                                                                    <td style=" padding: 0px 6px 0px 6px !important; border-right: 1px solid black;" class="text-right">
+                                                                        {% if doc.taxes[0].account_head.split()[2] == 'SGST' or doc.taxes[0].account_head.split()[2] == 'CGST' %}
+                                                                            {% if tax_5['SGST']['prod_val'] >= tax_5['CGST']['prod_val'] %}
+                                                                                {{ tax_5['SGST']['prod_val'] | sum() }}
+                                                                            {% else %}
+                                                                                {{ tax_5['CGST']['prod_val'] | sum() }}
+                                                                            {% endif %}
+                                                                        {% else %}
+                                                                            {{ tax_5['IGST']['prod_val'] | sum() }}
+                                                                        {% endif %}
+                                                                    </td>
+                                                                    <td style=" padding: 0px 6px 0px 6px !important; border-right: 1px solid black;" class="text-right">
+                                                                        {% if tax_5['SGST']['total'] >= tax_5['CGST']['total'] %}
+                                                                            {{ tax_5['SGST']['total'] | sum() }}
+                                                                        {% else %}
+                                                                            {{ tax_5['CGST']['total'] | sum() }}
+                                                                        {% endif %}
+                                                                    </td>
+                                                                    <td style=" padding: 0px 6px 0px 6px !important; border-right: 1px solid black;" class="text-right">
+                                                                        {% if tax_5['SGST']['total'] >= tax_5['CGST']['total'] %}
+                                                                            {{ tax_5['SGST']['total'] | sum() }}
+                                                                        {% else %}
+                                                                            {{ tax_5['CGST']['total'] | sum() }}
+                                                                        {% endif %}
+                                                                    </td>
+                                                                    <td style=" padding: 0px 6px 0px 6px !important; border-right: 1px solid black;" class="text-right">
+                                                                        {{ tax_5['IGST']['total'] | sum() }}
+                                                                    </td>
+                                                                    <td style=" padding: 0px 6px 0px 6px !important; border-right: 1px solid black;" class="text-right">
+                                                                        {% if tax_5['SGST']['total'] >= tax_5['CGST']['total'] %}
+                                                                            {{ tax_5['IGST']['total'] | sum() + (tax_5['SGST']['total'] | sum() * 2) }}
+                                                                        {% else %}
+                                                                            {{ tax_5['IGST']['total'] | sum() + (tax_5['CGST']['total'] | sum() * 2) }}
+                                                                        {% endif %}
+                                                                    </td>
+                                                                </tr>
+                                                                <tr style="border-top: 1px solid black;">
+                                                                    <td style=" padding: 0px 6px 0px 6px !important; border-right: 1px solid black;" class="text-center">12%</td>
+                                                                    <td style=" padding: 0px 6px 0px 6px !important; border-right: 1px solid black;" class="text-right">
+                                                                        {% if doc.taxes[0].account_head.split()[2] == 'SGST' or doc.taxes[0].account_head.split()[2] == 'CGST' %}
+                                                                            {% if tax_12['SGST']['prod_val'] >= tax_12['CGST']['prod_val'] %}
+                                                                                {{ tax_12['SGST']['prod_val'] | sum() }}
+                                                                            {% else %}
+                                                                                {{ tax_12['CGST']['prod_val'] | sum() }}
+                                                                            {% endif %}
+                                                                        {% else %}
+                                                                            {{ tax_12['IGST']['prod_val'] | sum() }}
+                                                                        {% endif %}
+                                                                    </td>
+                                                                    <td style=" padding: 0px 6px 0px 6px !important; border-right: 1px solid black;" class="text-right">
+                                                                        {% if tax_12['SGST']['total'] >= tax_12['CGST']['total'] %}
+                                                                            {{ tax_12['SGST']['total'] | sum() }}
+                                                                        {% else %}
+                                                                            {{ tax_12['CGST']['total'] | sum() }}
+                                                                        {% endif %}
+                                                                    </td>
+                                                                    <td style=" padding: 0px 6px 0px 6px !important; border-right: 1px solid black;" class="text-right">
+                                                                        {% if tax_12['SGST']['total'] >= tax_12['CGST']['total'] %}
+                                                                            {{ tax_12['SGST']['total'] | sum() }}
+                                                                        {% else %}
+                                                                            {{ tax_12['CGST']['total'] | sum() }}
+                                                                        {% endif %}
+                                                                    </td>
+                                                                    <td style=" padding: 0px 6px 0px 6px !important; border-right: 1px solid black;" class="text-right">
+                                                                        {{ tax_12['IGST']['total'] | sum() }}
+                                                                    </td>
+                                                                    <td style=" padding: 0px 6px 0px 6px !important; border-right: 1px solid black;" class="text-right">
+                                                                        {% if tax_12['SGST']['total'] >= tax_12['CGST']['total'] %}
+                                                                            {{ tax_12['IGST']['total'] | sum() + (tax_12['SGST']['total'] | sum() * 2) }}
+                                                                        {% else %}
+                                                                            {{ tax_12['IGST']['total'] | sum() + (tax_12['CGST']['total'] | sum() * 2) }}
+                                                                        {% endif %}
+                                                                    </td>
+                                                                </tr>
+                                                                <tr style="border-top: 1px solid black;">
+                                                                    <td style=" padding: 0px 6px 0px 6px !important; border-right: 1px solid black;" class="text-center">18%</td>
+                                                                    <td style=" padding: 0px 6px 0px 6px !important; border-right: 1px solid black;" class="text-right">
+                                                                        {% if doc.taxes[0].account_head.split()[2] == 'SGST' or doc.taxes[0].account_head.split()[2] == 'CGST' %}
+                                                                            {% if tax_18['SGST']['prod_val'] >= tax_18['CGST']['prod_val'] %}
+                                                                                {{ tax_18['SGST']['prod_val'] | sum() }}
+                                                                            {% else %}
+                                                                                {{ tax_18['CGST']['prod_val'] | sum() }}
+                                                                            {% endif %}
+                                                                        {% else %}
+                                                                            {{ tax_18['IGST']['prod_val'] | sum() }}
+                                                                        {% endif %}
+                                                                    </td>
+                                                                    <td style=" padding: 0px 6px 0px 6px !important; border-right: 1px solid black;" class="text-right">
+                                                                        {% if tax_18['SGST']['total'] >= tax_18['CGST']['total'] %}
+                                                                            {{ tax_18['SGST']['total'] | sum() }}
+                                                                        {% else %}
+                                                                            {{ tax_18['CGST']['total'] | sum() }}
+                                                                        {% endif %}
+                                                                    </td>
+                                                                    <td style=" padding: 0px 6px 0px 6px !important; border-right: 1px solid black;" class="text-right">
+                                                                        {% if tax_18['SGST']['total'] >= tax_18['CGST']['total'] %}
+                                                                            {{ tax_18['SGST']['total'] | sum() }}
+                                                                        {% else %}
+                                                                            {{ tax_18['CGST']['total'] | sum() }}
+                                                                        {% endif %}
+                                                                    </td>
+                                                                    <td style=" padding: 0px 6px 0px 6px !important; border-right: 1px solid black;" class="text-right">
+                                                                        {{ tax_18['IGST']['total'] | sum() }}
+                                                                    </td>
+                                                                    <td style=" padding: 0px 6px 0px 6px !important; border-right: 1px solid black;" class="text-right">
+                                                                        {% if tax_18['SGST']['total'] >= tax_18['CGST']['total'] %}
+                                                                            {{ tax_18['IGST']['total'] | sum() + (tax_18['SGST']['total'] | sum() * 2) }}
+                                                                        {% else %}
+                                                                            {{ tax_18['IGST']['total'] | sum() + (tax_18['CGST']['total'] | sum() * 2) }}
+                                                                        {% endif %}
+                                                                    </td>
+                                                                </tr>
+                                                                <tr style="border-top: 1px solid black;">
+                                                                    <td style=" padding: 0px 6px 0px 6px !important; border-right: 1px solid black;" class="text-center">28%</td>
+                                                                    <td style=" padding: 0px 6px 0px 6px !important; border-right: 1px solid black;" class="text-right">
+                                                                        {% if doc.taxes[0].account_head.split()[2] == 'SGST' or doc.taxes[0].account_head.split()[2] == 'CGST' %}
+                                                                            {% if tax_28['SGST']['prod_val'] >= tax_28['CGST']['prod_val'] %}
+                                                                                {{ tax_28['SGST']['prod_val'] | sum() }}
+                                                                            {% else %}
+                                                                                {{ tax_28['CGST']['prod_val'] | sum() }}
+                                                                            {% endif %}
+                                                                        {% else %}
+                                                                            {{ tax_28['IGST']['prod_val'] | sum() }}
+                                                                        {% endif %}
+                                                                    </td>
+                                                                    <td style=" padding: 0px 6px 0px 6px !important; border-right: 1px solid black;" class="text-right">
+                                                                        {% if tax_28['SGST']['total'] >= tax_28['CGST']['total'] %}
+                                                                            {{ tax_28['SGST']['total'] | sum() }}
+                                                                        {% else %}
+                                                                            {{ tax_28['CGST']['total'] | sum() }}
+                                                                        {% endif %}
+                                                                    </td>
+                                                                    <td style=" padding: 0px 6px 0px 6px !important; border-right: 1px solid black;" class="text-right">
+                                                                        {% if tax_28['SGST']['total'] >= tax_28['CGST']['total'] %}
+                                                                            {{ tax_28['SGST']['total'] | sum() }}
+                                                                        {% else %}
+                                                                            {{ tax_28['CGST']['total'] | sum() }}
+                                                                        {% endif %}
+                                                                    </td>
+                                                                    <td style=" padding: 0px 6px 0px 6px !important; border-right: 1px solid black;" class="text-right">
+                                                                        {{ tax_28['IGST']['total'] | sum() }}
+                                                                    </td>
+                                                                    <td style=" padding: 0px 6px 0px 6px !important; border-right: 1px solid black;" class="text-right">
+                                                                        {% if tax_28['SGST']['total'] >= tax_28['CGST']['total'] %}
+                                                                            {{ tax_28['IGST']['total'] | sum() + (tax_28['SGST']['total'] | sum() * 2) }}
+                                                                        {% else %}
+                                                                            {{ tax_28['IGST']['total'] | sum() + (tax_28['CGST']['total'] | sum() * 2) }}
+                                                                        {% endif %}
+                                                                    </td>
+                                                                </tr> 
+                                                                <tr style="border-top: 1px solid black;">
+                                                                    <td style=" padding: 0px 6px 0px 6px !important; border-right: 1px solid black;" class="text-center">Total</td>
+                                                                    <td style=" padding: 0px 6px 0px 6px !important; border-right: 1px solid black;" class="text-right">
+                                                                        {{ tax_5['IGST']['prod_val'] | sum() + tax_5['SGST']['prod_val'] | sum() + tax_5['CGST']['prod_val'] | sum()
+                                                                        + tax_12['IGST']['prod_val'] | sum() + tax_12['SGST']['prod_val'] | sum() + tax_12['CGST']['prod_val'] | sum() 
+                                                                        + tax_18['IGST']['prod_val'] | sum() + tax_18['SGST']['prod_val'] | sum() + tax_18['CGST']['prod_val'] | sum() 
+                                                                        + tax_28['IGST']['prod_val'] | sum() + tax_28['SGST']['prod_val'] | sum() + tax_28['CGST']['prod_val'] | sum() }}
+                                                                    </td>
+                                                                    <td style=" padding: 0px 6px 0px 6px !important; border-right: 1px solid black;" class="text-right">
+                                                                        {{ tax_5['SGST']['total'] | sum() + tax_12['SGST']['total'] | sum()
+                                                                            + tax_18['SGST']['total'] | sum() + tax_28['SGST']['total'] | sum() }}
+                                                                    </td>
+                                                                    <td style=" padding: 0px 6px 0px 6px !important; border-right: 1px solid black;" class="text-right">
+                                                                        {{ tax_5['CGST']['total'] | sum() + tax_12['CGST']['total'] | sum()
+                                                                            + tax_18['CGST']['total'] | sum() + tax_28['CGST']['total'] | sum() }}
+                                                                    </td>
+                                                                    <td style=" padding: 0px 6px 0px 6px !important; border-right: 1px solid black;" class="text-right">
+                                                                        {{ tax_5['IGST']['total'] | sum() + tax_12['IGST']['total'] | sum()
+                                                                            + tax_18['IGST']['total'] | sum() + tax_28['IGST']['total'] | sum() }}
+                                                                    </td>
+                                                                    <td style=" padding: 0px 6px 0px 6px !important; border-right: 1px solid black;" class="text-right">
+                                                                        {% if tax_5['SGST']['total'] >= tax_5['CGST']['total'] %}
+                                                                            {% set total_5 = tax_5['IGST']['total'] | sum() + (tax_5['SGST']['total'] | sum() * 2) %}
+                                                                        {% else %}
+                                                                            {% set total_5 = tax_5['IGST']['total'] | sum() + (tax_5['CGST']['total'] | sum() * 2) %}
+                                                                        {% endif %}
+                                                                        {% if tax_12['SGST']['total'] >= tax_12['CGST']['total'] %}
+                                                                            {% set total_12 = tax_12['IGST']['total'] | sum() + (tax_12['SGST']['total'] | sum() * 2) %}
+                                                                        {% else %}
+                                                                            {% set total_12 = tax_12['IGST']['total'] | sum() + (tax_12['CGST']['total'] | sum() * 2) %}
+                                                                        {% endif %}
+                                                                        {% if tax_18['SGST']['total'] >= tax_18['CGST']['total'] %}
+                                                                            {% set total_18 = tax_18['IGST']['total'] | sum() + (tax_18['SGST']['total'] | sum() * 2) %}
+                                                                        {% else %}
+                                                                            {% set total_18 = tax_18['IGST']['total'] | sum() + (tax_18['CGST']['total'] | sum() * 2) %}
+                                                                        {% endif %}
+                                                                        {% if tax_28['SGST']['total'] >= tax_28['CGST']['total'] %}
+                                                                            {% set total_28 = tax_28['IGST']['total'] | sum() + (tax_28['SGST']['total'] | sum() * 2) %}
+                                                                        {% else %}
+                                                                            {% set total_28 = tax_28['IGST']['total'] | sum() + (tax_28['CGST']['total'] | sum() * 2) %}
+                                                                        {% endif %}
+                                                                        {{ total_5 + total_12 + total_18 + total_28 }}
+                                                                    </td>
+                                                                </tr>
+                                                            </table>
+                                                        {% endif %}
+                                                    </td>
+                                                    <!-- AMOUNT RESUME -->
+                                                    <td style=" padding: 0px 0px  !important; border:none; border-left: 1px solid black;" class="text-right" width=17%>
+                                                        <table width=100%>
+                                                            <tr ms>
+                                                                <td style=" padding: 0px 0px  !important;" class="text-right" width=30%>{{"Total Amount"}}</td>
+                                                                <td style=" padding: 0px 0px  !important;" class="text-center" width=1%>:</td>
+                                                                <td style=" padding: 0px 0px  !important;" class="text-right" width=10%>
+                                                                    {{"₹ {:,.2f}".format(total_taxable_value | sum())}}&nbsp;&nbsp;
+                                                                </td>
+                                                            </tr>
+                                                            {% if cpt == pages - 1 %}
+                                                            <tr>
+                                                                <td style=" padding: 0px 0px  !important;" class="text-right" width=30%>{{"Total Discount"}}</td>
+                                                                <td style=" padding: 0px 0px  !important;" class="text-center" width=1%>:</td>
+                                                                <td style=" padding: 0px 0px  !important;" class="text-right" width=10%>
+                                                                    {{doc.get_formatted("discount_amount")}}&nbsp;&nbsp;
+                                                                </td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td style=" padding: 0px 0px  !important;" class="text-right" width=30%>Total Invoice Value</td>
+                                                                <td style=" padding: 0px 0px  !important;" class="text-center" width=1%>:</td>
+                                                                <td style=" padding: 0px 0px  !important;" class="text-right" width=10%>
+                                                                    {{doc.get_formatted("grand_total")}}&nbsp;&nbsp;
+                                                                </td>
+                                                            </tr>
+                                                            <tr style=" padding-right: 0px !important;">
+                                                                <td style=" padding: 0px 0px  !important;" class="text-right" width=30%>Round Off Invoice Value</td>
+                                                                <td style=" padding: 0px 0px  !important;" class="text-center" width=1%>:</td>
+                                                                <td style=" padding: 0px 0px 0px 0px !important;" class="text-right" width=10%>
+                                                                    {{doc.get_formatted("rounded_total")}}&nbsp;&nbsp;
+                                                                </td>
+                                                            </tr>
+                                                            {% endif %}
+                                                        </table>
+                                                    </td>
+                                                </tr>
+                                            </table>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </td>
+                        </tr>
+                        <tr style=" padding: 0px 0px  !important; font-size:10.5px;" height="auto">
+                            <td style="padding: 0px 0px  !important;">
+                                <!-- SIGN SECTION -->
+                                <table width="100%">
+                                    <tr>
+                                        <td width="100%" height="auto" style=" padding: 0px 0px  !important;">
+                                            <table width="100%">
+                                                <tr>
+                                                    <td height="auto" width="51%" style="border-right: 1px solid black;">
+                                                        <div>
+                                                            <b>For {{ company_name }}</b>
+                                                            <br>
+                                                            <p>Authorized Signatory:</p>
+                                                        </div>
+                                                    </td>
+                                                    <td height="auto" width="auto">
+                                                        <div class="text-left" style="margin-right: 3px">
+                                                            In case of delay in payment, interest@18% p.a shall be charged. In case of any excess rate charged by oversight, kindly bring to our notice.
+                                                        </div>
+                                                        <div class="text-left">
+                                                            Subject to Bengaluru Jurisdiction
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            </table>
+                                        </td>  
+                                    </tr>
+                                </table>
+                            </td>
+                        </tr>
+                    </table>
+                </td>
+                <!-- SLIP SECTION -->
+                <td width="20%" height="859px" style="border-right: 1px solid black; border-top: 1px solid black; border-bottom: 1px solid black;">
+                    <table width="100%" height="100%">
+                        <!-- COMPANY DETAILS -->
+                        <tr style="font-size:10px; border-bottom: 1px solid black;" height="6%">
+                            <td>
+                                <div style="font-size:10px" class="text-left"><b>{{ company_name }}</b></div>
+                                {% set address = frappe.get_list("Address",filters={"name":doc.company_address},fields=["*"]) -%}
+                                <div style="font-size:10px" class="text-left">
+                                    {{address[0]["address_line1"]}}{{", "}}{{address[0]["address_line2"]}}
+                                    <div>{{address[0]["city"]}}{{", "}}{% if address[0]['county'] %}
+                                        {{address[0]['county']}}{% endif%}{{address[0]['gst_state']}}{{", "}}{{address[0]['pincode']}}
+                                    </div>
+                                    <div>GSTIN:{{address[0]['gstin']}}</div>
+            
+                                    {% set company_tax = frappe.get_list("Company", filters={"name":doc.company} , fields=['*']) %}
+                                    <div>
+                                        PAN:{{company_tax[0]['tax_id']}}&nbsp;&nbsp;PH:{{ address[0]['phone'] }}<br>
+                                        {{address[0]['email_id']}}</div>
+                            </td>
+                        </tr>
+                        <!-- CUSTOMER DETAILS -->
+                        <tr style="font-size:10px; border-bottom: 1px solid black;" height="6%">
+                            <td>
+                                {% set address_details =
+                                    frappe.get_list("Address",filters={"name":doc.customer_address},fields=["*"]) %}
+                                <div style="font-size:10px" class="text-left">
+                                    Recipient (Billed to - {{address_details[0]["gst_state_number"] or
+							        ""}}{{"-"}}{{address_details[0]["gst_state"] or ""}})
+                                </div>
+                                <div class="text-left">{{doc.customer_address or ""}}</div>
+                                <div class="text-left">{{doc.address_display or ""}}</div>
+                            </td>
+                        </tr>
+                        <tr style="font-size:10px; text-align: center; border-bottom: 1px solid black;" height="1%"><td>Customer Seal & Signature Compulsory</td></tr>
+                        <tr style="font-size:10px; border-bottom: 1px solid black;" class="text-center" height="45%"><td><div style="margin-top: 160%">PLEASE DO NOT MAKE PAYMENT WITHOUT<br>COLLECTING ACKNOWLEDGEMENT SLIP</div></td></tr>
+                        <!-- INVOICE DETAILS -->
+                        <tr style="font-size:10px;" height="5%">
+                            <td style="border-bottom: 1px solid black;">
+                                <table width="100%">
+                                    <tr>
+                                        <td style=" padding: 0px 0px  !important;" width="33%">Invoice No.</td>
+                                        <td style=" padding: 0px 0px  !important;" >:&nbsp;</td>
+                                        <td style=" padding: 0px 0px  !important;" >{{ doc.name }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td style=" padding: 0px 0px  !important;"  width="33%">Invoice Date</td>
+                                        <td style=" padding: 0px 0px  !important;" >:&nbsp;</td>
+                                        <td style=" padding: 0px 0px  !important;" >{{ doc.get_formatted("posting_date") }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td style=" padding: 0px 0px  !important;"  width="33%">Due Date</td>
+                                        <td style=" padding: 0px 0px  !important;" >:&nbsp;</td>
+                                        <td style=" padding: 0px 0px  !important;" >{{ doc.get_formatted("due_date") }}</td>
+                                    </tr>
+                                </table>
+                            </td>
+                        </tr>
+                        <!-- AMOUNT DETAILS -->
+                        <tr style="font-size:10px;" height="10%">
+                            <td style="border-bottom: 1px solid black;">
+                                <table width="100%">
+                                    <tr>
+                                        <td style=" padding: 0px 0px  !important;" width="33%">Gross Amount</td>
+                                        <td style=" padding: 0px 0px  !important;" >:&nbsp;</td>
+                                        <td style=" padding: 0px 0px  !important;" >{{ doc.get_formatted("net_total") }}</td>
+                                    </tr>
+                                    {% if cpt == pages - 1 %}
+                                    <tr>
+                                        <td style=" padding: 0px 0px  !important;"  width="33%">Discount</td>
+                                        <td style=" padding: 0px 0px  !important;" >:&nbsp;</td>
+                                        <td style=" padding: 0px 0px  !important;" >0</td>
+                                    </tr>
+                                    <tr>
+                                        <td style=" padding: 0px 0px  !important;"  width="33%">Scheme Disc</td>
+                                        <td style=" padding: 0px 0px  !important;" >:&nbsp;</td>
+                                        <td style=" padding: 0px 0px  !important;" >0</td>
+                                    </tr>
+                                    <tr>
+                                        <td style=" padding: 0px 0px  !important;"  width="33%">Taxes</td>
+                                        <td style=" padding: 0px 0px  !important;" >:&nbsp;</td>
+                                        <td style=" padding: 0px 0px  !important;" >{{ doc.total_taxes_and_charges }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td style=" padding: 0px 0px  !important;"  width="33%">T.C.S</td>
+                                        <td style=" padding: 0px 0px  !important;" >:&nbsp;</td>
+                                        <td style=" padding: 0px 0px  !important;" >0</td>
+                                    </tr>
+                                    <tr>
+                                        <td style=" padding: 0px 0px  !important;"  width="33%">Round Off</td>
+                                        <td style=" padding: 0px 0px  !important;" >:&nbsp;</td>
+                                        <td style=" padding: 0px 0px  !important;" >{{ doc.rounding_adjustment }}</td>
+                                    </tr>
+                                    {% else %}
+                                    <tr>
+                                        <td style=" padding: 0px 0px  !important;"  width="33%">Discount</td>
+                                        <td style=" padding: 0px 0px  !important;" >:&nbsp;</td>
+                                        <td style=" padding: 0px 0px  !important;" ></td>
+                                    </tr>
+                                    <tr>
+                                        <td style=" padding: 0px 0px  !important;"  width="33%">Scheme Disc</td>
+                                        <td style=" padding: 0px 0px  !important;" >:&nbsp;</td>
+                                        <td style=" padding: 0px 0px  !important;" ></td>
+                                    </tr>
+                                    <tr>
+                                        <td style=" padding: 0px 0px  !important;"  width="33%">Taxes</td>
+                                        <td style=" padding: 0px 0px  !important;" >:&nbsp;</td>
+                                        <td style=" padding: 0px 0px  !important;" ></td>
+                                    </tr>
+                                    <tr>
+                                        <td style=" padding: 0px 0px  !important;"  width="33%">T.C.S</td>
+                                        <td style=" padding: 0px 0px  !important;" >:&nbsp;</td>
+                                        <td style=" padding: 0px 0px  !important;" ></td>
+                                    </tr>
+                                    <tr>
+                                        <td style=" padding: 0px 0px  !important;"  width="33%">Round Off</td>
+                                        <td style=" padding: 0px 0px  !important;" >:&nbsp;</td>
+                                        <td style=" padding: 0px 0px  !important;" ></td>
+                                    </tr>
+                                    {% endif %}
+                                </table>
+                            </td>
+                        </tr>
+                        <!-- NET AMOUNT DETAILS -->
+                        <tr style="font-size:10px;" height="auto">
+                            <td>
+                                <table width="100%">
+                                    <tr>
+                                        {% if cpt == pages - 1 %}
+                                        <td style=" padding: 0px 0px  !important;" width="33%">Net Amount</td>
+                                        <td style=" padding: 0px 0px  !important;" >:&nbsp;</td>
+                                        <td style=" padding: 0px 0px  !important;" >{{doc.get_formatted("rounded_total")}}</td>
+                                        {% else %}
+                                        <td style=" padding: 0px 0px  !important;" width="33%">Net Amount</td>
+                                        <td style=" padding: 0px 0px  !important;" >:&nbsp;</td>
+                                        <td style=" padding: 0px 0px  !important;" ></td>
+                                        {% endif %}
+                                    </tr>
+                                </table>
+                            </td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+        </table>
+        <footer width="100%" class="text-center">Page {{ cpt+1 }} of {{ pages }}</footer>
+    {% endfor %}
+</body>
+</html>
